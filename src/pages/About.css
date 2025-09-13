@@ -1,0 +1,247 @@
+.about-page {
+  padding: 40px 0;
+}
+
+.mission-section,
+.features-section,
+.team-section,
+.technology-section,
+.contact-section,
+.footer-note {
+  margin-bottom: 60px;
+}
+
+.mission-section .card {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.mission-section h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.mission-section p {
+  font-size: 1.1rem;
+  color: #666;
+  line-height: 1.7;
+}
+
+.features-section .section-title {
+  font-size: 2.2rem;
+  margin-bottom: 40px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 32px;
+}
+
+.feature-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-8px);
+}
+
+.feature-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.feature-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.feature-description {
+  color: #666;
+  line-height: 1.6;
+}
+
+.team-section .section-title {
+  font-size: 2.2rem;
+  margin-bottom: 40px;
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 32px;
+}
+
+.team-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s ease;
+}
+
+.team-card:hover {
+  transform: translateY(-8px);
+}
+
+.team-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.team-name {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.team-role {
+  font-size: 1rem;
+  color: #667eea;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.team-description {
+  color: #666;
+  line-height: 1.6;
+}
+
+.technology-section .card {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.technology-section h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.tech-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+}
+
+.tech-item {
+  background: #f8f9fa;
+  padding: 24px;
+  border-radius: 12px;
+  border-left: 4px solid #667eea;
+}
+
+.tech-item h4 {
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.tech-item p {
+  color: #666;
+  line-height: 1.6;
+}
+
+.contact-section .card {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.contact-section h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.contact-section p {
+  font-size: 1.1rem;
+  color: #666;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.contact-item {
+  background: #f8f9fa;
+  padding: 16px 24px;
+  border-radius: 8px;
+  color: #333;
+  font-size: 1rem;
+}
+
+.footer-note .card {
+  max-width: 400px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #667eea;
+  font-weight: 500;
+}
+
+.footer-content svg {
+  color: #e74c3c;
+}
+
+@media (max-width: 768px) {
+  .features-grid,
+  .team-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  .tech-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .mission-section h2,
+  .technology-section h2,
+  .contact-section h2 {
+    font-size: 1.6rem;
+  }
+  
+  .features-section .section-title,
+  .team-section .section-title {
+    font-size: 1.8rem;
+  }
+} 

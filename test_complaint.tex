@@ -1,0 +1,56 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[russian]{babel}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+
+% Настройки страницы
+\geometry{
+    left=2cm,
+    right=2cm,
+    top=2cm,
+    bottom=2cm
+}
+
+% Настройки заголовков
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+% Настройки отступов
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+\begin{document}
+
+% Заголовок документа
+\begin{center}
+\textbf{\Large ЖАЛОБА}
+\end{center}
+
+\vspace{1cm}
+
+% Место и дата
+\begin{flushright}
+г. Москва \hspace{2cm} \today
+\end{flushright}
+
+\vspace{1cm}
+
+% Содержимое документа
+Тестовое содержимое жалобы для проверки компиляции
+
+\vspace{1cm}
+
+% Подпись
+\begin{center}
+\rule{6cm}{0.5pt} \\
+\textit{Подпись} \\
+\vspace{0.5cm} \\
+[ФИО] \\
+\end{center}
+
+\end{document} 

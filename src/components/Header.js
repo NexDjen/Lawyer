@@ -1,0 +1,112 @@
+import React, { useState, useContext } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, Scale, Settings, LogOut, User } from 'lucide-react';
+import './Header.css';
+import { LanguageContext } from '../App';
+import { useAuth } from '../contexts/AuthContext';
+import translations from '../data/translations';
+
+const Header = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { lang } = useContext(LanguageContext);
+  const { user, logout, isAdmin } = useAuth();
+  const t = translations[lang] || translations['ru'];
+
+  const navItems = [
+    { path: '/', label: t.nav.home },
+    { path: '/chat', label: t.nav.chat },
+    { path: '/lawyer', label: t.nav.lawyer },
+    { path: '/fill-documents', label: 'Заполнение документов' },
+    { path: '/documents', label: 'Документы' },
+    { path: '/my-documents', label: 'Мои документы' }
+  ];
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const toggleUserMenu = () => {
+    setIsUserMenuOpen(!isUserMenuOpen);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  return (
+    <header className="header">
+      <div className="container">
+        <div className="header-content">
+          <Link to="/" className="logo">
+            <Scale size={32} />
+            <span>AI-Юрист</span>
+          </Link>
+
+          <nav className={`nav ${isMenuOpen ? 'nav-open' : ''}`}>
+            {navItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`nav-link ${location.pathname === item.path ? 'active' : ''}`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="header-actions">
+            {user && (
+              <div className="user-menu">
+                <button className="user-button" onClick={toggleUserMenu}>
+                  <User size={20} />
+                  <span>{user.name}</span>
+                </button>
+                {isUserMenuOpen && (
+                  <div className="user-dropdown">
+                    <div className="user-info">
+                      <p>{user.name}</p>
+                      <p className="user-email">{user.email}</p>
+                    </div>
+                    <Link
+                      to="/profile"
+                      className="dropdown-item"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <User size={16} />
+                      Профиль
+                    </Link>
+                    {isAdmin() && (
+                      <Link
+                        to="/admin"
+                        className="dropdown-item"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        <Settings size={16} />
+                        Админ панель
+                      </Link>
+                    )}
+                    <button className="dropdown-item logout" onClick={handleLogout}>
+                      <LogOut size={16} />
+                      Выйти
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+          <button className="menu-toggle" onClick={toggleMenu}>
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+};
+
+export default Header; 

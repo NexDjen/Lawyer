@@ -1,0 +1,20 @@
+{
+  "watch": [
+    "server.js",
+    "routes",
+    "services",
+    "controllers",
+    "config",
+    "middleware"
+  ],
+  "ignore": [
+    "uploads/**",
+    "temp/**",
+    "data/**/*.json",
+    "../uploads/**",
+    "../temp/**",
+    "../**/*.mp3",
+    "../**/*.wav"
+  ]
+}
+

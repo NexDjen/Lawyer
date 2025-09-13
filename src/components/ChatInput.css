@@ -1,0 +1,300 @@
+/* Современный дизайн поля ввода чата - 2024 UI/UX тенденции */
+.chat-input { padding: var(--space-3) var(--space-4); background: rgba(255,255,255,0.86); border-top: 1px solid rgba(229,231,235,0.7); position: relative; backdrop-filter: blur(10px); }
+
+.chat-input::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.1), transparent);
+}
+
+.chat-input__container { display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-2); align-items: flex-end; background: var(--surface); border-radius: var(--radius-md); padding: var(--space-2); box-shadow: none; border-top: 1px solid var(--border); position: relative; overflow: hidden; }
+
+.chat-input__left { display: flex; align-items: center; gap: var(--space-2); }
+
+.chat-input__container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(45deg, transparent 30%, rgba(148, 163, 184, 0.02) 50%, transparent 70%),
+    radial-gradient(circle at 20% 50%, rgba(148, 163, 184, 0.01) 0%, transparent 50%);
+  animation: shimmer 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0%, 100% { transform: translateX(-100%) rotate(0deg); opacity: 0.2; }
+  50% { transform: translateX(100%) rotate(2deg); opacity: 0.4; }
+}
+
+.chat-input__container:focus-within { border-color: #d1d5db; }
+
+/* Поле ввода */
+.chat-input__textarea { flex: 1; border: none; background: transparent; padding: var(--space-3); font-size: 1rem; line-height: 1.55; resize: none; font-family: inherit; color: var(--text-primary); min-height: 32px; max-height: 160px; outline: none; transition: none; font-weight: 400; }
+
+.chat-input__textarea::placeholder {
+  color: #94a3b8;
+  opacity: 0.7;
+  font-style: italic;
+  font-weight: 400;
+  transition: all 0.3s ease;
+}
+
+.chat-input__textarea:focus::placeholder {
+  opacity: 0.5;
+  transform: translateX(4px);
+}
+
+.chat-input__textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  color: #cbd5e1;
+}
+
+.chat-input__textarea:focus {
+  color: #334155;
+}
+
+/* Кнопки действий */
+.chat-input__actions { display: flex; gap: var(--space-2); align-items: center; flex-shrink: 0; }
+
+.chat-input__button { background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius-md); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition-fast); box-shadow: var(--shadow-sm); font-size: 1rem; }
+
+.chat-input__button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
+}
+
+.chat-input__button:hover::before {
+  transform: translateX(100%);
+}
+
+.chat-input__button:hover { background: #f3f4f6; }
+
+.chat-input__button:active {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 
+    0 8px 24px rgba(102, 126, 234, 0.2),
+    0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.chat-input__button:disabled {
+  background: linear-gradient(135deg, #c7d2fe 0%, #ddd6fe 100%);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 
+    0 4px 12px rgba(102, 126, 234, 0.15),
+    0 2px 6px rgba(118, 75, 162, 0.12);
+  opacity: 0.6;
+}
+
+.chat-input__button:disabled:hover {
+  transform: none;
+  box-shadow: 
+    0 4px 12px rgba(148, 163, 184, 0.15),
+    0 2px 6px rgba(148, 163, 184, 0.08);
+}
+
+/* Специальные кнопки */
+.chat-input__button--send { background: #111827; color: var(--text-inverse); border-color: #111827; }
+.chat-input__button--send:hover { background: #0b1220; }
+
+.chat-input__button--send:hover {
+  background: linear-gradient(135deg, #5b6ee7 0%, #6b46c1 100%);
+  box-shadow: 
+    0 12px 32px rgba(102, 126, 234, 0.25),
+    0 6px 16px rgba(102, 126, 234, 0.2);
+}
+
+.chat-input__button--send:disabled {
+  background: linear-gradient(135deg, #c7d2fe 0%, #ddd6fe 100%);
+  box-shadow: 
+    0 4px 12px rgba(102, 126, 234, 0.15),
+    0 2px 6px rgba(118, 75, 162, 0.12);
+}
+
+/* Счетчик символов */
+.chat-input__counter {
+  position: absolute;
+  bottom: 12px;
+  right: 56px;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  opacity: 0.7;
+  font-weight: 500;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px 8px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.chat-input__counter.warning {
+  color: #f59e0b;
+  opacity: 1;
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.chat-input__counter.danger {
+  color: #ef4444;
+  opacity: 1;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Анимации */
+@keyframes buttonPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.chat-input__button:not(:disabled):hover {
+  animation: buttonPulse 0.4s ease;
+}
+
+/* Индикатор загрузки */
+.chat-input__loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.chat-input__loading .spinning {
+  animation: spin 1.2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .chat-input {
+    padding: 24px 28px;
+  }
+  
+  .chat-input__container {
+    border-radius: 24px;
+    padding: 10px;
+    gap: 16px;
+  }
+  
+  .chat-input__textarea {
+    padding: 16px 20px;
+    font-size: 1rem;
+  }
+  
+  .chat-input__button {
+    width: 48px;
+    height: 48px;
+    font-size: 1rem;
+  }
+  
+  .chat-input__counter {
+    font-size: 0.75rem;
+    right: 52px;
+    padding: 3px 6px;
+  }
+  
+  .chat-input__actions {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chat-input {
+    padding: 20px 24px;
+  }
+  
+  .chat-input__container {
+    border-radius: 20px;
+    padding: 8px;
+    gap: 12px;
+  }
+  
+  .chat-input__textarea {
+    padding: 14px 18px;
+    font-size: 0.95rem;
+  }
+  
+  .chat-input__button {
+    width: 44px;
+    height: 44px;
+    font-size: 0.9rem;
+  }
+  
+  .chat-input__counter {
+    font-size: 0.7rem;
+    right: 48px;
+    padding: 2px 5px;
+  }
+}
+
+/* Темная тема */
+@media (prefers-color-scheme: dark) {
+  .chat-input {
+    background: 
+      linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.6) 100%),
+      radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+    border-top-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .chat-input__container {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(226, 232, 240, 0.8);
+  }
+  
+  .chat-input__textarea {
+    color: #0f172a;
+  }
+  
+  .chat-input__textarea::placeholder {
+    color: #64748b;
+  }
+  
+  .chat-input__counter {
+    color: #64748b;
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(226, 232, 240, 0.8);
+  }
+  
+  .chat-input__counter.warning {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+  
+  .chat-input__counter.danger {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+} 
