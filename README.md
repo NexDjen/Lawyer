@@ -128,7 +128,7 @@ UPLOAD_PATH=./uploads
 ```
 
 ### Получение WindexAI API ключа
-1. Перейдите на [windexai.com](https://windexai.com)
+1. Перейдите на WINDEX (Добавить URL)
 2. Зарегистрируйтесь и получите API ключ
 3. Добавьте ключ в файл `.env`
 
