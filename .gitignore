@@ -133,6 +133,9 @@ backend/temp_ocr/
 *.key
 *.crt
 
+# Google Cloud credentials (contains secrets)
+backend/google_credentials.json
+
 # Backup files
 *.backup
 *.bak
