@@ -71,7 +71,7 @@ router.post('/transcribe', upload.single('audio'), ErrorHandler.asyncHandler(asy
     const tempPath = path.join(tempDir, `recording_${Date.now()}${extension}`);
     await fsp.writeFile(tempPath, req.file.buffer);
 
-    const WindexAI = require('openai');
+    const WindexAI = require('openai'); // WindexAI API client
     const windexai = new WindexAI({ apiKey: process.env.WINDEXAI_API_KEY });
 
     const fileStream = fs.createReadStream(tempPath);

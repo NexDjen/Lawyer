@@ -1,4 +1,4 @@
-const WindexAI = require('openai');
+const WindexAI = require('windexai');
 const fs = require('fs');
 const path = require('path');
 const logger = require('../utils/logger');
@@ -6,7 +6,7 @@ const config = require('../config/config');
 const FormData = require('form-data');
 const axios = require('axios');
 
-const openai = new WindexAI({
+const windexai = new WindexAI({
   apiKey: config.windexai.apiKey
 });
 
@@ -28,9 +28,9 @@ const transcribeAudio = async (audioFilePath) => {
     formData.append('language', 'ru');
     
     // Отправляем запрос к WindexAI Whisper API
-    const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, {
+    const response = await axios.post('https://api.windexai.com/v1/audio/transcriptions', formData, {
       headers: {
-        'Authorization': `Bearer ${config.openai.apiKey}`,
+        'Authorization': `Bearer ${config.windexai.apiKey}`,
         ...formData.getHeaders()
       }
     });
@@ -219,7 +219,7 @@ ${hearingText}
 }
 `;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await windexai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {

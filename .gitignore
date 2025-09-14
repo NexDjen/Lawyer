@@ -139,6 +139,161 @@ backend/google_credentials.json
 # Backup files
 *.backup
 *.bak
+*.orig
+*.old
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+
+# Build artifacts
+dist/
+build/
+*.tgz
+*.tar.gz
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage reports
+coverage/
+*.lcov
+.nyc_output/
+
+# Dependency directories
+jspm_packages/
+node_modules/
+backend/node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Test files and directories
+test-results/
+playwright-report/
+test-output/
+
+# Database files
+*.sqlite
+*.db
+*.sqlite3
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# OCR temporary files
+backend/temp/
+uploads/temp_ocr/
+*.png.tmp
+*.jpg.tmp
+*.pdf.tmp
+
+# Audio files (generated)
+backend/test_audio*.*
+uploads/audio-*.*
+*.mp3
+*.wav
+*.ogg
+*.webm
+
+# Document processing artifacts
+*_processed.*
+*_processed_data.json
+
+# Package manager files (uncomment if you want to commit them)
+# package-lock.json
+# yarn.lock
+# backend/package-lock.json
+# backend/yarn.lock
 
 # Package manager lock files (uncomment if you want to commit them)
 # package-lock.json

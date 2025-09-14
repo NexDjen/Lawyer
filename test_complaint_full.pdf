@@ -1,1 +1,0 @@
-{"error":"Ошибка при генерации PDF документа","details":"Converting circular structure to JSON\n    --> starting at object with constructor 'PDFDocument'\n    |     property '_root' -> object with constructor 'PDFReference'\n    --- property 'document' closes the circle"}

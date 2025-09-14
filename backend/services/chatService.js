@@ -1,4 +1,4 @@
-const WindexAI = require('openai');
+const WindexAI = require('openai'); // WindexAI API client
 const config = require('../config/config');
 const logger = require('../utils/logger');
 const { readDb } = require('./documentStorage');

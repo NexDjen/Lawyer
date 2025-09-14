@@ -4,7 +4,7 @@ const fs = require('fs').promises;
 const path = require('path');
 
 // Путь к файлу статистики
-const STATS_FILE = path.join(__dirname, '../data/openai_stats.json');
+const STATS_FILE = path.join(__dirname, '../data/windexai_stats.json');
 const DAILY_STATS_FILE = path.join(__dirname, '../data/daily_stats.json');
 
 // Инициализация файлов статистики если они не существуют
@@ -31,8 +31,8 @@ async function initializeStatsFiles() {
   }
 }
 
-// Получение статистики OpenAI
-router.get('/openai-stats', async (req, res) => {
+// Получение статистики WindexAI
+router.get('/windexai-stats', async (req, res) => {
   try {
     await initializeStatsFiles();
     const statsData = await fs.readFile(STATS_FILE, 'utf8');

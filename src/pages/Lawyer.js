@@ -95,7 +95,7 @@ const Lawyer = () => {
         initializeAudioContext();
       }
     }
-  }, [initializeAudioContext]);
+  }, []); // initializeAudioContext вызывается внутри функции, но не зависит от ее состояния
 
   // Автоматически скрываем кнопку разрешения после получения разрешения
   useEffect(() => {
@@ -154,20 +154,6 @@ const Lawyer = () => {
     }
   }, []);
 
-  // Проверка возможности автовоспроизведения
-  const canAutoPlay = useCallback(() => {
-    // Проверяем userActivation API
-    if (navigator.userActivation && navigator.userActivation.hasBeenActive) {
-      return true;
-    }
-    
-    // Проверяем, был ли пользователь активен
-    if (userInteracted) {
-      return true;
-    }
-    
-    return false;
-  }, [userInteracted]);
 
   // Стратегия автоматического воспроизведения
   const attemptAutoPlay = useCallback(async (audio, responseText) => {
@@ -228,7 +214,7 @@ const Lawyer = () => {
       }
       return false;
     }
-  }, [audioPermissionGranted, userInteracted, audioContext]);
+  }, [audioPermissionGranted, userInteracted]); // audioContext проверяется на null внутри функции
 
   const stopAudio = useCallback(() => {
     if (currentAudio) {
@@ -300,7 +286,7 @@ const Lawyer = () => {
         fallbackToTTS(responseText);
       }
     }
-  }, [currentAudio, audioContext, attemptAutoPlay, audioPermissionGranted, userInteracted, fallbackToTTS]);
+  }, [currentAudio, attemptAutoPlay, audioPermissionGranted, userInteracted]); // fallbackToTTS вызывается внутри, но не зависит от ее состояния
 
   const sendToAI = useCallback(async (message) => {
     handleUserInteraction(); // Устанавливаем флаг взаимодействия
@@ -375,7 +361,7 @@ const Lawyer = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [conversationHistory, playAudio, audioPermissionGranted, handleUserInteraction]);
+  }, [conversationHistory, playAudio, handleUserInteraction]);
 
   const handleVoiceInput = useCallback(async (transcript) => {
     if (!transcript.trim()) return;

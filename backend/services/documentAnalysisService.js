@@ -1,8 +1,8 @@
-const WindexAI = require('openai');
+const WindexAI = require('windexai');
 const config = require('../config/config');
 const logger = require('../utils/logger');
 
-const openai = new WindexAI({ apiKey: config.windexai.apiKey });
+const windexai = new WindexAI({ apiKey: config.windexai.apiKey });
 
 function normalizeCompliance(value) {
   const v = String(value || '').toLowerCase();
@@ -14,7 +14,7 @@ function normalizeCompliance(value) {
 
 async function analyzeDocumentText(text) {
   try {
-    if (!config.openai.apiKey) {
+    if (!config.windexai.apiKey) {
       throw new Error('WindexAI API ключ не настроен');
     }
 
@@ -34,8 +34,8 @@ async function analyzeDocumentText(text) {
 ТЕКСТ:
 ${text}`;
 
-    const completion = await openai.chat.completions.create({
-      model: config.openai.model || 'gpt-4o-mini',
+    const completion = await windexai.chat.completions.create({
+      model: config.windexai.model || 'gpt-4o-mini',
       messages: [
         { role: 'system', content: 'Ты юридический аналитик. Отвечай строго в JSON.' },
         { role: 'user', content: prompt }
