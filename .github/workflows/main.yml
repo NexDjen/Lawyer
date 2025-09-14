@@ -18,4 +18,4 @@ jobs:
 
       - name: Deploy via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no ${{secrets.SSH_USER}}@${{ secrets.SERVER_IP }} `sudo /home/${secrets.SSH_USER}/deploy.sh`
+          ssh -o StrictHostKeyChecking=no ${{secrets.SSH_USER}}@${{ secrets.SERVER_IP }} -p ${{secrets.SSH_PORT}} `sudo /home/${{secrets.SSH_USER}}/deploy.sh`
