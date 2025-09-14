@@ -1,4 +1,4 @@
-const WindexAI = require('windexai');
+const WindexAI = require('openai'); // WindexAI API uses OpenAI SDK
 const config = require('../config/config');
 const logger = require('../utils/logger');
 

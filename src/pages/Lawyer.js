@@ -36,7 +36,7 @@ const Lawyer = () => {
         console.error('Ошибка инициализации Web Audio API:', error);
       }
     }
-  }, [userInteracted]);
+  }, [userInteracted, audioContext]);
 
   // Обработчик разрешения аудио
   const handleAudioPermission = useCallback(async () => {
@@ -95,7 +95,7 @@ const Lawyer = () => {
         initializeAudioContext();
       }
     }
-  }, []); // initializeAudioContext вызывается внутри функции, но не зависит от ее состояния
+  }, [initializeAudioContext]);
 
   // Автоматически скрываем кнопку разрешения после получения разрешения
   useEffect(() => {
@@ -117,7 +117,7 @@ const Lawyer = () => {
         console.log('Разрешение на аудио установлено автоматически');
       }
     }
-  }, [userInteracted, audioPermissionGranted]);
+  }, [userInteracted, audioPermissionGranted, initializeAudioContext]);
 
   // Fallback на браузерный TTS
   const fallbackToTTS = useCallback((responseText) => {
@@ -214,7 +214,7 @@ const Lawyer = () => {
       }
       return false;
     }
-  }, [audioPermissionGranted, userInteracted]); // audioContext проверяется на null внутри функции
+  }, [audioPermissionGranted, userInteracted, audioContext, fallbackToTTS]);
 
   const stopAudio = useCallback(() => {
     if (currentAudio) {
@@ -286,7 +286,7 @@ const Lawyer = () => {
         fallbackToTTS(responseText);
       }
     }
-  }, [currentAudio, attemptAutoPlay, audioPermissionGranted, userInteracted]); // fallbackToTTS вызывается внутри, но не зависит от ее состояния
+  }, [currentAudio, attemptAutoPlay, audioPermissionGranted, userInteracted, fallbackToTTS]);
 
   const sendToAI = useCallback(async (message) => {
     handleUserInteraction(); // Устанавливаем флаг взаимодействия
