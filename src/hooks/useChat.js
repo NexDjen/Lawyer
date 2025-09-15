@@ -3,8 +3,8 @@ import { safeFetchWithFallback, getFallbackNews } from '../utils/safeJson';
 
 // Константы для API
 const API_ENDPOINTS = {
-  CHAT: 'http://localhost:3006/chat',
-  NEWS: 'http://localhost:3006/news'
+  CHAT: '/api/chat',
+  NEWS: '/api/news'
 };
 
 // Константы для статусов
@@ -275,7 +275,7 @@ export const useChat = () => {
   // Функция для скачивания документа из сообщения
   const downloadDocument = useCallback(async (messageContent, title = 'Юридический документ') => {
     try {
-      const resp = await fetch('http://localhost:3006/chat/generate-docx', {
+      const resp = await fetch('/api/chat/generate-docx', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

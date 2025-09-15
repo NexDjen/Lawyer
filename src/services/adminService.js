@@ -1,6 +1,6 @@
 // Сервис для административных функций
 // Базовый URL API: env или backend origin
-const API_BASE_URL = 'http://localhost:3006';
+const API_BASE_URL = '/api';
 
 console.log('🔧 API_BASE_URL настроен на:', API_BASE_URL);
 

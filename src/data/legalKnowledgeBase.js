@@ -294,7 +294,7 @@ const upsertAct = async (update) => {
     
     // Загружаем текущую базу знаний через API
     const fallbackData = getFallbackKnowledgeBase();
-    const data = await safeFetchWithFallback('http://localhost:3006/chat/knowledge-base', fallbackData);
+    const data = await safeFetchWithFallback('/api/chat/knowledge-base', fallbackData);
     let knowledgeBase = Array.isArray(data.legalKnowledgeBase) ? data.legalKnowledgeBase : [];
     
     // Проверяем, существует ли уже запись с таким ID
@@ -406,7 +406,7 @@ const saveKnowledgeBase = async (knowledgeBase) => {
       return;
     }
     
-    const response = await fetch('http://localhost:3006/chat/knowledge-base', {
+    const response = await fetch('/api/chat/knowledge-base', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ legalKnowledgeBase: knowledgeBase })
@@ -457,7 +457,7 @@ let legalKnowledgeBase = null;
 export const loadKnowledgeBase = async () => {
   if (!legalKnowledgeBase) {
     const fallbackData = getFallbackKnowledgeBase();
-    const data = await safeFetchWithFallback('http://localhost:3006/chat/knowledge-base', fallbackData);
+    const data = await safeFetchWithFallback('/api/chat/knowledge-base', fallbackData);
     
     if (!data || !Array.isArray(data.legalKnowledgeBase)) {
       console.warn('Некорректный формат данных базы знаний, используем fallback');
