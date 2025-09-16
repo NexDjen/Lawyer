@@ -363,4 +363,41 @@ router.post('/voice-session/resume', (req, res) => {
   }
 });
 
+// Text chat pricing endpoint
+router.get('/text-pricing', (req, res) => {
+  try {
+    const textPricingService = require('../services/textPricingService');
+    const info = textPricingService.getPricingInfo();
+    logger.info('Text chat pricing requested');
+    res.json({ success: true, data: info });
+  } catch (error) {
+    logger.error('Text pricing error', error);
+    res.status(500).json({ success: false, error: 'Failed to get text chat pricing' });
+  }
+});
+
+// Document generation pricing endpoint
+router.get('/document-pricing', (req, res) => {
+  try {
+    const { perPageRate } = require('../config/config').pricing.documentGeneration;
+    logger.info('Document generation pricing requested');
+    res.json({ success: true, data: { perPageRate } });
+  } catch (error) {
+    logger.error('Document pricing error', error);
+    res.status(500).json({ success: false, error: 'Failed to get document generation pricing' });
+  }
+});
+
+// Photo analysis pricing endpoint
+router.get('/photo-pricing', (req, res) => {
+  try {
+    const photoConfig = require('../config/config').pricing.photoAnalysis;
+    logger.info('Photo analysis pricing requested');
+    res.json({ success: true, data: photoConfig });
+  } catch (error) {
+    logger.error('Photo pricing error', error);
+    res.status(500).json({ success: false, error: 'Failed to get photo analysis pricing' });
+  }
+});
+
 module.exports = router;

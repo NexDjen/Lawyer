@@ -3,8 +3,8 @@ require('dotenv').config();
 const config = {
   // Server configuration
   server: {
-    port: parseInt(process.env.PORT, 10) || 3006,
-    host: process.env.HOST || 'localhost'
+    port: parseInt(process.env.PORT, 10) || 3007,
+    host: process.env.HOST || '0.0.0.0'
   },
 
   // WindexAI configuration
@@ -67,6 +67,24 @@ const config = {
   documents: {
     defaultLanguage: 'ru',
     supportedTypes: ['договор', 'жалоба', 'заявление', 'contract', 'complaint', 'application']
+  },
+
+  // Pricing configuration
+  pricing: {
+    textChat: {
+      hourlyRate: 119, // рублей в час
+      discountedRate: 199, // рублей в час (без скидки)
+      minuteRate: 119 / 60,
+      discountedMinuteRate: 199 / 60
+    },
+    documentGeneration: {
+      perPageRate: 50 // рублей за страницу
+    },
+    photoAnalysis: {
+      upTo300: 5,        // рублей за лист до 300 страниц
+      from300to500: 3,   // рублей за лист от 300 до 500 страниц
+      above500: 2        // рублей за лист от 500 страниц и более
+    }
   },
 
   // Logging configuration
