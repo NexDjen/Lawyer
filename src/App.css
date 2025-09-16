@@ -312,3 +312,18 @@ input, textarea, select {
 .text-xl { font-size: 1.25rem; }
 .text-2xl { font-size: 1.5rem; }
 .text-3xl { font-size: 1.875rem; } 
+
+/* Responsive main content container */
+.main-content {
+  flex: 1;
+  width: 100%;
+  max-width: var(--breakpoint-lg);
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+@media (max-width: var(--breakpoint-md)) {
+  .main-content {
+    padding: var(--space-3);
+  }
+} 

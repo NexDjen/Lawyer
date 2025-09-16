@@ -174,7 +174,11 @@ export const useWebSocketChat = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const backendPort = process.env.REACT_APP_WS_PORT || process.env.REACT_APP_BACKEND_PORT || '3007';
       const backendHost = process.env.REACT_APP_WS_HOST || window.location.hostname;
-      const wsUrl = `${protocol}//${backendHost}:${backendPort}/ws`;
+      // In production omit explicit port to use default 443/80
+      const isProd = process.env.NODE_ENV === 'production';
+      const host = isProd ? window.location.hostname : backendHost;
+      const portSegment = isProd ? '' : `:${backendPort}`;
+      const wsUrl = `${protocol}//${host}${portSegment}/ws`;
       
       console.log('Connecting to WebSocket:', wsUrl);
       
