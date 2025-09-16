@@ -12,6 +12,7 @@ import {
   Download,
   RefreshCw
 } from 'lucide-react';
+import { buildApiUrl, buildFullUrl } from '../config/api';
 import './AudioFilesList.css';
 
 const AudioFilesList = ({ isOpen, onClose }) => {
@@ -28,7 +29,7 @@ const AudioFilesList = ({ isOpen, onClose }) => {
     setError(null);
     
     try {
-      const response = await fetch('http://localhost:3006/court/audio-files');
+      const response = await fetch(buildApiUrl('court/audio-files'));
       if (!response.ok) {
         throw new Error('Ошибка загрузки файлов');
       }
@@ -68,7 +69,7 @@ const AudioFilesList = ({ isOpen, onClose }) => {
     }
 
     try {
-      const response = await fetch(`http://localhost:3006/court/audio-files/${filename}`, {
+      const response = await fetch(buildApiUrl(`court/audio-files/${filename}`), {
         method: 'DELETE'
       });
       
@@ -100,7 +101,7 @@ const AudioFilesList = ({ isOpen, onClose }) => {
         audioElement.pause();
       }
       
-    const audio = new Audio(`http://localhost:3006/court/audio-files/${file.filename}`);
+    const audio = new Audio(buildFullUrl(`court/audio-files/${file.filename}`));
       audio.onended = () => {
         setPlayingFile(null);
         setAudioElement(null);
@@ -115,7 +116,7 @@ const AudioFilesList = ({ isOpen, onClose }) => {
   // Скачивание файла
   const downloadFile = (file) => {
     const link = document.createElement('a');
-    link.href = `http://localhost:3006/court/audio-files/${file.filename}`;
+    link.href = buildFullUrl(`court/audio-files/${file.filename}`);
     link.download = file.filename;
     document.body.appendChild(link);
     link.click();

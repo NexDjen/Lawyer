@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Upload, X, Camera, FileText, Edit3, Save, RotateCcw } from 'lucide-react';
+import { buildApiUrl } from '../config/api';
 import './DocumentUpload.css';
 
 const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storageKey = 'documents', profileDefaults = {} }) => {
@@ -186,7 +187,7 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
       // Отправляем на сервер для OCR
       const xhr = new XMLHttpRequest();
       xhrRef.current = xhr;
-      const endpoint = 'http://localhost:3006/ocr';
+      const endpoint = buildApiUrl('ocr');
       xhr.open('POST', endpoint, true);
       // upload progress (реальный прогресс отправки файла)
       xhr.upload.onprogress = (e) => {

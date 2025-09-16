@@ -1,8 +1,5 @@
 // Сервис для административных функций
-// Базовый URL API: env или backend origin
-const API_BASE_URL = '/api';
-
-console.log('🔧 API_BASE_URL настроен на:', API_BASE_URL);
+import { API_BASE_URL } from '../config/api';
 
 export const adminService = {
   // Получение статистики использования WindexAI

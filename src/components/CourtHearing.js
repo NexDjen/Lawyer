@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Headphones, Play, Pause, Square, AlertTriangle, CheckCircle, Info, Clock, User, Target, Save } from 'lucide-react';
+import { buildApiUrl } from '../config/api';
 import './CourtHearing.css';
 
 const CourtHearing = ({ isOpen, onClose }) => {
@@ -67,7 +68,7 @@ const CourtHearing = ({ isOpen, onClose }) => {
       formData.append('audio', audioBlob, 'hearing.wav');
 
       // Вызываем API для анализа аудио
-      const response = await fetch('http://localhost:3006/court/analyze-audio', {
+      const response = await fetch(buildApiUrl('court/analyze-audio'), {
         method: 'POST',
         body: formData
       });

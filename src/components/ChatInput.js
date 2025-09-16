@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Paperclip, Mic, ArrowUpCircle } from 'lucide-react';
+import { buildApiUrl } from '../config/api';
 import './ChatInput.css';
 
 const ChatInput = ({ 
@@ -84,7 +85,7 @@ const ChatInput = ({
       const formData = new FormData();
       const ext = type.includes('mp4') ? 'mp4' : 'webm';
       formData.append('audio', blob, `recording.${ext}`);
-      const res = await fetch('http://localhost:3006/chat/transcribe', { method: 'POST', body: formData });
+      const res = await fetch(buildApiUrl('chat/transcribe'), { method: 'POST', body: formData });
       if (!res.ok) throw new Error('Ошибка транскрибации');
       const data = await res.json();
       if (data && data.text) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { User as UserIcon, Mail, Lock, BarChart3, Wallet, Plus, Minus, ArrowUpRight, ArrowDownLeft, Mic } from 'lucide-react';
+import { buildApiUrl } from '../config/api';
 import './Profile.css';
 
 const Profile = () => {
@@ -59,7 +60,7 @@ const Profile = () => {
   useEffect(() => {
     const loadPricingInfo = async () => {
       try {
-        const response = await fetch('http://localhost:3006/wallet/voice-pricing');
+        const response = await fetch(buildApiUrl('wallet/voice-pricing'));
         const data = await response.json();
         if (data.success) {
           setPricingInfo(data.data);

@@ -2,6 +2,7 @@ import React, { useMemo, useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import DocumentUpload from '../components/DocumentUpload';
 import { Upload, FileText, Camera, User as UserIcon, Calendar, Badge, CreditCard } from 'lucide-react';
+import { buildApiUrl } from '../config/api';
 import './FillDocuments.css';
 
 const FillDocuments = () => {
@@ -84,7 +85,7 @@ const FillDocuments = () => {
 
   const handleDownloadDocx = async () => {
     try {
-      const res = await fetch('http://localhost:3006/generate-pdf', {
+      const res = await fetch(buildApiUrl('generate-pdf'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -136,7 +137,7 @@ const FillDocuments = () => {
       const formData = new FormData();
       formData.append('document', file);
 
-      const res = await fetch('http://localhost:3006/ocr', { method: 'POST', body: formData });
+      const res = await fetch(buildApiUrl('ocr'), { method: 'POST', body: formData });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
 

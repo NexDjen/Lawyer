@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Bot, User, MessageCircle, Volume2, Loader, Copy, Download } from 'lucide-react';
 import { formatTime } from '../utils/dateUtils';
+import { buildApiUrl } from '../config/api';
 import './ChatMessage.css';
 
 const ChatMessage = ({ message, onRetry, isLastMessage, onDownloadDocument }) => {
@@ -47,7 +48,7 @@ const ChatMessage = ({ message, onRetry, isLastMessage, onDownloadDocument }) =>
         return;
       }
       
-      const res = await fetch('http://localhost:3006/chat/openai-tts', {
+      const res = await fetch(buildApiUrl('chat/windexai-tts'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: content, voice: 'nova', model: 'tts-1' })

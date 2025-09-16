@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Volume2, Mic, Play, X } from 'lucide-react';
+import { buildApiUrl, buildFullUrl } from '../config/api';
 import './AudioPermission.css';
 
 const AudioPermission = ({ onGranted, onDenied, isVisible }) => {
@@ -36,10 +37,10 @@ const AudioPermission = ({ onGranted, onDenied, isVisible }) => {
 
   const handleTestAudio = async () => {
     try {
-      const audio = new Audio('http://localhost:3006/tts');
+      const audio = new Audio(buildFullUrl('tts'));
       audio.volume = 0.5;
       
-      const testResponse = await fetch('http://localhost:3006/tts', {
+      const testResponse = await fetch(buildApiUrl('tts'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

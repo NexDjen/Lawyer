@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { buildApiUrl } from '../config/api';
 import './TestPDF.css';
 
 const TestPDF = () => {
@@ -8,7 +9,7 @@ const TestPDF = () => {
     setResults(prev => ({ ...prev, [testId]: { status: 'loading', message: '⏳ Генерирую PDF...' } }));
     
     try {
-      const response = await fetch('http://localhost:3006/chat/generate-docx', {
+      const response = await fetch(buildApiUrl('chat/generate-docx'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
