@@ -113,9 +113,11 @@ async function handleChatMessage(data, ws) {
     const { message, history = [] } = data;
     const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    logger.info('Processing WebSocket chat message:', {
+    logger.info('💬 Processing WebSocket chat message:', {
       messageId,
       messageLength: message.length,
+      messagePreview: message.substring(0, 100),
+      historyLength: history.length,
       timestamp: new Date().toISOString()
     });
     
@@ -127,7 +129,14 @@ async function handleChatMessage(data, ws) {
     
     // Генерируем ответ через WindexAI
     const chatService = require('./services/chatService');
+    logger.info('🤖 Calling chatService.generateResponse...');
     const response = await chatService.generateResponse(message, history);
+    
+    logger.info('✅ Chat response generated', {
+      messageId,
+      responseLength: response.length,
+      responsePreview: response.substring(0, 100)
+    });
     
     // Отправляем текстовый ответ
     broadcastToClients({ 
@@ -142,7 +151,11 @@ async function handleChatMessage(data, ws) {
     // }, 100);
     
   } catch (error) {
-    logger.error('WebSocket chat processing error:', error);
+    logger.error('❌ WebSocket chat processing error:', {
+      error: error.message,
+      stack: error.stack,
+      messageId: data.messageId || 'unknown'
+    });
     broadcastToClients({ 
       type: 'error', 
       message: 'Failed to process message',
@@ -279,10 +292,12 @@ class Server {
     return new Promise((resolve, reject) => {
       try {
         this.server = this.app.listen(this.port, this.host, () => {
-          logger.info(`Server started successfully`, {
+          logger.info(`🚀 Server started successfully`, {
             host: this.host,
             port: this.port,
-            environment: process.env.NODE_ENV || 'development'
+            environment: process.env.NODE_ENV || 'development',
+            windexaiApiKey: process.env.WINDEXAI_API_KEY ? 'SET' : 'NOT SET',
+            windexaiModel: process.env.WINDEXAI_MODEL || 'gpt-4o-mini'
           });
           
           // Инициализируем WebSocket сервер
@@ -294,9 +309,10 @@ class Server {
           });
           
           wss.on('connection', (ws, req) => {
-            logger.info('WebSocket client connected', {
+            logger.info('🔌 WebSocket client connected', {
               ip: req.socket.remoteAddress,
-              userAgent: req.headers['user-agent']
+              userAgent: req.headers['user-agent'],
+              url: req.url
             });
             
             // Устанавливаем таймаут для соединения
@@ -307,7 +323,7 @@ class Server {
             
             // Добавляем обработчик для предотвращения множественных подключений
             ws.on('close', (code, reason) => {
-              logger.info('WebSocket client disconnected', { code, reason: reason.toString() });
+              logger.info('🔌 WebSocket client disconnected', { code, reason: reason.toString() });
               ws.isAlive = false;
             });
             
@@ -330,6 +346,10 @@ class Server {
                 // Обработка различных типов сообщений
                 if (data.type === 'chat') {
                   // Обработка чат сообщений
+                  logger.info('💬 WebSocket chat message received', { 
+                    messageLength: data.message?.length || 0,
+                    hasHistory: !!data.history?.length 
+                  });
                   handleChatMessage(data, ws);
                 } else if (data.type === 'ping') {
                   // Обработка ping для keep-alive

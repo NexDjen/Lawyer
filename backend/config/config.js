@@ -97,4 +97,12 @@ const config = {
 
 };
 
+// Логирование конфигурации при запуске
+console.log('🔧 Backend Configuration:');
+console.log('  - Port:', config.server.port);
+console.log('  - Host:', config.server.host);
+console.log('  - WindexAI API Key:', config.windexai.apiKey ? 'SET (' + config.windexai.apiKey.substring(0, 8) + '...)' : 'NOT SET');
+console.log('  - WindexAI Model:', config.windexai.model);
+console.log('  - NODE_ENV:', process.env.NODE_ENV || 'development');
+
 module.exports = config; 

@@ -52,7 +52,16 @@ class ChatService {
   // Генерация ответа (для WebSocket)
   async generateResponse(message, conversationHistory = [], useWebSearch = true) {
     try {
+      logger.info('🔍 ChatService.generateResponse called', {
+        messageLength: message.length,
+        hasApiKey: !!config.windexai.apiKey,
+        apiKeyPrefix: config.windexai.apiKey ? config.windexai.apiKey.substring(0, 8) + '...' : 'NOT_SET',
+        model: config.windexai.model,
+        conversationHistoryLength: conversationHistory.length
+      });
+
       if (!config.windexai.apiKey) {
+        logger.error('❌ WindexAI API ключ не настроен');
         throw new Error('WindexAI API ключ не настроен');
       }
 
@@ -75,6 +84,13 @@ class ChatService {
 
       const prompt = this.buildPrompt(message + userContext, conversationHistory, useWebSearch);
 
+      logger.info('🤖 Sending request to WindexAI', {
+        model: config.windexai.model,
+        promptLength: prompt.length,
+        maxTokens: config.windexai.maxTokens,
+        temperature: config.windexai.temperature
+      });
+
       const completion = await this.windexai.chat.completions.create({
         model: config.windexai.model,
         messages: [
@@ -92,6 +108,11 @@ class ChatService {
         stream: false
       });
 
+      logger.info('✅ WindexAI response received', {
+        responseLength: completion.choices[0]?.message?.content?.length || 0,
+        usage: completion.usage
+      });
+
       const response = completion.choices[0]?.message?.content?.trim();
       
       if (!response) {
@@ -107,9 +128,12 @@ class ChatService {
       return response;
 
     } catch (error) {
-      logger.error('Error processing chat message', {
+      logger.error('❌ Error processing chat message', {
         error: error.message,
-        message: message.substring(0, 100)
+        errorCode: error.code,
+        errorType: error.type,
+        message: message.substring(0, 100),
+        stack: error.stack
       });
 
       // Проверяем на географические ограничения или другие ошибки WindexAI
@@ -120,9 +144,16 @@ class ChatService {
           error.code === 'rate_limit_exceeded') {
         
         // Возвращаем fallback ответ вместо ошибки
-        logger.warn('WindexAI недоступен, используем fallback ответ');
+        logger.warn('⚠️ WindexAI недоступен, используем fallback ответ', {
+          reason: error.message,
+          code: error.code
+        });
         return this.getFallbackResponse(message);
       } else {
+        logger.error('💥 Unexpected error, throwing exception', {
+          error: error.message,
+          code: error.code
+        });
         throw new Error(`Ошибка обработки запроса: ${error.message}`);
       }
     }
@@ -162,6 +193,8 @@ class ChatService {
 
   // Fallback ответы при недоступности WindexAI
   getFallbackResponse(message) {
+    logger.info('🔄 Using fallback response', { message: message.substring(0, 50) });
+    
     const lowerMessage = message.toLowerCase();
     
     // Простые правила для базовых ответов
