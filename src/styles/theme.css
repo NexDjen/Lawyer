@@ -76,11 +76,85 @@
   padding-right: var(--space-4);
 }
 
-/* Utility classes */
+/* Responsive Typography */
 @media (max-width: var(--breakpoint-md)) {
+  :root {
+    /* Адаптивные размеры для планшетов */
+    --space-1: 3px;
+    --space-2: 6px;
+    --space-3: 10px;
+    --space-4: 14px;
+    --space-5: 18px;
+    --space-6: 22px;
+    --space-7: 26px;
+    --space-8: 30px;
+  }
+  
   .container {
     padding-left: var(--space-3);
     padding-right: var(--space-3);
+  }
+}
+
+@media (max-width: var(--breakpoint-sm)) {
+  :root {
+    /* Еще более компактные размеры для мобильных */
+    --space-1: 2px;
+    --space-2: 4px;
+    --space-3: 8px;
+    --space-4: 12px;
+    --space-5: 16px;
+    --space-6: 20px;
+    --space-7: 24px;
+    --space-8: 28px;
+    
+    /* Адаптивные радиусы */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
+  }
+  
+  .container {
+    padding-left: var(--space-2);
+    padding-right: var(--space-2);
+  }
+}
+
+/* Responsive utilities */
+.responsive-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+@media (max-width: var(--breakpoint-md)) {
+  .responsive-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+}
+
+@media (max-width: var(--breakpoint-sm)) {
+  .responsive-grid {
+    gap: var(--space-2);
+  }
+}
+
+/* Responsive spacing */
+.section-padding {
+  padding: var(--space-8) 0;
+}
+
+@media (max-width: var(--breakpoint-md)) {
+  .section-padding {
+    padding: var(--space-6) 0;
+  }
+}
+
+@media (max-width: var(--breakpoint-sm)) {
+  .section-padding {
+    padding: var(--space-4) 0;
   }
 }
 

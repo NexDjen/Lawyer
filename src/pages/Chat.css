@@ -383,6 +383,18 @@
 
 /* Адаптивность */
 @media (max-width: 768px) {
+  .chat-page {
+    top: 60px; /* Уменьшенная высота заголовка на мобильных */
+  }
+
+  .chat-layout {
+    grid-template-columns: 1fr; /* Одна колонка на планшетах */
+  }
+  
+  .chat-sidebar {
+    display: none; /* Скрываем боковую панель на мобильных */
+  }
+  
   .chat-container {
     height: 100%;
     margin: 0;
@@ -390,41 +402,70 @@
   }
   
   .chat-header {
-    padding: 16px 16px;
-    flex-direction: column;
-    gap: 20px;
+    padding: 16px;
+    height: 60px;
   }
   
   .chat-header__left {
-    flex-direction: column;
-    gap: 16px;
-  }
-  
-  .chat-header h2 {
-    font-size: 1.6rem;
-  }
-  
-  .chat-messages {
-    padding: 18px 16px;
-    gap: 24px;
-  }
-  
-  .chat-header__actions {
     gap: 12px;
   }
   
+  .chat-header h2 {
+    font-size: 1.3rem;
+  }
+  
+  .chat-header__subtitle {
+    font-size: 0.8rem;
+  }
+  
+  .chat-messages {
+    padding: 16px;
+    gap: 20px;
+  }
+  
+  .chat-header__actions {
+    gap: 8px;
+  }
+  
   .chat-header__button {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
   }
   
   .status-indicator {
     padding: 6px 12px;
     font-size: 0.8rem;
   }
+  
+  .chat-empty {
+    padding: 60px 16px;
+  }
+  
+  .chat-empty h3 {
+    font-size: 1.5rem;
+  }
+  
+  .chat-empty p {
+    font-size: 1rem;
+  }
+  
+  .chat-suggestions {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  
+  .suggestion-chip {
+    padding: 16px;
+    text-align: center;
+  }
 }
 
 @media (max-width: 480px) {
+  .chat-page {
+    top: 60px;
+  }
+  
   .chat-container {
     height: 100%;
     margin: 0;
@@ -432,14 +473,46 @@
   }
   
   .chat-header {
-    padding: 14px 14px;
-  }
-  
-  .chat-messages {
-    padding: 14px 14px;
+    padding: 12px;
+    height: 56px;
   }
   
   .chat-header h2 {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
+  }
+  
+  .chat-header__subtitle {
+    font-size: 0.75rem;
+  }
+  
+  .chat-messages {
+    padding: 12px;
+    gap: 16px;
+  }
+  
+  .chat-header__button {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .status-indicator {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+  }
+  
+  .chat-empty {
+    padding: 40px 12px;
+  }
+  
+  .chat-empty h3 {
+    font-size: 1.3rem;
+  }
+  
+  .chat-empty p {
+    font-size: 0.9rem;
+  }
+  
+  .chat-document-upload {
+    padding: 16px 12px;
   }
 } 

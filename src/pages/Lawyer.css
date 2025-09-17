@@ -487,4 +487,48 @@
   .welcome-text p {
     font-size: 0.9rem;
   }
+  
+  /* Enhanced responsive design for voice interface */
+  .gradient-circle-container {
+    width: 280px;
+    height: 280px;
+  }
+  
+  .voice-circle {
+    width: 160px;
+    height: 160px;
+  }
+  
+  .voice-controls {
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .control-button {
+    min-width: 56px;
+    height: 56px;
+    font-size: 1.1rem;
+  }
+  
+  .status-display {
+    padding: 12px;
+  }
+  
+  .session-info {
+    padding: 12px;
+  }
+  
+  .session-costs {
+    gap: 12px;
+    grid-template-columns: 1fr;
+  }
+  
+  .cost-item {
+    padding: 10px 14px;
+  }
+  
+  .cost-value {
+    font-size: 1.2rem;
+  }
 } 

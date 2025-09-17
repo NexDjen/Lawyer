@@ -244,6 +244,79 @@ input, textarea, select {
   .mobile-full {
     width: 100%;
   }
+  
+  /* Мобильная адаптация основных элементов */
+  body {
+    font-size: 14px;
+  }
+  
+  .App {
+    font-size: 0.9rem;
+  }
+  
+  /* Адаптивные отступы */
+  .p-4 { padding: 0.75rem; }
+  .p-5 { padding: 1rem; }
+  .p-6 { padding: 1.25rem; }
+  
+  .m-4 { margin: 0.75rem; }
+  .m-5 { margin: 1rem; }
+  .m-6 { margin: 1.25rem; }
+  
+  /* Адаптивные тексты */
+  .text-xl { font-size: 1.125rem; }
+  .text-2xl { font-size: 1.25rem; }
+  .text-3xl { font-size: 1.5rem; }
+  
+  /* Кнопки адаптивные */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+    font-size: 0.9rem;
+  }
+  
+  /* Инпуты адаптивные */
+  input, textarea, select {
+    min-height: 44px;
+    font-size: 16px; /* Предотвращает зум в iOS */
+    padding: 12px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Очень маленькие экраны */
+  body {
+    font-size: 13px;
+  }
+  
+  .App {
+    font-size: 0.85rem;
+  }
+  
+  /* Еще более компактные отступы */
+  .p-4 { padding: 0.5rem; }
+  .p-5 { padding: 0.75rem; }
+  .p-6 { padding: 1rem; }
+  
+  /* Более компактные тексты */
+  .text-lg { font-size: 1rem; }
+  .text-xl { font-size: 1.125rem; }
+  .text-2xl { font-size: 1.25rem; }
+  .text-3xl { font-size: 1.375rem; }
+  
+  /* Компактные кнопки */
+  button {
+    min-height: 40px;
+    min-width: 40px;
+    font-size: 0.85rem;
+    padding: 8px 12px;
+  }
+  
+  /* Компактные инпуты */
+  input, textarea, select {
+    min-height: 40px;
+    padding: 10px 12px;
+  }
 }
 
 @media (min-width: 769px) {
