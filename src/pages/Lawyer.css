@@ -416,6 +416,7 @@
   .gradient-circle-container {
     width: 300px;
     height: 300px;
+    margin: 20px auto;
   }
   
   .gradient-canvas {
@@ -424,8 +425,8 @@
   }
   
   .circle-content {
-    width: 220px;
-    height: 220px;
+    width: 180px;
+    height: 180px;
   }
   
   .current-message {
@@ -464,13 +465,14 @@
 
 @media (max-width: 480px) {
   .gradient-circle-container {
-    width: 250px;
-    height: 250px;
+    width: 220px;
+    height: 220px;
+    margin: 15px auto;
   }
   
   .gradient-canvas {
-    width: 250px;
-    height: 250px;
+    width: 220px;
+    height: 220px;
   }
   
   .circle-content {
@@ -497,13 +499,19 @@
   
   /* Enhanced responsive design for voice interface */
   .gradient-circle-container {
-    width: 280px;
-    height: 280px;
+    width: 250px;
+    height: 250px;
+    margin: 20px auto;
+  }
+  
+  .gradient-canvas {
+    width: 250px;
+    height: 250px;
   }
   
   .voice-circle {
-    width: 160px;
-    height: 160px;
+    width: 140px;
+    height: 140px;
   }
   
   .voice-controls {
