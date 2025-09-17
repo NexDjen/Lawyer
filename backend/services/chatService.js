@@ -2,11 +2,24 @@ const WindexAI = require('openai'); // WindexAI API client
 const config = require('../config/config');
 const logger = require('../utils/logger');
 const { readDb } = require('./documentStorage');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 
 class ChatService {
   constructor() {
+    // Настройка прокси для обхода географических ограничений
+    const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
+    const agent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined;
+    
+    logger.info('🔧 ChatService initialization', {
+      hasProxy: !!proxyUrl,
+      proxyUrl: proxyUrl ? proxyUrl.replace(/\/\/.*@/, '//***@') : 'none',
+      hasApiKey: !!config.windexai.apiKey
+    });
+
     this.windexai = new WindexAI({
       apiKey: config.windexai.apiKey,
+      httpAgent: agent,
+      httpsAgent: agent
     });
   }
 
