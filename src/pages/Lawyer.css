@@ -436,12 +436,19 @@
   .voice-controls {
     flex-direction: column;
     gap: 15px;
+    align-items: center;
+    width: 100%;
   }
   
-  .voice-button {
-    min-width: 180px;
+  .voice-button,
+  .hearing-button,
+  .files-button,
+  .interrupt-button {
+    min-width: 200px;
     padding: 14px 28px;
     font-size: 1rem;
+    width: 100%;
+    max-width: 300px;
   }
   
   .interrupt-button {
@@ -500,15 +507,21 @@
   }
   
   .voice-controls {
-    gap: 16px;
-    flex-wrap: wrap;
-    justify-content: center;
+    gap: 12px;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
   }
   
-  .control-button {
-    min-width: 56px;
-    height: 56px;
-    font-size: 1.1rem;
+  .voice-button,
+  .hearing-button,
+  .files-button,
+  .interrupt-button {
+    min-width: 180px;
+    padding: 12px 24px;
+    font-size: 0.9rem;
+    width: 100%;
+    max-width: 280px;
   }
   
   .status-display {
