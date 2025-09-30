@@ -25,6 +25,12 @@
   margin-bottom: 12px;
 }
 
+.profile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .profile-title {
   display: flex;
   align-items: center;
@@ -113,6 +119,8 @@
 .btn-outline:hover { background: #eef2ff; }
 .btn-secondary { background: #f8fafc; color: #111827; border-color: #cbd5e1; }
 .btn-secondary:hover { background: #f1f5f9; }
+.btn-ai-profile { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.9rem; padding: 8px 16px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
+.btn-ai-profile:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); }
 
 .btn-icon { width: 44px; height: 44px; display: grid; place-items: center; background: white; border-radius: 12px; }
 

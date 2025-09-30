@@ -24,7 +24,7 @@ router.get('/status', chatController.checkApiStatus);
 router.get('/model', chatController.getModelInfo);
 
 // TTS WindexAI endpoint
-router.post('/windexai-tts', ErrorHandler.asyncHandler(async (req, res) => {
+router.post('/tts', ErrorHandler.asyncHandler(async (req, res) => {
   const { text, voice = 'nova', model = 'tts-1' } = req.body;
   
   logger.info('TTS request received:', { textLength: text?.length, voice, model });
@@ -34,12 +34,24 @@ router.post('/windexai-tts', ErrorHandler.asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Text is required' });
   }
   
-  const { synthesizeSpeech } = require('../services/windexaiTTSService');
+  const { synthesizeSpeech } = require('../services/openaiTTSService');
+  
+  // Проверяем наличие API ключа OpenAI
+  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here') {
+    logger.warn('OpenAI API key not configured - TTS disabled');
+    return res.status(503).json({ error: 'TTS service unavailable - OpenAI API key not configured' });
+  }
+  
   try {
-    logger.info('Calling TTS service...');
+    logger.info('Calling OpenAI TTS service...');
     const audioBuffer = await synthesizeSpeech(text, { voice, model });
     
-    logger.info('TTS synthesis successful, audio size:', audioBuffer.length);
+    if (!audioBuffer) {
+      logger.warn('OpenAI TTS service returned null');
+      return res.status(503).json({ error: 'TTS service temporarily unavailable' });
+    }
+    
+    logger.info('OpenAI TTS synthesis successful, audio size:', audioBuffer.length);
     
     res.set({
       'Content-Type': 'audio/mpeg',
@@ -52,8 +64,8 @@ router.post('/windexai-tts', ErrorHandler.asyncHandler(async (req, res) => {
     
     res.send(audioBuffer);
   } catch (e) {
-    logger.error('TTS synthesis failed:', e);
-    res.status(500).json({ error: 'TTS synthesis failed', details: e.message });
+    logger.error('OpenAI TTS synthesis failed:', e);
+    res.status(503).json({ error: 'TTS service temporarily unavailable', details: e.message });
   }
 }));
 
@@ -277,7 +289,7 @@ router.post('/chat/voice', ErrorHandler.asyncHandler(async (req, res) => {
     logger.info('Generating TTS response...');
     
     // Генерируем аудио ответ
-    const { synthesizeSpeech } = require('../services/windexaiTTSService');
+    const { synthesizeSpeech } = require('../services/openaiTTSService');
     const responseAudioBuffer = await synthesizeSpeech(response, { voice: 'nova', model: 'tts-1' });
     
     logger.info('TTS generated, saving audio file...');

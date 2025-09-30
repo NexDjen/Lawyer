@@ -12,8 +12,8 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    // В development режиме разрешаем все origins
-    if (process.env.NODE_ENV === 'development') {
+    // В development разрешаем любые origins для внешних подключений
+    if (process.env.NODE_ENV !== 'production') {
       logger.info(`Development mode: allowing origin ${origin}`);
       return callback(null, true);
     }

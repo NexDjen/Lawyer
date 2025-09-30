@@ -2,7 +2,7 @@
   max-width: 1000px;
   margin: 0 auto;
   padding: 20px;
-  color: #111827;
+  color: #ffffff;
   line-height: 1.5;
 }
 
@@ -16,10 +16,11 @@
   margin: 0;
   font-size: 24px;
   font-weight: 700;
+  color: #ffffff;
 }
 
 .subtitle {
-  color: #374151;
+  color: #ffffff;
   font-size: 14px;
   margin-top: 8px;
 }
@@ -204,5 +205,61 @@
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+@media screen {
+/* Update header layout */
+.fill-docs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* Align action buttons to right */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+/* Subtitle styling to match theme */
+.subtitle {
+  color: #ffffff;
+  font-size: 0.95rem;
+  margin-top: var(--space-2);
+}
+
+/* Responsive stacking for small screens */
+@media (max-width: 768px) {
+  .fill-docs-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .contract-fill-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .actions .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .fill-docs-page {
+    padding: var(--space-4);
+  }
+  .contract-textarea {
+    font-size: 0.95rem;
+  }
+}
+
 }
 

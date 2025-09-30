@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const config = {
   // Server configuration
@@ -47,12 +48,14 @@ const config = {
       'http://localhost:3004',
       'http://localhost:3006',
       'http://localhost:3007',
+      'http://localhost:3008',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
       'http://127.0.0.1:3002',
       'http://127.0.0.1:3004',
       'http://127.0.0.1:3006',
       'http://127.0.0.1:3007',
+      'http://127.0.0.1:3008',
       'file://',
       'null',
       'http://localhost',
@@ -104,5 +107,8 @@ console.log('  - Host:', config.server.host);
 console.log('  - WindexAI API Key:', config.windexai.apiKey ? 'SET (' + config.windexai.apiKey.substring(0, 8) + '...)' : 'NOT SET');
 console.log('  - WindexAI Model:', config.windexai.model);
 console.log('  - NODE_ENV:', process.env.NODE_ENV || 'development');
+
+// Логирование загрузки OpenAI API Key
+console.log('🔧 OpenAI API Key:', process.env.OPENAI_API_KEY ? 'SET' : 'NOT SET');
 
 module.exports = config; 

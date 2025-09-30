@@ -502,14 +502,21 @@
   .document-upload-content {
     width: 95%;
     max-height: 95vh;
+    border-radius: 16px;
   }
 
   .document-upload-header {
     padding: 20px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .document-upload-header h2 {
+    font-size: 1.4rem;
   }
 
   .document-upload-body {
     padding: 20px;
+    max-height: calc(95vh - 100px);
   }
 
   .preview-content {
@@ -520,38 +527,170 @@
   .upload-buttons {
     flex-direction: column;
     align-items: center;
+    gap: 12px;
   }
 
   .upload-btn {
     width: 100%;
-    max-width: 200px;
+    max-width: 280px;
     justify-content: center;
+    padding: 14px 24px;
+    font-size: 1rem;
+    min-height: 48px;
+    /* Улучшенная тактильная обратная связь */
+    -webkit-tap-highlight-color: rgba(102, 126, 234, 0.1);
+    transition: all 0.2s ease;
+  }
+
+  .upload-btn:active {
+    transform: scale(0.98);
+  }
+
+  .upload-area {
+    padding: 40px 20px;
+    border-radius: 16px;
+  }
+
+  .upload-area h3 {
+    font-size: 1.4rem;
+  }
+
+  .upload-area p {
+    font-size: 0.95rem;
   }
 
   .camera-video {
     height: 250px;
+    border-radius: 10px;
+  }
+
+  .capture-btn {
+    padding: 14px 28px;
+    font-size: 1rem;
+    min-height: 48px;
+    border-radius: 10px;
+  }
+
+  .save-btn {
+    padding: 14px 32px;
+    font-size: 1rem;
+    min-height: 48px;
+    border-radius: 10px;
+  }
+
+  .fields-grid {
+    gap: 16px;
+  }
+
+  .field-input,
+  .field-value {
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    min-height: 44px;
+    border-radius: 8px;
+  }
+
+  .field-label {
+    font-size: 0.95rem;
   }
 }
 
 @media (max-width: 480px) {
   .document-upload-modal {
-    padding: 10px;
+    padding: 8px;
+  }
+
+  .document-upload-content {
+    width: 98%;
+    max-height: 98vh;
+    border-radius: 12px;
+  }
+
+  .document-upload-header {
+    padding: 16px;
+    border-radius: 12px 12px 0 0;
   }
 
   .document-upload-header h2 {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
+  }
+
+  .document-upload-body {
+    padding: 16px;
+    max-height: calc(98vh - 80px);
   }
 
   .upload-area {
-    padding: 40px 20px;
+    padding: 30px 16px;
+    border-radius: 12px;
   }
 
   .upload-area h3 {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
+    margin: 16px 0 8px;
+  }
+
+  .upload-area p {
+    font-size: 0.9rem;
+    margin-bottom: 24px;
+  }
+
+  .upload-btn {
+    max-width: 100%;
+    padding: 12px 20px;
+    font-size: 0.95rem;
+    min-height: 44px;
+    border-radius: 8px;
   }
 
   .fields-grid {
     gap: 12px;
+  }
+
+  .field-input,
+  .field-value {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    min-height: 40px;
+    border-radius: 6px;
+  }
+
+  .field-label {
+    font-size: 0.9rem;
+  }
+
+  .camera-video {
+    height: 200px;
+    border-radius: 8px;
+  }
+
+  .capture-btn {
+    padding: 12px 24px;
+    font-size: 0.95rem;
+    min-height: 44px;
+    border-radius: 8px;
+  }
+
+  .save-btn {
+    padding: 12px 28px;
+    font-size: 0.95rem;
+    min-height: 44px;
+    border-radius: 8px;
+  }
+
+  .close-button {
+    padding: 6px;
+    font-size: 1.3rem;
+    border-radius: 6px;
+  }
+
+  .retake-btn,
+  .edit-btn,
+  .view-text-btn {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    min-height: 36px;
+    border-radius: 6px;
   }
 }
 

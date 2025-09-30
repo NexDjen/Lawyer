@@ -1,0 +1,34 @@
+{
+  "userId": "test_user_123",
+  "createdAt": "2025-09-25T08:52:13.190Z",
+  "updatedAt": "2025-09-25T08:52:13.190Z",
+  "personalData": {
+    "fullName": "Анна Петрова",
+    "firstName": "Проблема",
+    "lastName": "",
+    "middleName": "",
+    "birthDate": "",
+    "birthPlace": "",
+    "phone": "",
+    "email": "",
+    "address": "",
+    "passportSeries": "",
+    "passportNumber": "",
+    "inn": "",
+    "snils": "",
+    "maritalStatus": "",
+    "occupation": "учителем",
+    "workplace": ""
+  },
+  "caseNotes": [],
+  "preferences": {
+    "autoSavePersonalData": true,
+    "dataRetentionDays": 365,
+    "privacyLevel": "standard"
+  },
+  "statistics": {
+    "totalMessages": 0,
+    "dataExtractionCount": 1,
+    "lastActivity": "2025-09-25T08:52:13.190Z"
+  }
+}

@@ -1,0 +1,522 @@
+/* UserProfile.css */
+
+.profile-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.profile-content {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25px 30px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 20px 20px 0 0;
+}
+
+.profile-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-title h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.profile-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.profile-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Кнопки */
+.btn-primary, .btn-success, .btn-secondary, .btn-close {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.btn-primary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.btn-primary:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.btn-success:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.btn-close {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 8px;
+  border-radius: 50%;
+}
+
+.btn-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+/* Статистика */
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 25px 30px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.stat-card {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.stat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.stat-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.stat-value {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.stat-date {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.completeness-bar {
+  flex: 1;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.completion-fill {
+  height: 100%;
+  background: var(--color);
+  width: var(--completion);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Секции профиля */
+.profile-section {
+  padding: 25px 30px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.profile-section:last-child {
+  border-bottom: none;
+}
+
+.profile-section h3 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-icon {
+  width: 20px;
+  height: 20px;
+  color: #667eea;
+}
+
+.profile-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profile-field label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.field-value {
+  padding: 12px 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  color: #1f2937;
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.empty-value {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.field-input {
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  outline: none;
+  background: white;
+}
+
+.field-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.field-input::placeholder {
+  color: #9ca3af;
+}
+
+/* Заметки о деле */
+.case-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.case-note {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  border-left: 4px solid #667eea;
+}
+
+.note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 12px;
+}
+
+.note-date {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.note-importance {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.importance-1, .importance-2, .importance-3 {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.importance-4, .importance-5, .importance-6 {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.importance-7, .importance-8, .importance-9, .importance-10 {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.note-content {
+  color: #374151;
+  line-height: 1.5;
+}
+
+/* Состояния загрузки и ошибок */
+.profile-loading, .profile-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 30px;
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.profile-error h3 {
+  color: #dc2626;
+  margin-bottom: 12px;
+}
+
+.profile-error p {
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+/* Адаптивные стили */
+@media (max-width: 768px) {
+  .profile-modal {
+    padding: 10px;
+  }
+  
+  .profile-content {
+    max-height: 95vh;
+    border-radius: 15px;
+  }
+  
+  .profile-header {
+    padding: 20px;
+    border-radius: 15px 15px 0 0;
+  }
+  
+  .profile-title h2 {
+    font-size: 20px;
+  }
+  
+  .profile-stats {
+    padding: 20px;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .profile-section {
+    padding: 20px;
+  }
+  
+  .profile-fields {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .profile-actions {
+    gap: 8px;
+  }
+  
+  .btn-primary, .btn-success, .btn-secondary {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  .edit-actions {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  
+  .profile-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .note-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  
+  .stat-value {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .completeness-bar {
+    width: 100%;
+  }
+}
+
+/* Прокрутка */
+.profile-content {
+  overflow-y: auto;
+}
+
+.profile-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.profile-content::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.profile-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.profile-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Анимации */
+.profile-modal {
+  animation: fadeIn 0.3s ease;
+}
+
+.profile-content {
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Улучшенный фокус для доступности */
+.field-input:focus,
+.btn-primary:focus,
+.btn-success:focus,
+.btn-secondary:focus,
+.btn-close:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* Стили для touch устройств */
+@media (hover: none) and (pointer: coarse) {
+  .btn-primary:hover,
+  .btn-success:hover,
+  .btn-secondary:hover,
+  .btn-close:hover {
+    transform: none;
+  }
+  
+  .btn-primary:active,
+  .btn-success:active,
+  .btn-secondary:active {
+    transform: scale(0.98);
+  }
+}
+

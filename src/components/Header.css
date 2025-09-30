@@ -13,11 +13,11 @@
 .container {
   max-width: var(--breakpoint-lg);
   margin: 0 auto;
-  padding: 0 var(--space-4);
+  padding: 0 var(--space-2);
 }
 @media (max-width: var(--breakpoint-md)) {
   .container {
-    padding: 0 var(--space-3);
+    padding: 0 var(--space-2);
   }
 }
 
@@ -52,16 +52,17 @@
 .nav {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 16px;
+  flex-wrap: nowrap;
 }
 
 .nav-link {
   text-decoration: none;
   color: #666;
   font-weight: 500;
-  font-size: 1rem;
+  font-size: 0.95rem;
   transition: all 0.3s ease;
-  padding: 12px 20px;
+  padding: 10px 12px;
   border-radius: 8px;
   position: relative;
   display: flex;
@@ -69,6 +70,7 @@
   justify-content: center;
   min-height: 44px;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .nav-link:hover,
@@ -213,6 +215,18 @@
   color: #667eea;
 }
 
+/* Tablet Responsive */
+@media (max-width: 1024px) {
+  .nav {
+    gap: 12px;
+  }
+  
+  .nav-link {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .nav {
@@ -220,16 +234,18 @@
     top: 70px;
     left: 0;
     right: 0;
-    background: white;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
     flex-direction: column;
     padding: 20px;
-    gap: 16px;
+    gap: 12px;
     transform: translateY(-100%);
     opacity: 0;
     visibility: hidden;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     z-index: 999;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   }
 
   .nav-link {
@@ -238,6 +254,18 @@
     justify-content: flex-start;
     text-align: left;
     width: 100%;
+    white-space: nowrap;
+    border-radius: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    /* Улучшенная тактильная обратная связь */
+    -webkit-tap-highlight-color: rgba(102, 126, 234, 0.1);
+  }
+
+  .nav-link:hover,
+  .nav-link.active {
+    background: rgba(102, 126, 234, 0.1);
+    transform: translateX(4px);
   }
 
   .nav-open {
@@ -248,6 +276,12 @@
 
   .menu-toggle {
     display: flex;
+    /* Улучшенная анимация */
+    transition: transform 0.2s ease;
+  }
+
+  .menu-toggle:active {
+    transform: scale(0.95);
   }
 
   .header-actions {
@@ -258,6 +292,13 @@
     padding: 10px;
     min-width: 44px;
     min-height: 44px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+  }
+
+  .user-button:active {
+    transform: scale(0.95);
+    background: rgba(102, 126, 234, 0.1);
   }
 
   .user-button span {
@@ -265,19 +306,27 @@
   }
 
   .user-dropdown {
-    min-width: 180px;
+    min-width: 200px;
     right: -8px;
+    /* Улучшенная анимация */
+    animation: dropdownSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dropdown-item {
     padding: 14px 16px;
     min-height: 48px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+
+  .dropdown-item:active {
+    transform: scale(0.98);
   }
 }
 
 @media (max-width: 480px) {
   .container {
-    padding: 0 16px;
+    padding: 0 8px;
   }
 
   .header-content {
@@ -286,33 +335,65 @@
 
   .logo {
     font-size: 1.3rem;
+    gap: 8px;
+  }
+
+  .logo svg {
+    width: 28px;
+    height: 28px;
   }
 
   .nav {
     top: 60px;
+    padding: 16px;
+    gap: 8px;
   }
 
   .nav-link {
     padding: 14px 18px;
     min-height: 48px;
     font-size: 0.95rem;
+    border-radius: 10px;
   }
 
   .user-button {
     padding: 8px;
     min-width: 40px;
     min-height: 40px;
+    border-radius: 8px;
   }
 
   .menu-toggle {
     padding: 10px;
     min-width: 40px;
     min-height: 40px;
+    border-radius: 8px;
   }
 
   .dropdown-item {
     padding: 12px 14px;
     min-height: 44px;
     font-size: 0.85rem;
+    border-radius: 6px;
+  }
+
+  .user-dropdown {
+    min-width: 180px;
+    right: -4px;
+    padding: 12px;
+  }
+
+  .user-info {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+  }
+
+  .user-info p {
+    font-size: 0.85rem;
+  }
+
+  .user-info .user-email {
+    font-size: 0.75rem;
   }
 } 

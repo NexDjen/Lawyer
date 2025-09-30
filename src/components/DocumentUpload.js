@@ -187,8 +187,9 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
       // Отправляем на сервер для OCR
       const xhr = new XMLHttpRequest();
       xhrRef.current = xhr;
-      const endpoint = buildApiUrl('ocr');
+      const endpoint = buildApiUrl('documents/ocr');
       xhr.open('POST', endpoint, true);
+      xhr.timeout = 120000; // 2 минуты таймаут для OCR
       // upload progress (реальный прогресс отправки файла)
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
@@ -222,11 +223,27 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
                 reject(err);
               }
             } else {
-              reject(new Error('Ошибка при обработке документа'));
+              // Улучшаем сообщение об ошибке: парсим тело ответа, если возможно
+              try {
+                const text = xhr.responseText || '';
+                let details = '';
+                if (text) {
+                  try {
+                    const json = JSON.parse(text);
+                    details = json.details || json.error || text;
+                  } catch (_) {
+                    details = text;
+                  }
+                }
+                reject(new Error(details || 'Ошибка при обработке документа'));
+              } catch (_) {
+                reject(new Error('Ошибка при обработке документа'));
+              }
             }
           }
         };
         xhr.onerror = () => reject(new Error('Ошибка сети при загрузке документа'));
+        xhr.ontimeout = () => reject(new Error('Таймаут при обработке документа. Попробуйте еще раз.'));
         xhr.onabort = () => reject(Object.assign(new Error('Загрузка отменена'), { name: 'AbortError' }));
       });
 
@@ -277,7 +294,41 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
           }
         };
         Object.keys(fields).forEach(key => {
-          initialFields[key] = result.extractedData?.[key] || mapProfileValue(key) || '';
+          // Пробуем прямое совпадение
+          let value = result.extractedData?.[key];
+          if (!value) {
+            // Фоллбэки для названий полей из OCR
+            switch (key) {
+              case 'firstName':
+                value = result.extractedData?.name;
+                break;
+              case 'lastName':
+                value = result.extractedData?.surname;
+                break;
+              case 'middleName':
+                value = result.extractedData?.patronymic;
+                break;
+              case 'birthDate':
+                value = result.extractedData?.birthDate || result.extractedData?.date_of_birth;
+                break;
+              case 'birthPlace':
+                value = result.extractedData?.birthPlace || result.extractedData?.place_of_birth;
+                break;
+              case 'issueDate':
+                value = result.extractedData?.issueDate || result.extractedData?.date_of_issue;
+                break;
+              case 'issuedBy':
+                value = result.extractedData?.issuedBy || result.extractedData?.issuing_authority;
+                break;
+              case 'number':
+                value = result.extractedData?.number || result.extractedData?.passport_number;
+                break;
+              case 'series':
+                value = result.extractedData?.series || '';
+                break;
+            }
+          }
+          initialFields[key] = value || mapProfileValue(key) || '';
         });
         setEditedFields(initialFields);
       }
@@ -295,7 +346,10 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
         (d) => d.id === clientId,
         (d) => ({ status: isAbort ? 'canceled' : 'error', progress: 0 })
       );
-      if (!isAbort) alert('Ошибка при загрузке документа');
+      if (!isAbort) {
+        const errorMessage = error?.response?.data?.details || error?.message || 'Неизвестная ошибка';
+        alert(`Ошибка при загрузке документа: ${errorMessage}`);
+      }
     } finally {
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);

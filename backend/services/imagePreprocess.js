@@ -3,8 +3,9 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const logger = require('../utils/logger');
+const sharp = require('sharp');
 
-const PYTHON_BIN = '/Users/artembutko/Documents/layer_3/venv/bin/python3';
+const PYTHON_BIN = process.env.PYTHON_PATH || 'python3';
 const SCRIPT_PATH = path.join(__dirname, 'py_preprocess.py');
 
 function runPythonPreprocess(inputPath) {
@@ -36,9 +37,27 @@ function runPythonPreprocess(inputPath) {
 async function preprocessImageAdvanced(inputPath) {
   try {
     logger.info('Advanced image preprocessing start', { inputPath });
-    const processed = await runPythonPreprocess(inputPath);
-    logger.info('Advanced image preprocessing done', { processed });
-    return processed;
+    let processedPath = inputPath;
+    // Сначала пытаемся Python предобработку
+    try {
+      processedPath = await runPythonPreprocess(inputPath);
+      logger.info('Python preprocessing done', { processedPath });
+    } catch (pyErr) {
+      logger.warn('Python preprocessing failed, fallback to sharp', { error: pyErr.message });
+      // Sharp fallback: grayscale, normalize, повышаем контраст
+      const sharpOut = path.join(
+        path.dirname(inputPath),
+        `pre_sharp_${Date.now()}_${Math.random().toString(36).slice(2)}.png`
+      );
+      await sharp(inputPath)
+        .grayscale()
+        .normalize()
+        .linear(1.5, -0.5)
+        .toFile(sharpOut);
+      logger.info('Sharp preprocessing done', { sharpOut });
+      processedPath = sharpOut;
+    }
+    return processedPath;
   } catch (e) {
     logger.warn('Advanced preprocessing failed, fallback to original', { error: e.message });
     return inputPath;

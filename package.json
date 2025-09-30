@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "homepage": ".",
-  "proxy": "http://localhost:80",
+  "proxy": "http://localhost:3007",
   "dependencies": {
     "@pdf-lib/standard-fonts": "^1.0.0",
     "@testing-library/jest-dom": "^5.16.4",
@@ -17,6 +17,7 @@
     "dotenv": "^17.2.0",
     "express": "^4.18.2",
     "form-data": "^4.0.4",
+    "http-proxy": "^1.18.1",
     "lucide-react": "^0.263.1",
     "multer": "^2.0.1",
     "node-latex": "^3.1.0",

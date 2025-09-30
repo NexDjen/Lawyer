@@ -6,7 +6,7 @@ const https = require('https');
 const WebSocket = require('ws');
 
 // Увеличиваем лимиты для заголовков на уровне Node.js
-process.env.NODE_OPTIONS = '--max-http-header-size=65536';
+process.env.NODE_OPTIONS = '--max-http-header-size=1048576'; // 1MB для заголовков
 
 // Импорты конфигурации и утилит
 const config = require('./config/config');
@@ -20,6 +20,7 @@ const documentRoutes = require('./routes/documentRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const courtRoutes = require('./routes/courtRoutes');
 const walletRoutes = require('./routes/walletRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 
 
 // WebSocket сервер для стриминга TTS
@@ -210,27 +211,33 @@ class Server {
   }
 
   _setupMiddleware() {
-    // Устанавливаем разумные таймауты
+    // Устанавливаем увеличенные таймауты для OCR обработки
     this.app.use((req, res, next) => {
-      req.setTimeout(30000); // 30 секунд
-      res.setTimeout(30000);
+      // Увеличиваем таймауты для OCR запросов
+      if (req.path.includes('/ocr')) {
+        req.setTimeout(120000); // 2 минуты для OCR
+        res.setTimeout(120000);
+      } else {
+        req.setTimeout(30000); // 30 секунд для остальных
+        res.setTimeout(30000);
+      }
       next();
     });
     
     // CORS
     this.app.use(cors(corsOptions));
     
-    // Парсинг JSON с минимальными лимитами
+    // Парсинг JSON с увеличенными лимитами для загрузки файлов
     this.app.use(express.json({ 
-      limit: '1mb',
+      limit: '100mb',
       extended: true 
     }));
     
-    // Парсинг URL-encoded данных с минимальными лимитами
+    // Парсинг URL-encoded данных с увеличенными лимитами
     this.app.use(express.urlencoded({ 
-      limit: '1mb', 
+      limit: '100mb', 
       extended: true,
-      parameterLimit: 100
+      parameterLimit: 1000
     }));
     
     // Статические файлы
@@ -248,11 +255,12 @@ class Server {
 
   _setupRoutes() {
     // API маршруты - сначала специфичные, потом общие
-    this.app.use('/chat', chatRoutes);
-    this.app.use('/admin', adminRoutes);
-    this.app.use('/court', courtRoutes);
-    this.app.use('/wallet', walletRoutes);
-    this.app.use('/', documentRoutes); // Общие маршруты в конце
+    this.app.use('/api/chat', chatRoutes);
+    this.app.use('/api/admin', adminRoutes);
+    this.app.use('/api/court', courtRoutes);
+    this.app.use('/api/wallet', walletRoutes);
+    this.app.use('/api/documents', documentRoutes); // Исправлено: добавляем /documents
+    this.app.use('/api/profile', profileRoutes); // Управление профилями пользователей
 
     
     // Health check

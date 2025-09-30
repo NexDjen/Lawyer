@@ -1,15 +1,74 @@
 {
   "short_name": "AI-Юрист",
   "name": "AI-Юрист - Интеллектуальный помощник для юридических вопросов",
+  "description": "Современный AI-помощник для решения юридических вопросов с поддержкой документооборота и голосового взаимодействия",
   "icons": [
     {
       "src": "favicon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable any"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "portrait-primary",
+  "theme_color": "#667eea",
+  "background_color": "#ffffff",
+  "categories": ["productivity", "business", "utilities"],
+  "lang": "ru",
+  "dir": "ltr",
+  "scope": "/",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Чат с AI",
+      "short_name": "Чат",
+      "description": "Быстрый доступ к чату с AI-юристом",
+      "url": "/chat",
+      "icons": [
+        {
+          "src": "favicon.ico",
+          "sizes": "64x64"
+        }
+      ]
+    },
+    {
+      "name": "Документы",
+      "short_name": "Документы",
+      "description": "Управление документами",
+      "url": "/documents",
+      "icons": [
+        {
+          "src": "favicon.ico",
+          "sizes": "64x64"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ]
 } 

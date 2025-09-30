@@ -41,7 +41,10 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024 * 1024 // 5GB
+    fileSize: 5 * 1024 * 1024 * 1024, // 5GB
+    fieldSize: 100 * 1024 * 1024, // 100MB для полей
+    fields: 1000, // увеличенное количество полей
+    parts: 1000 // увеличенное количество частей
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
@@ -66,7 +69,14 @@ const upload = multer({
 // Маршрут для OCR обработки документов
 router.post('/ocr', upload.single('document'), async (req, res) => {
   try {
+    logger.info('OCR запрос начат', {
+      headers: Object.keys(req.headers),
+      contentType: req.get('Content-Type'),
+      contentLength: req.get('Content-Length')
+    });
+
     if (!req.file) {
+      logger.error('Файл не был загружен в multer');
       return res.status(400).json({ error: 'Файл не был загружен' });
     }
 
@@ -276,7 +286,8 @@ router.post('/ocr', upload.single('document'), async (req, res) => {
   } catch (error) {
     logger.error('Ошибка OCR обработки', {
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
+      errorCode: error.code
     });
 
     // Удаляем файл в случае ошибки
@@ -284,9 +295,27 @@ router.post('/ocr', upload.single('document'), async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
 
+    // Специальная обработка ошибок multer
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ 
+        error: 'Файл слишком большой',
+        details: 'Максимальный размер файла: 5GB',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (error.code === 'LIMIT_FIELD_VALUE') {
+      return res.status(413).json({ 
+        error: 'Слишком большое значение поля',
+        details: 'Размер поля превышает допустимый лимит',
+        timestamp: new Date().toISOString()
+      });
+    }
+
     res.status(500).json({ 
       error: 'Ошибка при обработке документа',
-      details: error.message 
+      details: error.message,
+      timestamp: new Date().toISOString()
     });
   }
 });

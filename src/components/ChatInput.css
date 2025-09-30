@@ -200,63 +200,117 @@
 /* Адаптивность */
 @media (max-width: 768px) {
   .chat-input {
-    padding: 24px 28px;
+    padding: 16px 20px;
+    /* Улучшенная прокрутка на мобильных */
+    -webkit-overflow-scrolling: touch;
   }
   
   .chat-input__container {
-    border-radius: 24px;
-    padding: 10px;
-    gap: 16px;
+    border-radius: 20px;
+    padding: 12px;
+    gap: 12px;
+    /* Улучшенная тактильная обратная связь */
+    -webkit-tap-highlight-color: rgba(102, 126, 234, 0.1);
   }
   
   .chat-input__textarea {
-    padding: 16px 20px;
-    font-size: 1rem;
+    padding: 14px 16px;
+    font-size: 16px; /* Предотвращает зум в iOS */
+    min-height: 44px;
+    max-height: 120px;
+    line-height: 1.5;
+    /* Улучшенная работа с клавиатурой */
+    -webkit-appearance: none;
+    border-radius: 8px;
   }
   
   .chat-input__button {
     width: 48px;
     height: 48px;
     font-size: 1rem;
+    border-radius: 12px;
+    /* Улучшенная тактильная обратная связь */
+    -webkit-tap-highlight-color: rgba(102, 126, 234, 0.1);
+    transition: all 0.2s ease;
+  }
+
+  .chat-input__button:active {
+    transform: scale(0.95);
   }
   
   .chat-input__counter {
     font-size: 0.75rem;
-    right: 52px;
-    padding: 3px 6px;
+    right: 60px;
+    padding: 4px 8px;
+    border-radius: 8px;
   }
   
   .chat-input__actions {
-    gap: 10px;
+    gap: 8px;
+  }
+
+  .chat-input__left {
+    gap: 8px;
   }
 }
 
 @media (max-width: 480px) {
   .chat-input {
-    padding: 20px 24px;
+    padding: 12px 16px;
+    /* Оптимизация для маленьких экранов */
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
   }
   
   .chat-input__container {
-    border-radius: 20px;
-    padding: 8px;
-    gap: 12px;
+    border-radius: 16px;
+    padding: 10px;
+    gap: 10px;
+    /* Улучшенная производительность */
+    will-change: transform;
   }
   
   .chat-input__textarea {
-    padding: 14px 18px;
-    font-size: 0.95rem;
+    padding: 12px 14px;
+    font-size: 16px; /* Важно для предотвращения зума */
+    min-height: 40px;
+    max-height: 100px;
+    line-height: 1.4;
+    border-radius: 6px;
   }
   
   .chat-input__button {
     width: 44px;
     height: 44px;
     font-size: 0.9rem;
+    border-radius: 10px;
+    /* Улучшенная тактильная обратная связь */
+    -webkit-tap-highlight-color: rgba(102, 126, 234, 0.1);
+  }
+
+  .chat-input__button:active {
+    transform: scale(0.9);
   }
   
   .chat-input__counter {
     font-size: 0.7rem;
-    right: 48px;
-    padding: 2px 5px;
+    right: 56px;
+    padding: 3px 6px;
+    border-radius: 6px;
+  }
+
+  .chat-input__actions {
+    gap: 6px;
+  }
+
+  .chat-input__left {
+    gap: 6px;
+  }
+
+  /* Улучшенная работа с клавиатурой */
+  .chat-input__textarea:focus {
+    transform: none;
   }
 }
 

@@ -8,11 +8,13 @@ import { loadSessions, createSession, getSessionById, upsertSession, generateTit
 import DocumentUpload from '../components/DocumentUpload';
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
+import { useAuth } from '../contexts/AuthContext';
 // import { LanguageContext } from '../App';
 // import translations from '../data/translations';
 
 const Chat = () => {
   // const { lang } = useContext(LanguageContext);
+  const { user } = useAuth();
   const messagesEndRef = useRef(null);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const [sessions, setSessions] = useState(() => loadSessions());
@@ -30,7 +32,7 @@ const Chat = () => {
     useWebSearch,
     setUseWebSearch,
     setMessages
-  } = useChat();
+  } = useChat(user?.id || user?.email || null); // Передаем userId в useChat
 
   // Прокрутка к последнему сообщению
   const scrollToBottom = () => {

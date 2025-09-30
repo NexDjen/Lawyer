@@ -3,6 +3,8 @@ const config = require('../config/config');
 const logger = require('../utils/logger');
 const { readDb } = require('./documentStorage');
 const { HttpsProxyAgent } = require('https-proxy-agent');
+const PersonalDataExtractor = require('./personalDataExtractor');
+const UserProfileService = require('./userProfileService');
 
 class ChatService {
   constructor() {
@@ -21,10 +23,14 @@ class ChatService {
       httpAgent: agent,
       httpsAgent: agent
     });
+
+    // Инициализация сервисов для работы с персональными данными
+    this.dataExtractor = new PersonalDataExtractor();
+    this.profileService = new UserProfileService();
   }
 
   // Формирование промпта для AI
-  buildPrompt(message, conversationHistory = [], useWebSearch = true) {
+  async buildPrompt(message, conversationHistory = [], useWebSearch = true, userId = null) {
     const basePrompt = `Ты - опытный юрист-консультант Галина. Твоя задача - предоставлять точные, практичные и понятные юридические консультации.
 
 ПРАВИЛА:
@@ -48,22 +54,30 @@ class ChatService {
     const historyContext = conversationHistory.length > 0 
       ? `\n\nИстория разговора:\n${conversationHistory.map(msg => `${msg.type}: ${msg.content}`).join('\n')}`
       : '';
-    const personalization = '\n\nЕсли в пользовательских документах есть ФИО (Имя, Отчество, Фамилия) — обращайся к пользователю по Имени и Отчеству. В ответах опирайся на факты из документов пользователя (OCR поля/текст), явно указывай ключевые выдержки, если они релевантны.';
+    const personalization = '\n\nОбращайся к пользователю уважительно, но без персональных данных. Каждая беседа - новая сессия.';
 
     const webSearchContext = useWebSearch 
       ? '\n\nИспользуй актуальную информацию из интернета для более точных ответов.'
       : '\n\nОтвечай только на основе базовых знаний, без веб-поиска.';
 
-    return `${basePrompt}${personalization}${historyContext}${webSearchContext}\n\nВопрос: ${message}\n\nОтвет:`;
+    // Получаем контекст пользователя для персонализации
+    const userContext = userId ? await this.getUserContext(userId) : '';
+
+    return `${basePrompt}${personalization}${historyContext}${webSearchContext}${userContext}\n\nВопрос: ${message}\n\nОтвет:`;
   }
 
   // Обработка сообщения через WindexAI
-  async processMessage(message, conversationHistory = [], useWebSearch = true) {
-    return this.generateResponse(message, conversationHistory, useWebSearch);
+  async processMessage(message, conversationHistory = [], useWebSearch = true, userId = null) {
+    // Извлекаем персональные данные из сообщения пользователя
+    if (userId) {
+      await this.extractAndSavePersonalData(message, userId);
+    }
+    
+    return this.generateResponse(message, conversationHistory, useWebSearch, userId);
   }
 
   // Генерация ответа (для WebSocket)
-  async generateResponse(message, conversationHistory = [], useWebSearch = true) {
+  async generateResponse(message, conversationHistory = [], useWebSearch = true, userId = null) {
     try {
       logger.info('🔍 ChatService.generateResponse called', {
         messageLength: message.length,
@@ -79,23 +93,11 @@ class ChatService {
       }
 
       // Собираем контекст из пользовательских документов (OCR результаты)
+      // ВРЕМЕННО ОТКЛЮЧЕНО для изоляции пользователей
       let userContext = '';
-      try {
-        const db = await readDb();
-        const lastItems = (db.items || []).filter(i => i.kind === 'ocr').slice(-10).reverse();
-        if (lastItems.length > 0) {
-          const blocks = lastItems.map((it, idx) => {
-            const fields = it.extractedData ? JSON.stringify(it.extractedData) : '';
-            const text = it.recognizedText ? (it.recognizedText.substring(0, 1500)) : '';
-            return `Документ ${idx + 1} [тип: ${it.documentType || 'unknown'}]:\nПоля: ${fields}\nТекст: ${text}`;
-          });
-          userContext = `\n\nПользовательские документы:\n${blocks.join('\n\n')}`;
-        }
-      } catch (e) {
-        logger.warn('Failed to load user documents context', { error: e.message });
-      }
+      logger.info('User context loading temporarily disabled for user isolation');
 
-      const prompt = this.buildPrompt(message + userContext, conversationHistory, useWebSearch);
+      const prompt = await this.buildPrompt(message + userContext, conversationHistory, useWebSearch, userId);
 
       logger.info('🤖 Sending request to WindexAI', {
         model: config.windexai.model,
@@ -251,6 +253,99 @@ class ChatService {
     } catch (error) {
       logger.error('Error getting usage stats', error);
       return null;
+    }
+  }
+
+  /**
+   * Извлекает и сохраняет персональные данные из сообщения пользователя
+   * @param {string} message - Сообщение пользователя
+   * @param {string} userId - ID пользователя
+   */
+  async extractAndSavePersonalData(message, userId) {
+    try {
+      // Получаем существующий профиль пользователя
+      const existingProfile = await this.profileService.getUserProfile(userId);
+      
+      // Извлекаем данные из сообщения
+      const extractedData = this.dataExtractor.extractPersonalData(message, existingProfile.personalData);
+      
+      // Если найдены персональные данные или важные заметки о деле
+      if (Object.keys(extractedData.personalData).length > 0 || extractedData.caseNotes.length > 0) {
+        
+        // Обновляем профиль пользователя
+        await this.profileService.updateUserProfile(userId, {
+          personalData: extractedData.personalData,
+          caseNotes: extractedData.caseNotes
+        });
+        
+        logger.info('Персональные данные обновлены в профиле', {
+          userId: this.profileService.maskUserId(userId),
+          extractedFields: Object.keys(extractedData.personalData),
+          caseNotesAdded: extractedData.caseNotes.length
+        });
+      }
+      
+      // Очистка старых данных (выполняется периодически)
+      if (Math.random() < 0.1) { // 10% шанс запуска очистки
+        await this.profileService.cleanupOldData(userId);
+      }
+      
+    } catch (error) {
+      logger.error('Ошибка извлечения персональных данных', {
+        userId: this.profileService.maskUserId(userId),
+        error: error.message
+      });
+      // Не прерываем основной процесс чата в случае ошибки
+    }
+  }
+
+  /**
+   * Получает контекст пользователя для персонализации ответов
+   * @param {string} userId - ID пользователя
+   * @returns {string} Контекст пользователя
+   */
+  async getUserContext(userId) {
+    try {
+      const profile = await this.profileService.getUserProfile(userId);
+      
+      // Формируем контекст на основе доступных данных
+      const contextParts = [];
+      
+      if (profile.personalData.fullName || profile.personalData.firstName) {
+        const name = profile.personalData.fullName || profile.personalData.firstName;
+        contextParts.push(`Клиент: ${name}`);
+      }
+      
+      if (profile.personalData.occupation) {
+        contextParts.push(`Профессия: ${profile.personalData.occupation}`);
+      }
+      
+      if (profile.personalData.maritalStatus) {
+        contextParts.push(`Семейное положение: ${profile.personalData.maritalStatus}`);
+      }
+      
+      // Добавляем важные заметки о деле (последние 3)
+      const importantNotes = profile.caseNotes
+        .filter(note => note.importance >= 7)
+        .slice(-3);
+      
+      if (importantNotes.length > 0) {
+        contextParts.push('Важная информация о деле:');
+        importantNotes.forEach(note => {
+          contextParts.push(`- ${note.content}`);
+        });
+      }
+      
+      return contextParts.length > 0 
+        ? `\n\nКонтекст клиента:\n${contextParts.join('\n')}`
+        : '';
+        
+    } catch (error) {
+      logger.error('Ошибка получения контекста пользователя', {
+        userId: this.profileService.maskUserId(userId),
+        error: error.message
+      });
+      return '';
     }
   }
 }

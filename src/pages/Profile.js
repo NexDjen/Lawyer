@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User as UserIcon, Mail, Lock, BarChart3, Wallet, Plus, Minus, ArrowUpRight, ArrowDownLeft, Mic } from 'lucide-react';
+import { User as UserIcon, Mail, Lock, BarChart3, Wallet, Plus, Minus, ArrowUpRight, ArrowDownLeft, Mic, Brain } from 'lucide-react';
 import { buildApiUrl } from '../config/api';
+import UserProfile from '../components/UserProfile';
 import './Profile.css';
 
 const Profile = () => {
@@ -27,34 +28,10 @@ const Profile = () => {
   const [walletAmount, setWalletAmount] = useState('');
   const [showAddFunds, setShowAddFunds] = useState(false);
   const [pricingInfo, setPricingInfo] = useState(null);
+  const [showAIProfile, setShowAIProfile] = useState(false);
 
-  // Моковые транзакции для демонстрации
-  const [transactions] = useState([
-    {
-      id: 1,
-      type: 'deposit',
-      amount: 500,
-      description: 'Пополнение счета',
-      date: '2025-09-01',
-      status: 'completed'
-    },
-    {
-      id: 2,
-      type: 'withdrawal',
-      amount: -200,
-      description: 'Вывод средств',
-      date: '2025-08-28',
-      status: 'completed'
-    },
-    {
-      id: 3,
-      type: 'service',
-      amount: -50,
-      description: 'Оплата услуги анализа документов',
-      date: '2025-08-25',
-      status: 'completed'
-    }
-  ]);
+  // Список транзакций пользователя
+  const [transactions, setTransactions] = useState([]);
 
   // Загрузка информации о тарифах голосового ИИ
   useEffect(() => {
@@ -71,6 +48,37 @@ const Profile = () => {
     };
 
     loadPricingInfo();
+  }, []);
+  // Загрузка реального баланса
+  useEffect(() => {
+    const loadBalance = async () => {
+      try {
+        const res = await fetch(buildApiUrl('wallet/balance'));
+        const json = await res.json();
+        if (json.success) {
+          setForm(prev => ({ ...prev, walletBalance: json.data.amount }));
+        }
+      } catch (error) {
+        console.error('Failed to load wallet balance:', error);
+      }
+    };
+    loadBalance();
+  }, []);
+
+  // Загрузка истории транзакций
+  useEffect(() => {
+    const loadTransactions = async () => {
+      try {
+        const res = await fetch(buildApiUrl('wallet/transactions?limit=10'));
+        const json = await res.json();
+        if (json.success) {
+          setTransactions(json.data.transactions);
+        }
+      } catch (error) {
+        console.error('Failed to load transactions:', error);
+      }
+    };
+    loadTransactions();
   }, []);
 
   const handleChange = (e) => {
@@ -101,7 +109,7 @@ const Profile = () => {
     setTimeout(() => setMessage(''), 2000);
   };
 
-  const handleAddFunds = (e) => {
+  const handleAddFunds = async (e) => {
     e.preventDefault();
     const amount = Number(walletAmount);
     if (amount <= 0) {
@@ -109,31 +117,66 @@ const Profile = () => {
       setTimeout(() => setMessage(''), 2000);
       return;
     }
-
-    const currentBalance = Number(form.walletBalance) || 0;
-    const newBalance = currentBalance + amount;
-
-    updateCurrentUser({ walletBalance: newBalance });
-    setForm(prev => ({ ...prev, walletBalance: newBalance }));
-    setWalletAmount('');
-    setShowAddFunds(false);
-    setMessage(`Счет пополнен на ${amount} ₽`);
-    setTimeout(() => setMessage(''), 2000);
+    try {
+      const res = await fetch(buildApiUrl('wallet/deposit'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount })
+      });
+      const json = await res.json();
+      if (json.success) {
+        const transaction = json.data;
+        const currentBalance = Number(form.walletBalance) || 0;
+        const newBalance = currentBalance + transaction.amount;
+        updateCurrentUser({ walletBalance: newBalance });
+        setForm(prev => ({ ...prev, walletBalance: newBalance }));
+        setTransactions(prev => [transaction, ...prev]);
+        setWalletAmount('');
+        setShowAddFunds(false);
+        setMessage(`Счет пополнен на ${transaction.amount} ₽`);
+        setTimeout(() => setMessage(''), 2000);
+      } else {
+        setMessage(json.error || 'Ошибка при пополнении счета');
+        setTimeout(() => setMessage(''), 2000);
+      }
+    } catch (error) {
+      console.error('Deposit error:', error);
+      setMessage('Ошибка при пополнении счета');
+      setTimeout(() => setMessage(''), 2000);
+    }
   };
 
-  const handleWithdrawFunds = (amount) => {
+  const handleWithdrawFunds = async (amount) => {
     const currentBalance = Number(form.walletBalance) || 0;
     if (amount > currentBalance) {
       setMessage('Недостаточно средств на счете');
       setTimeout(() => setMessage(''), 2000);
       return;
     }
-
-    const newBalance = currentBalance - amount;
-    updateCurrentUser({ walletBalance: newBalance });
-    setForm(prev => ({ ...prev, walletBalance: newBalance }));
-    setMessage(`Выведено ${amount} ₽ со счета`);
-    setTimeout(() => setMessage(''), 2000);
+    try {
+      const res = await fetch(buildApiUrl('wallet/withdraw'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, walletAddress: form.walletAddress })
+      });
+      const json = await res.json();
+      if (json.success) {
+        const transaction = json.data;
+        const newBalance = currentBalance + transaction.amount;
+        updateCurrentUser({ walletBalance: newBalance });
+        setForm(prev => ({ ...prev, walletBalance: newBalance }));
+        setTransactions(prev => [transaction, ...prev]);
+        setMessage(`Выведено ${Math.abs(transaction.amount)} ₽`);
+        setTimeout(() => setMessage(''), 2000);
+      } else {
+        setMessage(json.error || 'Ошибка при выводе средств');
+        setTimeout(() => setMessage(''), 2000);
+      }
+    } catch (error) {
+      console.error('Withdraw error:', error);
+      setMessage('Ошибка при выводе средств');
+      setTimeout(() => setMessage(''), 2000);
+    }
   };
 
   // Метрики пользователя на основе локальных данных
@@ -156,7 +199,18 @@ const Profile = () => {
               <p className="profile-subtitle">Личные данные и настройки кошелька</p>
             </div>
           </div>
-          {message && <div className="profile-badge">{message}</div>}
+          <div className="profile-header-actions">
+            <button 
+              type="button"
+              className="btn btn-ai-profile"
+              onClick={() => setShowAIProfile(true)}
+              title="Профиль AI с автоматически извлеченными данными"
+            >
+              <Brain size={18} />
+              AI Профиль
+            </button>
+            {message && <div className="profile-badge">{message}</div>}
+          </div>
         </div>
 
         <form onSubmit={handleSave} className="profile-grid">
@@ -436,34 +490,6 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="voice-sessions-history">
-              <h4>Недавние сессии</h4>
-              <div className="sessions-list">
-                {transactions
-                  .filter(t => t.type === 'service' && t.description.includes('голос'))
-                  .slice(0, 3)
-                  .map((session) => (
-                    <div key={session.id} className="session-item">
-                      <div className="session-icon">
-                        <Mic size={16} />
-                      </div>
-                      <div className="session-info">
-                        <div className="session-description">{session.description}</div>
-                        <div className="session-date">{new Date(session.date).toLocaleDateString('ru-RU')}</div>
-                      </div>
-                      <div className="session-cost">
-                        -{Math.abs(session.amount)}₽
-                      </div>
-                    </div>
-                  ))}
-                {transactions.filter(t => t.type === 'service' && t.description.includes('голос')).length === 0 && (
-                  <div className="no-sessions">
-                    <Mic size={24} />
-                    <p>Пока нет сессий голосового ИИ</p>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
 
           <div className="profile-actions">
@@ -472,6 +498,14 @@ const Profile = () => {
           </div>
         </form>
       </div>
+      
+      {/* AI Профиль с автоматически извлеченными данными */}
+      {showAIProfile && (
+        <UserProfile 
+          userId={user.id || user.email || 'default_user'} 
+          onClose={() => setShowAIProfile(false)} 
+        />
+      )}
     </div>
   );
 };

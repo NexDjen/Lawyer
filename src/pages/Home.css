@@ -6,6 +6,11 @@
   overflow: hidden;
 }
 
+/* Убедимся, что все дочерние элементы наследуют фон */
+.home * {
+  background-color: transparent;
+}
+
 .home--visible {
   animation: fadeInUp 0.8s ease-out;
 }
@@ -68,6 +73,7 @@
     radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
   background-size: 50px 50px, 30px 30px;
   animation: particleFloat 20s linear infinite;
+  background-color: transparent;
 }
 
 @keyframes particleFloat {
@@ -213,8 +219,7 @@
 /* Stats Section */
 .stats {
   padding: 80px 20px;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
+  background: transparent;
 }
 
 .stats__grid {
@@ -422,8 +427,7 @@
 /* Capabilities Section */
 .capabilities {
   padding: 120px 20px;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
+  background: transparent;
 }
 
 .capabilities__header {

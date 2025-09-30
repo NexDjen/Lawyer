@@ -48,7 +48,7 @@ const ChatMessage = ({ message, onRetry, isLastMessage, onDownloadDocument }) =>
         return;
       }
       
-      const res = await fetch(buildApiUrl('chat/windexai-tts'), {
+      const res = await fetch(buildApiUrl('chat/tts'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: content, voice: 'nova', model: 'tts-1' })
@@ -59,6 +59,37 @@ const ChatMessage = ({ message, onRetry, isLastMessage, onDownloadDocument }) =>
       if (!res.ok) {
         const errorText = await res.text();
         console.error('Ошибка TTS:', errorText);
+        
+        // Если TTS недоступен, используем браузерный TTS
+        if (res.status === 503 || res.status === 500) {
+          console.log('Серверный TTS недоступен, используем браузерный TTS');
+          const utterance = new SpeechSynthesisUtterance(content);
+          utterance.lang = 'ru-RU';
+          utterance.rate = 0.9;
+          utterance.pitch = 1.0;
+          utterance.volume = 1.0;
+          
+          const voices = speechSynthesis.getVoices();
+          const russianVoice = voices.find(voice => voice.lang.includes('ru'));
+          if (russianVoice) {
+            utterance.voice = russianVoice;
+          }
+          
+          setIsPlaying(true);
+          speechSynthesis.speak(utterance);
+          
+          utterance.onend = () => {
+            setIsPlaying(false);
+          };
+          
+          utterance.onerror = () => {
+            setIsPlaying(false);
+            console.error('Ошибка браузерного TTS');
+          };
+          
+          return;
+        }
+        
         throw new Error(`Ошибка синтеза речи: ${res.status} ${res.statusText}`);
       }
       

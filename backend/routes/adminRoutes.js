@@ -45,6 +45,20 @@ router.get('/windexai-stats', async (req, res) => {
   }
 });
 
+// Получение статистики OpenAI (алиас для совместимости)
+router.get('/openai-stats', async (req, res) => {
+  try {
+    await initializeStatsFiles();
+    const statsData = await fs.readFile(STATS_FILE, 'utf8');
+    const stats = JSON.parse(statsData);
+    
+    res.json(stats);
+  } catch (error) {
+    console.error('Ошибка при получении статистики OpenAI:', error);
+    res.status(500).json({ error: 'Ошибка при получении статистики' });
+  }
+});
+
 // Получение дневной статистики
 router.get('/daily-stats', async (req, res) => {
   try {

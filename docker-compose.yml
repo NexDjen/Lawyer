@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3007
+      - NODE_ENV=production
+      - WINDEXAI_API_KEY=${WINDEXAI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    ports:
+      - "3007:3007"
+    networks:
+      - app-network
+
+  ngrok:
+    image: wernight/ngrok
+    command: http backend:3007
+    ports:
+      - "4040:4040"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

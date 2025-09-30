@@ -33,6 +33,10 @@ const Header = () => {
   };
 
   const handleLogout = () => {
+    // Очищаем все данные чата и сессий для обеспечения приватности
+    localStorage.removeItem('chat_sessions');
+    localStorage.removeItem('ai_lawyer_messages');
+    
     logout();
     navigate('/login');
   };

@@ -137,7 +137,7 @@ const FillDocuments = () => {
       const formData = new FormData();
       formData.append('document', file);
 
-      const res = await fetch(buildApiUrl('ocr'), { method: 'POST', body: formData });
+      const res = await fetch(buildApiUrl('documents/ocr'), { method: 'POST', body: formData });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
 

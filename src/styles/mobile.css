@@ -1,0 +1,480 @@
+/* Мобильные улучшения для AI-Юрист */
+
+/* Улучшенная прокрутка для мобильных устройств */
+* {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Оптимизация для touch устройств */
+button, a, input, textarea, select {
+  -webkit-tap-highlight-color: rgba(102, 126, 234, 0.1);
+  touch-action: manipulation;
+}
+
+/* Улучшенная производительность на мобильных */
+.mobile-optimized {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Мобильные утилиты */
+@media (max-width: 768px) {
+  /* Скрытие элементов на мобильных */
+  .mobile-hidden {
+    display: none !important;
+  }
+  
+  /* Полная ширина на мобильных */
+  .mobile-full {
+    width: 100% !important;
+  }
+  
+  /* Компактные отступы */
+  .mobile-compact {
+    padding: 8px !important;
+    margin: 4px !important;
+  }
+  
+  /* Мобильные карточки */
+  .mobile-card {
+    margin: 0 8px 16px 8px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+  }
+  
+  /* Мобильные кнопки */
+  .mobile-button {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: rgba(102, 126, 234, 0.1);
+  }
+  
+  .mobile-button:active {
+    transform: scale(0.95);
+  }
+  
+  /* Мобильные формы */
+  .mobile-form {
+    padding: 16px;
+  }
+  
+  .mobile-input {
+    width: 100%;
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 16px; /* Предотвращает зум в iOS */
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    -webkit-appearance: none;
+    transition: all 0.2s ease;
+  }
+  
+  .mobile-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+  
+  /* Мобильная навигация */
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 8px 16px;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #666;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    min-width: 60px;
+  }
+  
+  .mobile-nav-item.active {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+  }
+  
+  .mobile-nav-item:active {
+    transform: scale(0.95);
+  }
+  
+  /* Мобильные модальные окна */
+  .mobile-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: flex-end;
+    padding: 0;
+  }
+  
+  .mobile-modal-content {
+    width: 100%;
+    max-height: 90vh;
+    background: white;
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  
+  /* Мобильные списки */
+  .mobile-list {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  }
+  
+  .mobile-list-item {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+    min-height: 60px;
+  }
+  
+  .mobile-list-item:last-child {
+    border-bottom: none;
+  }
+  
+  .mobile-list-item:active {
+    background: #f9fafb;
+    transform: scale(0.98);
+  }
+  
+  /* Мобильные уведомления */
+  .mobile-toast {
+    position: fixed;
+    top: 20px;
+    left: 16px;
+    right: 16px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    z-index: 1001;
+    animation: slideDown 0.3s ease-out;
+  }
+  
+  @keyframes slideDown {
+    from {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  /* Мобильные индикаторы загрузки */
+  .mobile-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    gap: 12px;
+  }
+  
+  .mobile-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #e5e7eb;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  /* Мобильные разделители */
+  .mobile-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
+    margin: 16px 0;
+  }
+  
+  /* Мобильные заголовки */
+  .mobile-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  
+  .mobile-subtitle {
+    font-size: 1rem;
+    color: #6b7280;
+    margin-bottom: 20px;
+    text-align: center;
+    line-height: 1.5;
+  }
+  
+  /* Мобильные иконки */
+  .mobile-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+  
+  /* Мобильные аватары */
+  .mobile-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  
+  /* Мобильные бейджи */
+  .mobile-badge {
+    background: #667eea;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 20px;
+    text-align: center;
+  }
+  
+  /* Мобильные переключатели */
+  .mobile-switch {
+    position: relative;
+    width: 48px;
+    height: 28px;
+    background: #d1d5db;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .mobile-switch.active {
+    background: #667eea;
+  }
+  
+  .mobile-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 24px;
+    height: 24px;
+    background: white;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+  
+  .mobile-switch.active::after {
+    transform: translateX(20px);
+  }
+}
+
+/* Очень маленькие экраны */
+@media (max-width: 480px) {
+  .mobile-compact {
+    padding: 6px !important;
+    margin: 2px !important;
+  }
+  
+  .mobile-card {
+    margin: 0 4px 12px 4px;
+    border-radius: 10px;
+  }
+  
+  .mobile-button {
+    min-height: 40px;
+    min-width: 40px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    border-radius: 6px;
+  }
+  
+  .mobile-input {
+    min-height: 40px;
+    padding: 10px 14px;
+    font-size: 16px;
+    border-radius: 6px;
+  }
+  
+  .mobile-nav {
+    padding: 6px 12px;
+  }
+  
+  .mobile-nav-item {
+    padding: 6px 8px;
+    font-size: 0.7rem;
+    min-width: 50px;
+  }
+  
+  .mobile-modal-content {
+    border-radius: 16px 16px 0 0;
+    padding: 16px;
+  }
+  
+  .mobile-list-item {
+    padding: 12px 16px;
+    min-height: 56px;
+  }
+  
+  .mobile-title {
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+  }
+  
+  .mobile-subtitle {
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+  }
+  
+  .mobile-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 0.8rem;
+  }
+  
+  .mobile-icon {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Улучшения для iOS */
+@supports (-webkit-touch-callout: none) {
+  .mobile-input {
+    font-size: 16px; /* Предотвращает зум */
+  }
+  
+  .mobile-button {
+    -webkit-appearance: none;
+  }
+}
+
+/* Улучшения для Android */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  .mobile-input {
+    font-size: 16px;
+  }
+}
+
+/* Темная тема для мобильных */
+@media (prefers-color-scheme: dark) {
+  .mobile-card {
+    background: rgba(17, 24, 39, 0.95);
+    color: #e5e7eb;
+  }
+  
+  .mobile-input {
+    background: #374151;
+    border-color: #4b5563;
+    color: #e5e7eb;
+  }
+  
+  .mobile-input:focus {
+    border-color: #667eea;
+  }
+  
+  .mobile-nav {
+    background: rgba(17, 24, 39, 0.95);
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .mobile-nav-item {
+    color: #9ca3af;
+  }
+  
+  .mobile-nav-item.active {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.2);
+  }
+  
+  .mobile-modal-content {
+    background: #111827;
+    color: #e5e7eb;
+  }
+  
+  .mobile-list {
+    background: #111827;
+  }
+  
+  .mobile-list-item {
+    border-bottom-color: #374151;
+    color: #e5e7eb;
+  }
+  
+  .mobile-list-item:active {
+    background: #374151;
+  }
+  
+  .mobile-title {
+    color: #e5e7eb;
+  }
+  
+  .mobile-subtitle {
+    color: #9ca3af;
+  }
+  
+  .mobile-switch {
+    background: #4b5563;
+  }
+  
+  .mobile-switch.active {
+    background: #667eea;
+  }
+}
+

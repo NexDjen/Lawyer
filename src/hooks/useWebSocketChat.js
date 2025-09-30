@@ -171,14 +171,23 @@ export const useWebSocketChat = () => {
         wsRef.current = null;
       }
 
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const backendPort = process.env.REACT_APP_WS_PORT || process.env.REACT_APP_BACKEND_PORT || '3007';
-      const backendHost = process.env.REACT_APP_WS_HOST || window.location.hostname;
-      // In production use same host without port (default 443/80)
-      const isProd = process.env.NODE_ENV === 'production';
-      const host = isProd ? window.location.host : backendHost;
-      const portSegment = isProd ? '' : `:${backendPort}`;
-      const wsUrl = `${protocol}//${host}${portSegment}/ws`;
+      // If explicit WS URL is provided, use it
+      const explicitWsUrl = process.env.REACT_APP_WS_URL;
+      let wsUrl;
+      if (explicitWsUrl) {
+        wsUrl = explicitWsUrl.replace(/\/$/, '') + '/ws';
+      } else {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const isProd = process.env.NODE_ENV === 'production';
+        // In production, use same host (behind reverse proxy), no explicit port
+        if (isProd) {
+          wsUrl = `${protocol}//${window.location.host}/ws`;
+        } else {
+          const devHost = process.env.REACT_APP_WS_HOST || 'localhost';
+          const devPort = process.env.REACT_APP_WS_PORT || process.env.REACT_APP_BACKEND_PORT || '3007';
+          wsUrl = `${protocol}//${devHost}:${devPort}/ws`;
+        }
+      }
       
       console.log('Connecting to WebSocket:', wsUrl);
       

@@ -105,6 +105,10 @@ export const AuthProvider = ({ children }) => {
       throw new Error('Неверный email или пароль');
     }
 
+    // Очищаем данные чата предыдущего пользователя для обеспечения приватности
+    localStorage.removeItem('chat_sessions');
+    localStorage.removeItem('ai_lawyer_messages');
+
     // Сохраняем текущего пользователя
     localStorage.setItem('currentUser', JSON.stringify(user));
     setUser(user);

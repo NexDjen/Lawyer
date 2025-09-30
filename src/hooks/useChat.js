@@ -21,7 +21,7 @@ const MESSAGE_TYPES = {
   SYSTEM: 'system'
 };
 
-export const useChat = () => {
+export const useChat = (userId = null) => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
@@ -192,7 +192,8 @@ export const useChat = () => {
         body: JSON.stringify({
           message: message,
           conversationHistory: messages.slice(-10),
-          useWebSearch: useWebSearch
+          useWebSearch: useWebSearch,
+          userId: userId // Добавляем userId для извлечения персональных данных
         })
       });
 
@@ -240,7 +241,7 @@ export const useChat = () => {
       setIsRetrying(false);
       setRetryCount(0);
     }
-  }, [messages, useWebSearch, formatAIResponse, handleApiError]);
+  }, [messages, useWebSearch, userId, formatAIResponse, handleApiError]);
 
   // Получение новостей
   const getLegalNews = useCallback(async () => {

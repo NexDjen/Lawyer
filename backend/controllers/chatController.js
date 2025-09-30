@@ -9,7 +9,8 @@ class ChatController {
         message, 
         conversationHistory = [], 
         history = [], // Поддержка нового формата истории
-        useWebSearch = true
+        useWebSearch = true,
+        userId = null // ID пользователя для персонализации
       } = req.body;
 
       // Валидация входных данных
@@ -28,18 +29,19 @@ class ChatController {
       logger.info('Processing chat message', {
         messageLength: message.length,
         historyLength: validatedHistory.length,
-        useWebSearch
+        useWebSearch,
+        hasUserId: !!userId
       });
 
       // Обработка сообщения через сервис
-      const response = await chatService.processMessage(message, validatedHistory, useWebSearch);
+      const response = await chatService.processMessage(message, validatedHistory, useWebSearch, userId);
 
       // Генерируем аудио ответ (без фатала при отсутствии ключа)
       let audioBuffer = null;
       let audioUrl = null;
       try {
-        if (process.env.WINDEXAI_API_KEY) {
-          const { synthesizeSpeech } = require('../services/windexaiTTSService');
+        if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here') {
+          const { synthesizeSpeech } = require('../services/openaiTTSService');
           audioBuffer = await synthesizeSpeech(response, { voice: 'nova', model: 'tts-1' });
         }
       } catch (ttsError) {
