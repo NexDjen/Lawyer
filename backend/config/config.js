@@ -1,5 +1,5 @@
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const config = {
   // Server configuration
@@ -14,6 +14,15 @@ const config = {
     model: process.env.WINDEXAI_MODEL || 'gpt-4o-mini',
     maxTokens: parseInt(process.env.WINDEXAI_MAX_TOKENS) || 4000,
     temperature: parseFloat(process.env.WINDEXAI_TEMPERATURE) || 0.7
+  },
+
+  // OpenAI configuration
+  openai: {
+    apiKey: process.env.OPENAI_API_KEY,
+    model: process.env.OPENAI_MODEL || 'gpt-4o',
+    visionModel: process.env.OPENAI_VISION_MODEL || 'gpt-4o',
+    ttsModel: process.env.OPENAI_TTS_MODEL || 'tts-1',
+    ttsVoice: process.env.OPENAI_TTS_VOICE || 'alloy'
   },
 
   // Google TTS configuration
@@ -106,9 +115,8 @@ console.log('  - Port:', config.server.port);
 console.log('  - Host:', config.server.host);
 console.log('  - WindexAI API Key:', config.windexai.apiKey ? 'SET (' + config.windexai.apiKey.substring(0, 8) + '...)' : 'NOT SET');
 console.log('  - WindexAI Model:', config.windexai.model);
+console.log('  - OpenAI API Key:', config.openai.apiKey ? 'SET (' + config.openai.apiKey.substring(0, 8) + '...)' : 'NOT SET');
+console.log('  - OpenAI Vision Model:', config.openai.visionModel);
 console.log('  - NODE_ENV:', process.env.NODE_ENV || 'development');
-
-// Логирование загрузки OpenAI API Key
-console.log('🔧 OpenAI API Key:', process.env.OPENAI_API_KEY ? 'SET' : 'NOT SET');
 
 module.exports = config; 

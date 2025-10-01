@@ -10,7 +10,7 @@ services:
       - WINDEXAI_API_KEY=${WINDEXAI_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     ports:
-      - "3007:3007"
+      - "${PORT}:${PORT}"
     networks:
       - app-network
 
