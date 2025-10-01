@@ -8,9 +8,10 @@ export const API_BASE_URL = envApiBase
   : (isProd ? `${window.location.origin}/api` : 'http://localhost:3007/api');
 
 // Optional explicit WS URL override
+// In production, use same origin with ws:// or wss:// protocol
 export const WS_BASE_URL = process.env.REACT_APP_WS_URL
   ? process.env.REACT_APP_WS_URL.replace(/\/$/, '')
-  : (isProd ? 'ws://w-lawyer.ru' : 'ws://localhost:3007');
+  : (isProd ? `${window.location.origin.replace(/^http/, 'ws')}` : 'ws://localhost:3007');
 
 // Debug logs
 console.log('🔧 API_BASE_URL:', API_BASE_URL);
