@@ -89,7 +89,7 @@ const AppContent = () => {
             }}>
               <h1 style={{ fontSize: 36, marginBottom: 24 }}>Добро пожаловать! Welcome! Қош келдіңіз!</h1>
               <p style={{ fontSize: 20, marginBottom: 32 }}>Выберите язык/Select your language:</p>
-              <div style={{ display: 'flex', gap: 32 }}>
+              <div className="language-selection" style={{ display: 'flex', gap: 32 }}>
                 {LANGUAGES.map(l => (
                   <button
                     key={l.code}
