@@ -175,13 +175,13 @@ export const useWebSocketChat = () => {
       const explicitWsUrl = process.env.REACT_APP_WS_URL;
       let wsUrl;
       if (explicitWsUrl) {
-        wsUrl = explicitWsUrl.replace(/\/$/, '') + '/ws';
+        wsUrl = explicitWsUrl.replace(/\/$/, '') + '/api/ws';
       } else {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const isProd = process.env.NODE_ENV === 'production';
-        // In production, use same host (behind reverse proxy), no explicit port
+        // In production, use w-lawyer.ru with /api/ws path
         if (isProd) {
-          wsUrl = `${protocol}//${window.location.host}/ws`;
+          wsUrl = 'ws://w-lawyer.ru/api/ws';
         } else {
           const devHost = process.env.REACT_APP_WS_HOST || 'localhost';
           const devPort = process.env.REACT_APP_WS_PORT || process.env.REACT_APP_BACKEND_PORT || '3007';

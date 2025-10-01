@@ -311,7 +311,7 @@ class Server {
           // Инициализируем WebSocket сервер
           wss = new WebSocket.Server({ 
             server: this.server,
-            path: '/ws',
+            path: '/api/ws',
             perMessageDeflate: false, // Отключаем сжатие для лучшей производительности
             maxPayload: 1024 * 1024 // 1MB лимит
           });
