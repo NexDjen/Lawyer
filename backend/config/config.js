@@ -68,7 +68,9 @@ const config = {
       'file://',
       'null',
       'http://localhost',
-      'http://127.0.0.1'
+      'http://127.0.0.1',
+      'https://w-lawyer.ru',
+      'https://www.w-lawyer.ru'
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
