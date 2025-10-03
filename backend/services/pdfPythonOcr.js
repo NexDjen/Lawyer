@@ -2,7 +2,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 const logger = require('../utils/logger');
 
-const PYTHON_BIN = '/Users/artembutko/Documents/layer_3/venv/bin/python3';
+const PYTHON_BIN = process.env.PYTHON_BIN || 'python3';
 const SCRIPT_PATH = path.join(__dirname, 'py_pdf_ocr.py');
 
 function runPythonPdfOcr(pdfPath, lang = 'rus+eng') {
