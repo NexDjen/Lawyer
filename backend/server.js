@@ -224,7 +224,8 @@ class Server {
       next();
     });
     
-    // CORS
+    // Debug: log allowed CORS origins
+    logger.info('Allowed CORS origins:', config.cors.origins);
     this.app.use(cors(corsOptions));
     
     // Парсинг JSON с увеличенными лимитами для загрузки файлов
