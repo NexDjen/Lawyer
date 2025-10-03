@@ -18,8 +18,9 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    if (config.cors.origins.includes(origin)) {
-      logger.info(`Origin ${origin} is in allowed list`);
+    // Allow production domains
+    if (config.cors.origins.includes(origin) || origin === 'https://w-lawyer.ru' || origin === 'https://www.w-lawyer.ru') {
+      logger.info(`Origin ${origin} is allowed`);
       callback(null, true);
     } else {
       logger.warn(`Origin ${origin} is not allowed`);

@@ -229,13 +229,13 @@ class Server {
     
     // Парсинг JSON с увеличенными лимитами для загрузки файлов
     this.app.use(express.json({ 
-      limit: '100mb',
+      limit: '5gb',
       extended: true 
     }));
     
     // Парсинг URL-encoded данных с увеличенными лимитами
     this.app.use(express.urlencoded({ 
-      limit: '100mb', 
+      limit: '5gb', 
       extended: true,
       parameterLimit: 1000
     }));
@@ -243,11 +243,43 @@ class Server {
     // Статические файлы
     this.app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
     
+    // Статические файлы фронтенда для глобального доступа
+    this.app.use(express.static(path.join(process.cwd(), 'build')));
+    
+    // Middleware для обработки ошибок размера запроса
+    this.app.use((error, req, res, next) => {
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        logger.warn('File too large', {
+          ip: req.ip,
+          userAgent: req.get('User-Agent'),
+          contentLength: req.get('Content-Length')
+        });
+        return res.status(413).json({
+          error: 'Файл слишком большой',
+          details: 'Максимальный размер файла: 5GB',
+          timestamp: new Date().toISOString()
+        });
+      }
+      if (error.code === 'LIMIT_FIELD_VALUE') {
+        logger.warn('Field value too large', {
+          ip: req.ip,
+          userAgent: req.get('User-Agent')
+        });
+        return res.status(413).json({
+          error: 'Слишком большое значение поля',
+          details: 'Размер поля превышает допустимый лимит',
+          timestamp: new Date().toISOString()
+        });
+      }
+      next(error);
+    });
+
     // Логирование запросов
     this.app.use((req, res, next) => {
       logger.info(`${req.method} ${req.url}`, {
         ip: req.ip,
-        userAgent: req.get('User-Agent')
+        userAgent: req.get('User-Agent'),
+        contentLength: req.get('Content-Length')
       });
       next();
     });
@@ -272,24 +304,19 @@ class Server {
       });
     });
     
-    // Root endpoint
-    this.app.get('/', (req, res) => {
-      res.json({ 
-        message: 'AI Lawyer Backend API',
-        version: '1.0.0',
-        endpoints: {
-          chat: '/api/chat',
-          documents: '/api/generate-pdf',
-          files: '/api/uploaded-files',
-          tts: '/api/tts/synthesize',
-          health: '/health'
-        }
-      });
+    // SPA fallback - все НЕ-API роуты возвращают index.html
+    this.app.get('*', (req, res, next) => {
+      // Если запрос к API или статическим файлам - пропускаем
+      if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/health')) {
+        return next();
+      }
+      // Для всех остальных - возвращаем SPA
+      res.sendFile(path.join(process.cwd(), 'build', 'index.html'));
     });
   }
 
   _setupErrorHandling() {
-    // Обработка 404 ошибок
+    // Обработка 404 ошибок для API
     this.app.use('*', ErrorHandler.handleNotFound);
     
     // Глобальная обработка ошибок

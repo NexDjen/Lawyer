@@ -47,8 +47,7 @@ router.post('/tts', ErrorHandler.asyncHandler(async (req, res) => {
     const audioBuffer = await synthesizeSpeech(text, { voice, model });
     
     if (!audioBuffer) {
-      logger.warn('OpenAI TTS service returned null');
-      return res.status(503).json({ error: 'TTS service temporarily unavailable' });
+      throw new Error('OpenAI TTS returned null');
     }
     
     logger.info('OpenAI TTS synthesis successful, audio size:', audioBuffer.length);

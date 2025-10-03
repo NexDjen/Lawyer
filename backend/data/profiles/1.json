@@ -1,0 +1,50 @@
+{
+  "userId": "1",
+  "createdAt": "2025-10-03T22:16:54.168Z",
+  "updatedAt": "2025-10-03T22:19:44.248Z",
+  "personalData": {
+    "fullName": "",
+    "firstName": "",
+    "lastName": "",
+    "middleName": "",
+    "birthDate": "",
+    "birthPlace": "",
+    "phone": "",
+    "email": "",
+    "address": "",
+    "passportSeries": "",
+    "passportNumber": "",
+    "inn": "",
+    "snils": "",
+    "maritalStatus": "",
+    "occupation": "",
+    "workplace": ""
+  },
+  "caseNotes": [
+    {
+      "timestamp": "2025-10-03T22:16:54.168Z",
+      "content": "Проверь договор аренды: риски и рекомендации",
+      "importance": 5
+    },
+    {
+      "timestamp": "2025-10-03T22:18:55.157Z",
+      "content": "Проверь договор аренды: риски и рекомендации",
+      "importance": 5
+    },
+    {
+      "timestamp": "2025-10-03T22:19:44.248Z",
+      "content": "Проверь договор аренды: риски и рекомендации",
+      "importance": 5
+    }
+  ],
+  "preferences": {
+    "autoSavePersonalData": true,
+    "dataRetentionDays": 365,
+    "privacyLevel": "standard"
+  },
+  "statistics": {
+    "totalMessages": 0,
+    "dataExtractionCount": 0,
+    "lastActivity": "2025-10-03T22:19:44.248Z"
+  }
+}
