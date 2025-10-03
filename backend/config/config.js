@@ -50,28 +50,17 @@ const config = {
 
   // CORS configuration
   cors: {
-    origins: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-      'http://localhost:3004',
-      'http://localhost:3006',
-      'http://localhost:3007',
-      'http://localhost:3008',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:3001',
-      'http://127.0.0.1:3002',
-      'http://127.0.0.1:3004',
-      'http://127.0.0.1:3006',
-      'http://127.0.0.1:3007',
-      'http://127.0.0.1:3008',
-      'file://',
-      'null',
-      'http://localhost',
-      'http://127.0.0.1',
-      'https://w-lawyer.ru',
-      'https://www.w-lawyer.ru'
-    ],
+    origins: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
+      : [
+          'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002',
+          'http://localhost:3004', 'http://localhost:3006', 'http://localhost:3007',
+          'http://localhost:3008', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001',
+          'http://127.0.0.1:3002', 'http://127.0.0.1:3004', 'http://127.0.0.1:3006',
+          'http://127.0.0.1:3007', 'http://127.0.0.1:3008', 'file://', 'null',
+          'http://localhost', 'http://127.0.0.1', 'https://w-lawyer.ru',
+          'https://www.w-lawyer.ru'
+        ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept']
