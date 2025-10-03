@@ -16,10 +16,9 @@ async function synthesizeSpeech(text, { model = 'tts-1', voice = 'alloy', format
     
     logger.info('OpenAI TTS request:', { textLength: text.length, voice, model, hasProxy: !!proxyUrl });
     
-    // Initialize OpenAI client with proxy agent and WindexAI endpoint
+    // Initialize OpenAI client with proxy agent
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY || process.env.WINDEXAI_API_KEY,
-      baseURL: 'https://api.windexai.com/v1',
       httpAgent: agent,
       httpsAgent: agent
     });
