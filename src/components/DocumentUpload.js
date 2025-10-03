@@ -125,6 +125,13 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
   };
 
   const handleFileUpload = async (file) => {
+    // Проверяем размер файла на клиенте (5GB лимит)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
+    if (file.size > MAX_FILE_SIZE) {
+      alert(`Файл слишком большой. Максимальный размер: ${formatSize(MAX_FILE_SIZE)}. Размер вашего файла: ${formatSize(file.size)}`);
+      return;
+    }
+
     setIsUploading(true);
     setProgress(0);
     if (progressTimerRef.current) clearInterval(progressTimerRef.current);
@@ -235,7 +242,13 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
                     details = text;
                   }
                 }
-                reject(new Error(details || 'Ошибка при обработке документа'));
+                
+                // Специальная обработка ошибки 413
+                if (xhr.status === 413) {
+                  reject(new Error('Файл слишком большой для загрузки. Пожалуйста, выберите файл меньшего размера или обратитесь к администратору для настройки сервера.'));
+                } else {
+                  reject(new Error(details || 'Ошибка при обработке документа'));
+                }
               } catch (_) {
                 reject(new Error('Ошибка при обработке документа'));
               }
@@ -325,6 +338,9 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
                 break;
               case 'series':
                 value = result.extractedData?.series || '';
+                break;
+              default:
+                // Для неизвестных ключей оставляем value как есть
                 break;
             }
           }

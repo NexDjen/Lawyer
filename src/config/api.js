@@ -2,16 +2,19 @@
 const envApiBase = process.env.REACT_APP_API_URL;
 const isProd = process.env.NODE_ENV === 'production';
 
+// Use ngrok URL for global access
+const NGROK_URL = 'https://274c3aef1743.ngrok-free.app';
+
 // In production, default to current origin + /api if not provided
 export const API_BASE_URL = envApiBase
   ? envApiBase.replace(/\/$/, '')
-  : (isProd ? `${window.location.origin}/api` : 'http://localhost:3007/api');
+  : (isProd ? `${window.location.origin}/api` : NGROK_URL);
 
 // Optional explicit WS URL override
 // In production, use same origin with ws:// or wss:// protocol
 export const WS_BASE_URL = process.env.REACT_APP_WS_URL
   ? process.env.REACT_APP_WS_URL.replace(/\/$/, '')
-  : (isProd ? `${window.location.origin.replace(/^http/, 'ws')}` : 'ws://localhost:3007');
+  : (isProd ? `${window.location.origin.replace(/^http/, 'ws')}` : NGROK_URL.replace(/^https/, 'wss'));
 
 // Debug logs
 console.log('🔧 API_BASE_URL:', API_BASE_URL);
