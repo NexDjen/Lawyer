@@ -207,12 +207,14 @@ export const useChat = (userId = null) => {
         throw new Error(`${response.status}: ${errorData.error || 'Unknown error'}`);
       }
 
+      // Clone the response before reading to allow fallback to text
+      const responseClone = response.clone();
       let data;
       try {
         data = await response.json();
       } catch (e) {
-        // Если ответ не JSON, создаем объект с текстовым содержимым
-        const textContent = await response.text();
+        // If JSON parsing fails, read text from cloned response
+        const textContent = await responseClone.text();
         data = { response: textContent };
       }
       const botMessage = {
