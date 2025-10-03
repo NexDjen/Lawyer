@@ -20,6 +20,7 @@ class ChatService {
 
     this.windexai = new WindexAI({
       apiKey: config.windexai.apiKey,
+      baseURL: 'https://api.windexai.com/v1',
       httpAgent: agent,
       httpsAgent: agent
     });

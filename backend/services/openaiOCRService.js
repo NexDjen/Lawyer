@@ -43,7 +43,8 @@ const updateOpenAIStats = async (tokens, cost = 0) => {
 class OpenAIVisionOCR {
   constructor() {
     this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
+      apiKey: process.env.OPENAI_API_KEY || process.env.WINDEXAI_API_KEY,
+      baseURL: 'https://api.windexai.com/v1'
     });
   }
 
