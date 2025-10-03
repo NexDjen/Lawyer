@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
 import { safeFetchWithFallback, getFallbackNews } from '../utils/safeJson';
+import { buildApiUrl } from '../config/api';
 
 // Константы для API
 const API_ENDPOINTS = {
-  CHAT: '/api/chat',
-  NEWS: '/api/news'
+  CHAT: buildApiUrl('/chat'),
+  NEWS: buildApiUrl('/news')
 };
 
 // Константы для статусов
@@ -207,15 +208,13 @@ export const useChat = (userId = null) => {
         throw new Error(`${response.status}: ${errorData.error || 'Unknown error'}`);
       }
 
-      // Clone the response before reading to allow fallback to text
-      const responseClone = response.clone();
+      // Read full response text and parse JSON with fallback
+      const text = await response.text();
       let data;
       try {
-        data = await response.json();
+        data = JSON.parse(text);
       } catch (e) {
-        // If JSON parsing fails, read text from cloned response
-        const textContent = await responseClone.text();
-        data = { response: textContent };
+        data = { response: text };
       }
       const botMessage = {
         id: Date.now() + 1,
