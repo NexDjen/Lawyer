@@ -12,7 +12,7 @@ const config = {
   windexai: {
     apiKey: process.env.WINDEXAI_API_KEY,
     model: process.env.WINDEXAI_MODEL || 'gpt-4o-mini',
-    maxTokens: parseInt(process.env.WINDEXAI_MAX_TOKENS) || 4000,
+    maxTokens: parseInt(process.env.WINDEXAI_MAX_TOKENS) || 6000,
     temperature: parseFloat(process.env.WINDEXAI_TEMPERATURE) || 0.7
   },
 
