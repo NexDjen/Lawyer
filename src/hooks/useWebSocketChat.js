@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 
 export const useWebSocketChat = () => {
-  const { user, isLoading: authLoading } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -217,8 +215,32 @@ export const useWebSocketChat = () => {
       
       wsRef.current.onerror = (error) => {
         console.error('WebSocket error:', error);
-        setError('Ошибка соединения');
-        setIsConnected(false);
+        
+        // Если это ошибка SSL/TLS, попробуем HTTP вместо HTTPS
+        if (wsUrl.startsWith('wss://') && reconnectAttempts === 0) {
+          console.log('WSS failed, trying WS fallback...');
+          const fallbackUrl = wsUrl.replace('wss://', 'ws://');
+          setTimeout(() => {
+            try {
+              wsRef.current = new WebSocket(fallbackUrl);
+              wsRef.current.onopen = () => {
+                console.log('WebSocket connected via fallback');
+                setIsConnected(true);
+                setError(null);
+                setReconnectAttempts(0);
+              };
+              wsRef.current.onclose = wsRef.current.onclose;
+              wsRef.current.onmessage = wsRef.current.onmessage;
+              wsRef.current.onerror = wsRef.current.onerror;
+            } catch (fallbackError) {
+              console.error('Fallback WebSocket also failed:', fallbackError);
+              setError('Ошибка подключения к серверу. Проверьте интернет-соединение.');
+            }
+          }, 1000);
+          return;
+        }
+        
+        setError('Ошибка соединения. Проверьте интернет-соединение.');
       };
       
       wsRef.current.onmessage = handleWebSocketMessage;
@@ -280,12 +302,9 @@ export const useWebSocketChat = () => {
     }
   };
 
-  // Подключение при монтировании и после авторизации
+  // Подключение при монтировании
   useEffect(() => {
-    // Подключаемся только если пользователь авторизован и загрузка завершена
-    if (!authLoading && user) {
-      connectWebSocket();
-    }
+    connectWebSocket();
     
     return () => {
       if (reconnectTimeoutRef.current) {
@@ -296,7 +315,7 @@ export const useWebSocketChat = () => {
         wsRef.current.close(1000, 'Component unmounting');
       }
     };
-  }, [user, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     isConnected,

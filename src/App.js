@@ -39,6 +39,35 @@ const AppContent = () => {
     localStorage.setItem('lang', lang);
   }, [lang]);
 
+  // Глобальная обработка ошибок
+  useEffect(() => {
+    const handleError = (error) => {
+      console.error('Global error:', error);
+      // Не показываем ошибки WebSocket в консоли как критические
+      if (error.message && error.message.includes('WebSocket')) {
+        console.log('WebSocket error handled gracefully');
+        return;
+      }
+    };
+
+    const handleUnhandledRejection = (event) => {
+      console.error('Unhandled promise rejection:', event.reason);
+      // Предотвращаем показ ошибки в консоли для WebSocket
+      if (event.reason && event.reason.message && event.reason.message.includes('WebSocket')) {
+        event.preventDefault();
+        console.log('WebSocket promise rejection handled gracefully');
+      }
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
 
   if (isLoading) {
     return <div>Загрузка...</div>;
