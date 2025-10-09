@@ -11,10 +11,10 @@ export const API_BASE_URL = envApiBase
   : (isProd ? `${window.location.origin}/api` : NGROK_URL);
 
 // Optional explicit WS URL override
-// In production, use same origin with ws:// or wss:// protocol
+// In production, connect to backend server port 3007
 export const WS_BASE_URL = process.env.REACT_APP_WS_URL
   ? process.env.REACT_APP_WS_URL.replace(/\/$/, '')
-  : (isProd ? `${window.location.origin.replace(/^https/, 'wss').replace(/^http/, 'ws')}` : NGROK_URL.replace(/^https/, 'wss'));
+  : (isProd ? `ws://${window.location.hostname}:3007` : NGROK_URL.replace(/^https/, 'wss'));
 
 // Debug logs
 console.log('🔧 API_BASE_URL:', API_BASE_URL);
