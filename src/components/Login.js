@@ -54,7 +54,7 @@ const Login = () => {
     <div className="login-page">
       <div className="login-container">
         <div className="login-header">
-          <h1>⚖️ Галина - AI Юрист</h1>
+          <h1>Windex-Юрист</h1>
           <p>Вход в систему</p>
         </div>
         
@@ -89,31 +89,12 @@ const Login = () => {
             {isRedirecting ? 'Перенаправляем...' : isLoading ? 'Входим...' : 'Войти'}
           </button>
           
-          <div className="quick-login">
-            <button 
-              type="button" 
-              onClick={() => {
-                setEmail('admin@layer.com');
-                setPassword('admin123');
-                handleSubmit({ preventDefault: () => {} });
-              }}
-              disabled={isLoading || isRedirecting}
-              className="quick-login-button"
-            >
-              🚀 Быстрый вход (Админ)
-            </button>
-          </div>
         </form>
         
         <div className="login-footer">
           <p>
             Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
           </p>
-          <div className="demo-credentials">
-            <p><strong>Для демонстрации:</strong></p>
-            <p>Администратор: admin@layer.com / admin123</p>
-            <p>Пользователь: user@layer.com / user123</p>
-          </div>
         </div>
       </div>
     </div>

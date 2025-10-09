@@ -1,4 +1,4 @@
-// База знаний для AI-Юриста
+// База знаний для Windex-Юриста
 // Система управления и поиска по российскому законодательству
 
 import { safeFetchWithFallback, getFallbackKnowledgeBase } from '../utils/safeJson';

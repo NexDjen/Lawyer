@@ -28,7 +28,7 @@
 }
 
 .chat-message--last {
-  animation: messageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1), messageGlow 3s ease-in-out;
+  animation: messageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes messageGlow {
@@ -151,17 +151,17 @@
     0 4px 16px rgba(251, 191, 36, 0.08);
 }
 
-.chat-message__text:hover { transform: none; box-shadow: none; }
-
-.chat-message__text:hover::before {
-  opacity: 1;
+.chat-message__text:hover { 
+  transform: none; 
+  box-shadow: none; 
 }
 
 .chat-message--user .chat-message__text:hover {
-  box-shadow: 
-    0 20px 60px rgba(100, 116, 139, 0.25),
-    0 10px 30px rgba(100, 116, 139, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chat-message--bot .chat-message__text:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Футер сообщения */
@@ -197,7 +197,7 @@
 }
 
 .chat-message__time:hover {
-  transform: translateY(-1px) scale(1.02);
+  transform: none;
 }
 
 /* Кнопки действий */
@@ -211,76 +211,64 @@
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 6px;
   box-shadow: none;
   text-decoration: none;
-}
-.chat-message__tts:hover,
-.chat-message__retry:hover,
-.chat-message__copy:hover { background: #f3f4f6; }
-
-.chat-message__copy { background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-2); font-size: 0.78rem; font-weight: 500; display: flex; align-items: center; gap: var(--space-2); cursor: pointer; transition: all var(--transition-fast); }
-.chat-message__copy:hover { box-shadow: 0 10px 20px rgba(102,126,234,0.18); }
-
-.chat-message__tts:hover,
-.chat-message__retry:hover { box-shadow: 0 10px 20px rgba(102,126,234,0.18); }
-
-.chat-message__tts::before,
-.chat-message__retry::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.chat-message__tts:hover::before,
-.chat-message__retry:hover::before {
-  left: 100%;
+  position: relative;
 }
 
 .chat-message__tts:hover,
 .chat-message__retry:hover {
-  box-shadow: 
-    0 8px 24px rgba(6, 182, 212, 0.18),
-    0 4px 12px rgba(6, 182, 212, 0.12);
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chat-message__copy { 
+  background: var(--surface); 
+  color: var(--text-primary); 
+  border: 1px solid var(--border); 
+  border-radius: var(--radius-sm); 
+  padding: var(--space-2) var(--space-2); 
+  font-size: 0.78rem; 
+  font-weight: 500; 
+  display: flex; 
+  align-items: center; 
+  gap: var(--space-2); 
+  cursor: pointer; 
+  transition: all 0.2s ease; 
+}
+
+.chat-message__copy:hover { 
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .chat-message__tts:active,
 .chat-message__retry:active {
-  box-shadow: 
-    0 4px 12px rgba(6, 182, 212, 0.2),
-    0 2px 6px rgba(6, 182, 212, 0.15);
+  transform: scale(0.98);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .chat-message__tts:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
-  box-shadow: 
-    0 2px 8px rgba(6, 182, 212, 0.15),
-    0 1px 4px rgba(6, 182, 212, 0.08);
+  box-shadow: none;
 }
 
 .chat-message__retry {
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-  box-shadow: 
-    0 4px 16px rgba(14, 165, 233, 0.2),
-    0 2px 8px rgba(14, 165, 233, 0.15);
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
 }
 
-.chat-message__retry:hover {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  box-shadow: 
-    0 8px 24px rgba(14, 165, 233, 0.3),
-    0 4px 12px rgba(14, 165, 233, 0.2);
-}
 
 /* Анимация вращения для загрузки */
 .spinning {

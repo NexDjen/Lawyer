@@ -20,13 +20,17 @@ import {
   Scan,
   X
 } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import './Documents.css';
 import DocumentUpload from '../components/DocumentUpload';
 
 
 const Documents = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Логирование для диагностики
+  console.log('Documents component rendered, current location:', location.pathname);
   const [documents, setDocuments] = useState([]);
   const [ocrResults, setOcrResults] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,6 +38,7 @@ const Documents = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [uploadDocumentType, setUploadDocumentType] = useState(null);
   const [filterType, setFilterType] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [isVisible, setIsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('documents');
@@ -155,25 +160,38 @@ const Documents = () => {
 
   const filteredDocuments = documents
     .filter(doc => {
-      // Фильтруем только личные документы пользователя (не загруженные договоры/контракты)
-      const personalTypes = new Set(['passport','snils','license','birth','pdf']);
-      const isPersonal = personalTypes.has(doc.type);
+      // Поиск по названию и содержимому
       const display = toDisplayText(doc.content).toLowerCase();
-      const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesSearch = searchTerm === '' || 
+                           doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            display.includes(searchTerm.toLowerCase());
+      
+      // Фильтрация по типу
       const matchesFilter = filterType === 'all' || doc.type === filterType;
-      return isPersonal && matchesSearch && matchesFilter;
+      
+      // Фильтрация по статусу
+      const matchesStatus = filterStatus === 'all' || doc.status === filterStatus;
+      
+      return matchesSearch && matchesFilter && matchesStatus;
     })
     .sort((a, b) => {
       switch (sortBy) {
         case 'name':
           return a.name.localeCompare(b.name);
+        case 'name-desc':
+          return b.name.localeCompare(a.name);
         case 'date':
           return new Date(b.uploadedAt) - new Date(a.uploadedAt);
+        case 'date-old':
+          return new Date(a.uploadedAt) - new Date(b.uploadedAt);
         case 'size':
-          return parseFloat(a.size) - parseFloat(b.size);
+          return parseFloat(a.size || 0) - parseFloat(b.size || 0);
+        case 'size-desc':
+          return parseFloat(b.size || 0) - parseFloat(a.size || 0);
+        case 'status':
+          return a.status.localeCompare(b.status);
         default:
-          return 0;
+          return new Date(b.uploadedAt) - new Date(a.uploadedAt);
       }
     });
 
@@ -314,6 +332,13 @@ const Documents = () => {
           <div className="documents-header__actions">
             <button 
               className="documents-header__btn documents-header__btn--primary"
+              onClick={() => navigate('/chat')}
+            >
+              <FileText size={20} />
+              Консультация
+            </button>
+            <button 
+              className="documents-header__btn documents-header__btn--secondary"
               onClick={() => setShowUpload(true)}
             >
               <Upload size={20} />
@@ -321,10 +346,10 @@ const Documents = () => {
             </button>
             <button 
               className="documents-header__btn documents-header__btn--secondary"
-              onClick={() => setActiveTab(activeTab === 'documents' ? 'upload' : 'documents')}
+              onClick={() => navigate('/fill-documents')}
             >
               <Camera size={20} />
-              {activeTab === 'documents' ? 'Сканировать' : 'Мои документы'}
+              Заполнение документов
             </button>
           </div>
         </div>
@@ -376,8 +401,29 @@ const Documents = () => {
                   className="filter-select"
                 >
                   <option value="all">Все типы</option>
+                  <option value="passport">Паспорт РФ</option>
+                  <option value="snils">СНИЛС</option>
+                  <option value="license">Водительские права</option>
+                  <option value="birth">Свидетельство о рождении</option>
+                  <option value="pdf">PDF документы</option>
                   <option value="contract">Договоры</option>
                   <option value="legal">Юридические документы</option>
+                </select>
+              </div>
+              
+              <div className="filter-group">
+                <CheckCircle size={16} />
+                <select 
+                  value={filterStatus} 
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="all">Все статусы</option>
+                  <option value="analyzed">Проанализированы</option>
+                  <option value="uploaded">Загружены</option>
+                  <option value="processing">В обработке</option>
+                  <option value="pending">Ожидают</option>
+                  <option value="error">Ошибки</option>
                 </select>
               </div>
               
@@ -388,13 +434,43 @@ const Documents = () => {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="filter-select"
                 >
-                  <option value="date">По дате</option>
-                  <option value="name">По названию</option>
-                  <option value="size">По размеру</option>
+                  <option value="date">По дате (новые)</option>
+                  <option value="date-old">По дате (старые)</option>
+                  <option value="name">По названию (А-Я)</option>
+                  <option value="name-desc">По названию (Я-А)</option>
+                  <option value="size">По размеру (маленькие)</option>
+                  <option value="size-desc">По размеру (большие)</option>
+                  <option value="status">По статусу</option>
                 </select>
               </div>
+              
+              <button 
+                className="filter-reset-btn"
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterType('all');
+                  setFilterStatus('all');
+                  setSortBy('date');
+                }}
+                title="Сбросить все фильтры"
+              >
+                <X size={16} />
+                Сбросить
+              </button>
             </div>
           </section>
+
+          {/* Results Counter */}
+          <div className="documents-results">
+            <span className="results-count">
+              Найдено документов: {filteredDocuments.length} из {documents.length}
+            </span>
+            {(searchTerm || filterType !== 'all' || filterStatus !== 'all') && (
+              <span className="results-filtered">
+                (применены фильтры)
+              </span>
+            )}
+          </div>
 
           {/* Documents Grid Section */}
           <section className="documents-content">

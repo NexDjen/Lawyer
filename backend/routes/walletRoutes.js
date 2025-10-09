@@ -1,163 +1,72 @@
 const express = require('express');
 const logger = require('../utils/logger');
+const walletService = require('../services/walletService');
 
 const router = express.Router();
 
-// Получение баланса пользователя
-router.get('/balance', (req, res) => {
-  try {
-    // В реальном приложении здесь будет проверка авторизации
-    // Пока возвращаем моковые данные
-    const balance = {
-      amount: 1250.50,
-      currency: 'RUB',
-      lastUpdated: new Date().toISOString()
-    };
+// helper to get userId; в реальном приложении берется из аутентификации
+function getUserId(req) {
+  return req.user?.id || req.body.userId || req.query.userId || 'demo_user';
+}
 
-    logger.info('Wallet balance requested');
-    res.json({
-      success: true,
-      data: balance
-    });
+// Получение баланса пользователя
+router.get('/balance', async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const balance = await walletService.getBalance(userId);
+    res.json({ success: true, data: balance });
   } catch (error) {
     logger.error('Wallet balance error', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get wallet balance'
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
 // Пополнение счета
-router.post('/deposit', (req, res) => {
+router.post('/deposit', async (req, res) => {
   try {
+    const userId = getUserId(req);
     const { amount, paymentMethod } = req.body;
-
     if (!amount || amount <= 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid amount'
-      });
+      return res.status(400).json({ success: false, error: 'Invalid amount' });
     }
-
-    // В реальном приложении здесь будет интеграция с платежной системой
-    const transaction = {
-      id: `dep_${Date.now()}`,
-      type: 'deposit',
-      amount: Number(amount),
-      paymentMethod: paymentMethod || 'card',
-      status: 'completed',
-      timestamp: new Date().toISOString(),
-      description: 'Пополнение счета'
-    };
-
-    logger.info('Wallet deposit processed', { amount, paymentMethod });
-    res.json({
-      success: true,
-      data: transaction
-    });
+    const tx = await walletService.deposit(userId, amount, paymentMethod);
+    res.json({ success: true, data: tx });
   } catch (error) {
     logger.error('Wallet deposit error', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to process deposit'
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
 // Вывод средств
-router.post('/withdraw', (req, res) => {
+router.post('/withdraw', async (req, res) => {
   try {
+    const userId = getUserId(req);
     const { amount, walletAddress } = req.body;
-
     if (!amount || amount <= 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid amount'
-      });
+      return res.status(400).json({ success: false, error: 'Invalid amount' });
     }
-
     if (!walletAddress) {
-      return res.status(400).json({
-        success: false,
-        error: 'Wallet address is required'
-      });
+      return res.status(400).json({ success: false, error: 'Wallet address is required' });
     }
-
-    // В реальном приложении здесь будет проверка баланса и интеграция с платежной системой
-    const transaction = {
-      id: `wdr_${Date.now()}`,
-      type: 'withdrawal',
-      amount: -Number(amount),
-      walletAddress,
-      status: 'pending',
-      timestamp: new Date().toISOString(),
-      description: 'Вывод средств'
-    };
-
-    logger.info('Wallet withdrawal requested', { amount, walletAddress });
-    res.json({
-      success: true,
-      data: transaction
-    });
+    const tx = await walletService.withdraw(userId, amount, walletAddress);
+    res.json({ success: true, data: tx });
   } catch (error) {
     logger.error('Wallet withdrawal error', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to process withdrawal'
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
 // Получение истории транзакций
-router.get('/transactions', (req, res) => {
+router.get('/transactions', async (req, res) => {
   try {
-    const { limit = 10, offset = 0 } = req.query;
-
-    // Моковые транзакции для демонстрации
-    const transactions = [
-      {
-        id: 'txn_001',
-        type: 'deposit',
-        amount: 500,
-        description: 'Пополнение счета',
-        date: '2025-09-01T10:00:00Z',
-        status: 'completed'
-      },
-      {
-        id: 'txn_002',
-        type: 'withdrawal',
-        amount: -200,
-        description: 'Вывод средств',
-        date: '2025-08-28T15:30:00Z',
-        status: 'completed'
-      },
-      {
-        id: 'txn_003',
-        type: 'service',
-        amount: -50,
-        description: 'Оплата услуги анализа документов',
-        date: '2025-08-25T09:15:00Z',
-        status: 'completed'
-      }
-    ];
-
-    logger.info('Wallet transactions requested', { limit, offset });
-    res.json({
-      success: true,
-      data: {
-        transactions: transactions.slice(offset, offset + limit),
-        total: transactions.length,
-        limit: Number(limit),
-        offset: Number(offset)
-      }
-    });
+    const userId = getUserId(req);
+    const limit = Number(req.query.limit) || 10;
+    const offset = Number(req.query.offset) || 0;
+    const result = await walletService.getTransactions(userId, limit, offset);
+    res.json({ success: true, data: result });
   } catch (error) {
     logger.error('Wallet transactions error', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get transactions'
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -217,7 +126,7 @@ router.post('/voice-check', (req, res) => {
     const voicePricingService = require('../services/voicePricingService');
 
     // В реальном приложении здесь нужно получить userId из токена/сессии
-    const userId = 'demo_user';
+    const userId = getUserId(req);
 
     const canUse = voicePricingService.canUseVoice(userId, estimatedDuration);
 
@@ -242,7 +151,7 @@ router.post('/voice-session/start', (req, res) => {
     const voicePricingService = require('../services/voicePricingService');
 
     // В реальном приложении здесь нужно получить userId из токена/сессии
-    const userId = 'demo_user';
+    const userId = getUserId(req);
 
     const session = voicePricingService.startVoiceSession(userId, textLength);
 
@@ -301,7 +210,7 @@ router.get('/voice-sessions/active', (req, res) => {
     const voicePricingService = require('../services/voicePricingService');
 
     // В реальном приложении здесь нужно получить userId из токена/сессии
-    const userId = 'demo_user';
+    const userId = getUserId(req);
 
     const sessions = voicePricingService.getActiveSessions(userId);
 

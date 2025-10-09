@@ -211,13 +211,15 @@
 
 .chat-header__button:hover {
   background: rgba(255, 255, 255, 0.95);
-  transform: translateY(-3px) scale(1.05);
+  /* Отключаем трансформацию при наведении */
+  transform: none !important;
   box-shadow: 0 12px 24px rgba(102, 126, 234, 0.25);
   color: #667eea;
 }
 
 .chat-header__button:active {
-  transform: translateY(-1px) scale(1.02);
+  /* Отключаем трансформацию при клике */
+  transform: none !important;
 }
 
 .chat-header__button.active {

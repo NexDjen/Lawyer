@@ -37,6 +37,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "postbuild": "prettier --parser html --write build/index.html",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "server": "node backend/server.js",
@@ -52,17 +53,21 @@
   },
   "browserslist": {
     "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
+      "last 2 Chrome versions",
+      "last 2 Firefox versions",
+      "last 2 Safari versions",
+      "last 2 Edge versions",
+      "not dead"
     ],
     "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
+      "last 1 Chrome version",
+      "last 1 Firefox version",
+      "last 1 Safari version",
+      "last 1 Edge version"
     ]
   },
   "devDependencies": {
+    "prettier": "^2.8.0",
     "http-proxy-middleware": "^3.0.5"
   }
 }

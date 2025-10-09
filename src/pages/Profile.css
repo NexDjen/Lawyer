@@ -170,33 +170,6 @@
   font-weight: 500;
 }
 
-.wallet-address {
-  margin-bottom: 20px;
-}
-
-.wallet-address label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #475569;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.wallet-address input {
-  border: 1px solid rgba(203, 213, 225, 0.9);
-  border-radius: 12px;
-  padding: 12px 14px;
-  font-size: 14px;
-  width: 100%;
-  background: white;
-  transition: border-color 0.3s ease;
-}
-
-.wallet-address input:focus {
-  outline: none;
-  border-color: #667eea;
-}
 
 .wallet-actions {
   display: flex;
@@ -378,8 +351,8 @@
   }
 }
 
-/* Голосовой ИИ */
-.voice-usage-card {
+/* Тарификация Windex-Юрист */
+.pricing-card {
   grid-column: 1 / -1;
   border: 1px solid rgba(226, 232, 240, 0.9);
   border-radius: 16px;
@@ -389,82 +362,97 @@
   margin-bottom: 20px;
 }
 
-.voice-usage-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.usage-stat {
-  text-align: center;
-  padding: 16px;
+.pricing-table {
   background: white;
   border-radius: 12px;
+  overflow: hidden;
   border: 1px solid rgba(226, 232, 240, 0.9);
   box-shadow: 0 4px 12px rgba(0,0,0,0.04);
 }
 
-.stat-label {
-  font-size: 0.9rem;
-  color: #64748b;
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #334155;
-}
-
-.voice-pricing-summary {
+.pricing-table-header {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.pricing-tier {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  border: 2px solid rgba(226, 232, 240, 0.9);
-  text-align: center;
-  transition: all 0.3s ease;
-}
-
-.pricing-tier:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-}
-
-.pricing-tier--discounted {
-  border-color: #ef4444;
-  background: rgba(239, 68, 68, 0.05);
-}
-
-.tier-name {
-  font-size: 1.1rem;
+  grid-template-columns: 2fr 1fr 1fr;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-weight: 700;
-  color: #334155;
-  margin-bottom: 8px;
-}
-
-.tier-price {
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #667eea;
-  margin-bottom: 8px;
-}
-
-.pricing-tier--discounted .tier-price {
-  color: #ef4444;
-}
-
-.tier-description {
   font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pricing-table-header > div {
+  padding: 16px 20px;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  color: white !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pricing-table-header > div:last-child {
+  border-right: none;
+}
+
+.pricing-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+  transition: all 0.2s ease;
+}
+
+.pricing-row:hover {
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.pricing-row:last-child {
+  border-bottom: none;
+}
+
+.pricing-row > div {
+  padding: 20px;
+  border-right: 1px solid rgba(226, 232, 240, 0.3);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.pricing-row > div:last-child {
+  border-right: none;
+}
+
+.pricing-service {
+  flex: 1;
+}
+
+.service-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 4px;
+}
+
+.service-description {
+  font-size: 0.85rem;
   color: #64748b;
+  line-height: 1.4;
+}
+
+.pricing-unit {
+  font-size: 0.9rem;
+  color: #475569;
+  font-weight: 500;
+  text-align: center;
+}
+
+.pricing-price {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #667eea;
+  text-align: center;
 }
 
 .voice-sessions-history h4 {
@@ -546,26 +534,59 @@
   font-size: 0.9rem;
 }
 
-/* Мобильная адаптация для голосового ИИ */
+/* Мобильная адаптация для тарификации */
 @media (max-width: 768px) {
-  .voice-usage-stats {
+  .pricing-table-header {
     grid-template-columns: 1fr;
+    text-align: center;
   }
 
-  .voice-pricing-summary {
+  .pricing-table-header > div {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .pricing-table-header > div:last-child {
+    border-bottom: none;
+  }
+
+  .pricing-row {
     grid-template-columns: 1fr;
+    border-bottom: 2px solid rgba(226, 232, 240, 0.5);
   }
 
-  .usage-stat {
-    padding: 12px;
+  .pricing-row > div {
+    border-right: none;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.3);
+    padding: 16px;
   }
 
-  .stat-value {
-    font-size: 1.3rem;
+  .pricing-row > div:last-child {
+    border-bottom: none;
   }
 
-  .tier-price {
-    font-size: 1.5rem;
+  .pricing-service {
+    text-align: center;
+  }
+
+  .service-name {
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+  }
+
+  .service-description {
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+  }
+
+  .pricing-unit {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .pricing-price {
+    font-size: 1.4rem;
   }
 }
 

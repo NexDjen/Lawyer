@@ -94,7 +94,7 @@ const Registration = () => {
     <div className="registration-page">
       <div className="registration-container">
         <div className="registration-header">
-          <h1>⚖️ Галина - AI Юрист</h1>
+          <h1>⚖️ Галина - Windex-Юрист</h1>
           <p>Регистрация нового аккаунта</p>
         </div>
 

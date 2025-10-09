@@ -4,6 +4,7 @@
   padding: 20px;
   color: #ffffff;
   line-height: 1.5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 .fill-docs-header .title {
@@ -17,12 +18,14 @@
   font-size: 24px;
   font-weight: 700;
   color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 .subtitle {
   color: #ffffff;
   font-size: 14px;
   margin-top: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 .contract-fill-card {
@@ -41,6 +44,13 @@
   margin-bottom: 12px;
 }
 
+.contract-fill-header h3 {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
 .role-toggle {
   display: flex;
   align-items: center;
@@ -53,6 +63,8 @@
   border: 1px solid #e5e7eb;
   background: #f9fafb;
   cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-size: 14px;
 }
 
 .toggle-btn.active {
@@ -137,6 +149,7 @@
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 .doc-type-grid {
@@ -157,6 +170,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 .doc-type .emoji {
@@ -190,6 +204,9 @@
   border-radius: 8px;
   border: none;
   cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .btn-primary {

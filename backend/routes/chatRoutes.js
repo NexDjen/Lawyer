@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const chatController = require('../controllers/chatController');
+const { chatRateLimiter } = require('../middleware/rateLimiter');
+const { metrics } = require('../middleware/metrics');
 const ErrorHandler = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 const axios = require('axios');
@@ -11,11 +13,47 @@ const fsp = require('fs').promises;
 const path = require('path');
 const { Document, Packer, Paragraph, HeadingLevel, TextRun, AlignmentType, BorderStyle } = require('docx');
 
-// Основной маршрут для обработки сообщений чата (без дублирования пути)
-router.post('/', chatController.handleChatMessage);
+// Основной маршрут для обработки сообщений чата (с rate limiting)
+router.post('/', chatRateLimiter, chatController.handleChatMessage);
 
 // Маршрут для получения статистики использования
 router.get('/stats', chatController.getUsageStats);
+
+// Маршрут для получения метрик производительности
+router.get('/metrics', (req, res) => {
+  try {
+    const metricsData = metrics.getMetrics();
+    res.json({
+      success: true,
+      data: metricsData,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Error getting metrics', error);
+    res.status(500).json({
+      success: false,
+      error: 'Ошибка при получении метрик'
+    });
+  }
+});
+
+// Маршрут для получения статуса здоровья с метриками
+router.get('/health-detailed', (req, res) => {
+  try {
+    const healthStatus = metrics.getHealthStatus();
+    res.json({
+      ...healthStatus,
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
+    });
+  } catch (error) {
+    logger.error('Error getting detailed health', error);
+    res.status(500).json({
+      status: 'error',
+      error: 'Ошибка при получении статуса здоровья'
+    });
+  }
+});
 
 // Маршрут для проверки состояния API
 router.get('/status', chatController.checkApiStatus);

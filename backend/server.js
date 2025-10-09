@@ -13,6 +13,7 @@ const config = require('./config/config');
 const logger = require('./utils/logger');
 const ErrorHandler = require('./middleware/errorHandler');
 const corsOptions = require('./middleware/cors');
+const { metricsMiddleware, metrics } = require('./middleware/metrics');
 
 // Импорты маршрутов
 const chatRoutes = require('./routes/chatRoutes');
@@ -22,6 +23,14 @@ const courtRoutes = require('./routes/courtRoutes');
 const walletRoutes = require('./routes/walletRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 
+require('dotenv').config({ path: path.resolve(__dirname, '../config/.env'), override: true });
+
+// Enable HTTP proxy for AI requests to bypass regional restrictions
+if (process.env.HTTPS_PROXY) {
+  // global-agent will route all HTTP/HTTPS requests through the proxy
+  process.env.GLOBAL_AGENT_HTTP_PROXY = process.env.HTTPS_PROXY;
+  require('global-agent/bootstrap');
+}
 
 // WebSocket сервер для стриминга TTS
 let wss = null;
@@ -227,6 +236,9 @@ class Server {
     // Debug: log allowed CORS origins
     logger.info('Allowed CORS origins:', config.cors.origins);
     this.app.use(cors(corsOptions));
+    
+    // Middleware для сбора метрик производительности
+    this.app.use(metricsMiddleware);
     
     // Парсинг JSON с увеличенными лимитами для загрузки файлов
     this.app.use(express.json({ 

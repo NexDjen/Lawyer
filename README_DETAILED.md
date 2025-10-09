@@ -1,4 +1,4 @@
-# 🤖 AI Lawyer - Интеллектуальная Юридическая Система
+# 🤖 Windex-Юрист - Интеллектуальная Юридическая Система
 
 [![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
@@ -661,4 +661,4 @@ npm run test:e2e
 
 ⭐ **Если проект оказался полезным, поставьте звезду на GitHub!**
 
-🚀 **Happy coding with AI Lawyer!** 🤖⚖️
+🚀 **Happy coding with Windex-Юрист!** 🤖⚖️

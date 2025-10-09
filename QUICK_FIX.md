@@ -82,3 +82,8 @@ apache2ctl configtest
 # Проверить лимиты
 apache2ctl -M | grep -i limit
 ```
+
+
+
+
+

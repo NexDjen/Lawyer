@@ -1,6 +1,6 @@
 version: '3.8'
 services:
-  backend:
+  backend-1:
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -9,14 +9,60 @@ services:
       - NODE_ENV=production
       - WINDEXAI_API_KEY=${WINDEXAI_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - WINDEXAI_MODEL=${WINDEXAI_MODEL}
+      - WINDEXAI_MAX_TOKENS=${WINDEXAI_MAX_TOKENS}
+      - WINDEXAI_TEMPERATURE=${WINDEXAI_TEMPERATURE}
     ports:
-      - "${PORT}:${PORT}"
+      - "3007:3007"
     networks:
       - app-network
+    restart: unless-stopped
+
+  backend-2:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3007
+      - NODE_ENV=production
+      - WINDEXAI_API_KEY=${WINDEXAI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - WINDEXAI_MODEL=${WINDEXAI_MODEL}
+      - WINDEXAI_MAX_TOKENS=${WINDEXAI_MAX_TOKENS}
+      - WINDEXAI_TEMPERATURE=${WINDEXAI_TEMPERATURE}
+    ports:
+      - "3008:3007"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  backend-3:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3007
+      - NODE_ENV=production
+      - WINDEXAI_API_KEY=${WINDEXAI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - WINDEXAI_MODEL=${WINDEXAI_MODEL}
+      - WINDEXAI_MAX_TOKENS=${WINDEXAI_MAX_TOKENS}
+      - WINDEXAI_TEMPERATURE=${WINDEXAI_TEMPERATURE}
+    ports:
+      - "3009:3007"
+    networks:
+      - app-network
+    restart: unless-stopped
 
   ngrok:
     image: wernight/ngrok
-    command: http backend:3007
+    command: http backend-1:3007 --authtoken ${NGROK_AUTHTOKEN:-}
     ports:
       - "4040:4040"
     networks:

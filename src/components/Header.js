@@ -1,27 +1,19 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Scale, Settings, LogOut, User } from 'lucide-react';
 import './Header.css';
-import { LanguageContext } from '../App';
 import { useAuth } from '../contexts/AuthContext';
-import translations from '../data/translations';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { lang } = useContext(LanguageContext);
   const { user, logout, isAdmin } = useAuth();
-  const t = translations[lang] || translations['ru'];
 
   const navItems = [
-    { path: '/', label: t.nav.home },
-    { path: '/chat', label: t.nav.chat },
-    { path: '/lawyer', label: t.nav.lawyer },
-    { path: '/fill-documents', label: 'Заполнение документов' },
-    { path: '/documents', label: 'Документы' },
-    { path: '/my-documents', label: 'Мои документы' }
+    { path: '/chat', label: 'Консультация' },
+    { path: '/documents', label: 'Документы' }
   ];
 
   const toggleMenu = () => {
@@ -47,7 +39,7 @@ const Header = () => {
         <div className="header-content">
           <Link to="/" className="logo">
             <Scale size={32} />
-            <span>AI-Юрист</span>
+            <span>Windex-Юрист</span>
           </Link>
 
           <nav className={`nav ${isMenuOpen ? 'nav-open' : ''}`}>

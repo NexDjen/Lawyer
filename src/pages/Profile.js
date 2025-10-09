@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User as UserIcon, Mail, Lock, BarChart3, Wallet, Plus, Minus, ArrowUpRight, ArrowDownLeft, Mic, Brain } from 'lucide-react';
+import { User as UserIcon, Mail, Lock, BarChart3, Wallet, Plus, Minus, ArrowUpRight, ArrowDownLeft, Brain } from 'lucide-react';
 import { buildApiUrl } from '../config/api';
 import UserProfile from '../components/UserProfile';
 import './Profile.css';
@@ -10,45 +10,18 @@ const Profile = () => {
   const [form, setForm] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    password: user?.password || '',
-    walletAddress: user?.walletAddress || '',
-    walletBalance: user?.walletBalance ?? 0,
-    // Дополнительные данные для автозаполнения документов
-    lastName: user?.lastName || '',
-    firstName: user?.firstName || '',
-    middleName: user?.middleName || '',
-    fullName: user?.fullName || '',
-    snils: user?.snils || '',
-    passportSeries: user?.passportSeries || '',
-    passportNumber: user?.passportNumber || '',
-    birthDate: user?.birthDate || '',
-    address: user?.address || ''
+    password: user?.password || ''
   });
+  // Separate state for wallet balance, always fetched from backend
+  const [walletBalance, setWalletBalance] = useState(0);
   const [message, setMessage] = useState('');
   const [walletAmount, setWalletAmount] = useState('');
   const [showAddFunds, setShowAddFunds] = useState(false);
-  const [pricingInfo, setPricingInfo] = useState(null);
   const [showAIProfile, setShowAIProfile] = useState(false);
 
   // Список транзакций пользователя
   const [transactions, setTransactions] = useState([]);
 
-  // Загрузка информации о тарифах голосового ИИ
-  useEffect(() => {
-    const loadPricingInfo = async () => {
-      try {
-        const response = await fetch(buildApiUrl('wallet/voice-pricing'));
-        const data = await response.json();
-        if (data.success) {
-          setPricingInfo(data.data);
-        }
-      } catch (error) {
-        console.error('Failed to load pricing info:', error);
-      }
-    };
-
-    loadPricingInfo();
-  }, []);
   // Загрузка реального баланса
   useEffect(() => {
     const loadBalance = async () => {
@@ -56,7 +29,7 @@ const Profile = () => {
         const res = await fetch(buildApiUrl('wallet/balance'));
         const json = await res.json();
         if (json.success) {
-          setForm(prev => ({ ...prev, walletBalance: json.data.amount }));
+          setWalletBalance(json.data.amount);
         }
       } catch (error) {
         console.error('Failed to load wallet balance:', error);
@@ -92,7 +65,6 @@ const Profile = () => {
       name: form.name,
       email: form.email,
       password: form.password,
-      walletAddress: form.walletAddress,
       walletBalance: Number(form.walletBalance) || 0,
       lastName: form.lastName,
       firstName: form.firstName,
@@ -126,10 +98,9 @@ const Profile = () => {
       const json = await res.json();
       if (json.success) {
         const transaction = json.data;
-        const currentBalance = Number(form.walletBalance) || 0;
+        const currentBalance = walletBalance;
         const newBalance = currentBalance + transaction.amount;
-        updateCurrentUser({ walletBalance: newBalance });
-        setForm(prev => ({ ...prev, walletBalance: newBalance }));
+        setWalletBalance(newBalance);
         setTransactions(prev => [transaction, ...prev]);
         setWalletAmount('');
         setShowAddFunds(false);
@@ -147,7 +118,7 @@ const Profile = () => {
   };
 
   const handleWithdrawFunds = async (amount) => {
-    const currentBalance = Number(form.walletBalance) || 0;
+    const currentBalance = walletBalance;
     if (amount > currentBalance) {
       setMessage('Недостаточно средств на счете');
       setTimeout(() => setMessage(''), 2000);
@@ -163,8 +134,7 @@ const Profile = () => {
       if (json.success) {
         const transaction = json.data;
         const newBalance = currentBalance + transaction.amount;
-        updateCurrentUser({ walletBalance: newBalance });
-        setForm(prev => ({ ...prev, walletBalance: newBalance }));
+        setWalletBalance(newBalance);
         setTransactions(prev => [transaction, ...prev]);
         setMessage(`Выведено ${Math.abs(transaction.amount)} ₽`);
         setTimeout(() => setMessage(''), 2000);
@@ -363,21 +333,12 @@ const Profile = () => {
 
             <div className="wallet-balance">
               <div className="balance-amount">
-                <span className="balance-value">{Number(form.walletBalance || 0).toLocaleString('ru-RU')}</span>
+                <span className="balance-value">{Number(walletBalance).toLocaleString('ru-RU')}</span>
                 <span className="balance-currency">₽</span>
               </div>
               <div className="balance-label">Текущий баланс</div>
             </div>
 
-            <div className="wallet-address">
-              <label><Wallet size={16} /> Адрес кошелька</label>
-              <input
-                name="walletAddress"
-                value={form.walletAddress}
-                onChange={handleChange}
-                placeholder="Введите адрес кошелька"
-              />
-            </div>
 
             <div className="wallet-actions">
               <button
@@ -392,7 +353,7 @@ const Profile = () => {
                 type="button"
                 className="btn btn-outline"
                 onClick={() => handleWithdrawFunds(100)}
-                disabled={Number(form.walletBalance || 0) < 100}
+                disabled={walletBalance < 100}
               >
                 <Minus size={16} />
                 Вывести 100₽
@@ -453,40 +414,56 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* История расходов на голосовой ИИ */}
-          <div className="voice-usage-card">
+          {/* Тарификация Windex-Юрист */}
+          <div className="pricing-card">
             <div className="metrics-header">
               <div className="metrics-title">
-                <Mic size={18} />
-                <span>Голосовой ИИ</span>
+                <Brain size={18} />
+                <span>Тарификация Windex-Юрист</span>
               </div>
             </div>
 
-            <div className="voice-usage-stats">
-              <div className="usage-stat">
-                <div className="stat-label">Использовано сегодня</div>
-                <div className="stat-value">{pricingInfo?.currentUsage.minutes.toFixed(1) || 0} мин</div>
+            <div className="pricing-table">
+              <div className="pricing-table-header">
+                <div className="pricing-service">Услуга</div>
+                <div className="pricing-unit">Единица</div>
+                <div className="pricing-price">Цена</div>
               </div>
-              <div className="usage-stat">
-                <div className="stat-label">Потрачено</div>
-                <div className="stat-value">{pricingInfo?.currentUsage.cost.toFixed(2) || 0} ₽</div>
+              
+              <div className="pricing-row">
+                <div className="pricing-service">
+                  <div className="service-name">Чат с Windex-Юристом</div>
+                  <div className="service-description">Текстовое общение с AI-юристом</div>
+                </div>
+                <div className="pricing-unit">1 час</div>
+                <div className="pricing-price">119 ₽</div>
               </div>
-              <div className="usage-stat">
-                <div className="stat-label">Бесплатно осталось</div>
-                <div className="stat-value">{pricingInfo?.currentUsage.remainingFreeMinutes.toFixed(1) || 0} мин</div>
+              
+              <div className="pricing-row">
+                <div className="pricing-service">
+                  <div className="service-name">Голосовое общение с Windex-Юристом</div>
+                  <div className="service-description">Разговор с AI-юристом голосом</div>
+                </div>
+                <div className="pricing-unit">1 час</div>
+                <div className="pricing-price">199 ₽</div>
               </div>
-            </div>
-
-            <div className="voice-pricing-summary">
-              <div className="pricing-tier">
-                <div className="tier-name">Базовый тариф</div>
-                <div className="tier-price">{pricingInfo?.hourlyRate || 199}₽/час</div>
-                <div className="tier-description">Первые 5 минут в день бесплатно</div>
+              
+              <div className="pricing-row">
+                <div className="pricing-service">
+                  <div className="service-name">Генерация документов</div>
+                  <div className="service-description">Создание юридических документов</div>
+                </div>
+                <div className="pricing-unit">1 страница</div>
+                <div className="pricing-price">50 ₽</div>
               </div>
-              <div className="pricing-tier pricing-tier--discounted">
-                <div className="tier-name">Без скидки</div>
-                <div className="tier-price">{pricingInfo?.discountedRate || 299}₽/час</div>
-                <div className="tier-description">Полная стоимость без лимитов</div>
+              
+              <div className="pricing-row">
+                <div className="pricing-service">
+                  <div className="service-name">Анализ документов</div>
+                  <div className="service-description">Анализ и проверка документов</div>
+                </div>
+                <div className="pricing-unit">1 страница</div>
+                <div className="pricing-price">3 ₽</div>
               </div>
             </div>
 

@@ -61,7 +61,7 @@ const WebSocketChat = () => {
   return (
     <div className="websocket-chat">
       <div className="chat-header">
-        <h2>AI Юрист - Живой Диалог</h2>
+        <h2>Windex-Юрист - Живой Диалог</h2>
         <div className="connection-status">
           <span className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
             {getConnectionStatus()}

@@ -1,7 +1,7 @@
 {
   "name": "ai-lawyer-backend",
   "version": "1.0.0",
-  "description": "AI Lawyer Backend with Google TTS integration",
+  "description": "Windex-Юрист Backend with Google TTS integration",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -23,6 +23,7 @@
     "openai": "^4.20.0",
     "pdf-parse": "^1.1.1",
     "sharp": "^0.34.3",
+    "ws": "^8.18.3",
     "winston": "^3.11.0"
   },
   "devDependencies": {
@@ -40,6 +41,6 @@
     "google-cloud",
     "express"
   ],
-  "author": "AI Lawyer Team",
+  "author": "Windex-Юрист Team",
   "license": "MIT"
 }

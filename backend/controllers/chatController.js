@@ -22,6 +22,9 @@ class ChatController {
         });
       }
 
+      // Получаем модель из запроса или используем модель по умолчанию
+      const requestedModel = req.body.model || process.env.WINDEXAI_MODEL || 'gpt-4o-mini';
+
       // Объединяем историю из разных форматов
       const allHistory = [...conversationHistory, ...history];
       const validatedHistory = chatService.validateConversationHistory(allHistory);
@@ -30,50 +33,53 @@ class ChatController {
         messageLength: message.length,
         historyLength: validatedHistory.length,
         useWebSearch,
-        hasUserId: !!userId
+        hasUserId: !!userId,
+        requestedModel
       });
 
       // Обработка сообщения через сервис
-      const response = await chatService.processMessage(message, validatedHistory, useWebSearch, userId);
+      const response = await chatService.processMessage(message, validatedHistory, useWebSearch, userId, requestedModel);
 
-      // Генерируем аудио ответ (без фатала при отсутствии ключа)
-      let audioBuffer = null;
-      let audioUrl = null;
-      try {
-        if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here') {
-          const { synthesizeSpeech } = require('../services/openaiTTSService');
-          audioBuffer = await synthesizeSpeech(response, { voice: 'nova', model: 'tts-1' });
-        }
-      } catch (ttsError) {
-        logger.warn('TTS unavailable, continue without audio', { error: ttsError.message });
-        audioBuffer = null;
-      }
-      
-      // Сохраняем аудио файл только если TTS сработал
-      if (audioBuffer) {
-        const fs = require('fs');
-        const path = require('path');
-        const audioFileName = `chat_response_${Date.now()}.mp3`;
-        
-        // Сохраняем в папку uploads/audio для отображения в списке
-        const audioPath = path.join(__dirname, '../uploads/audio', audioFileName);
-        
-        if (!fs.existsSync(path.dirname(audioPath))) {
-          fs.mkdirSync(path.dirname(audioPath), { recursive: true });
-        }
-        
-        fs.writeFileSync(audioPath, audioBuffer);
-        audioUrl = `/api/court/audio-files/${audioFileName}`;
-      }
+      // Генерируем уникальное имя для аудио файла заранее
+      const audioFileName = `chat_response_${Date.now()}.mp3`;
+      const audioUrl = `/api/court/audio-files/${audioFileName}`;
 
+      // Немедленно отправляем ответ клиенту (не ждем TTS)
       const result = {
         response,
-        audioUrl,
+        audioUrl, // Клиент будет запрашивать аудио по этому URL
         timestamp: new Date().toISOString(),
-        model: process.env.WINDEXAI_MODEL || 'gpt-4o-mini'
+        model: requestedModel
       };
-
       res.json(result);
+
+      // Генерируем TTS асинхронно в фоне (не блокирует ответ)
+      setImmediate(async () => {
+        try {
+          if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here') {
+            const { synthesizeSpeech } = require('../services/openaiTTSService');
+            const audioBuffer = await synthesizeSpeech(response, { voice: 'nova', model: 'tts-1' });
+            
+            if (audioBuffer) {
+              const fs = require('fs');
+              const path = require('path');
+              const audioPath = path.join(__dirname, '../uploads/audio', audioFileName);
+              
+              if (!fs.existsSync(path.dirname(audioPath))) {
+                fs.mkdirSync(path.dirname(audioPath), { recursive: true });
+              }
+              
+              fs.writeFileSync(audioPath, audioBuffer);
+              logger.info('✅ TTS audio generated successfully', { audioFileName, size: audioBuffer.length });
+            }
+          }
+        } catch (ttsError) {
+          logger.warn('⚠️ Background TTS generation failed', { 
+            error: ttsError.message,
+            audioFileName 
+          });
+        }
+      });
 
     } catch (error) {
       logger.error('Chat controller error', {
@@ -94,20 +100,38 @@ class ChatController {
   // Получение статистики использования
   async getUsageStats(req, res) {
     try {
-      const stats = await chatService.getUsageStats();
+      // Базовая статистика системы
+      const stats = {
+        system: {
+          uptime: process.uptime(),
+          memory: process.memoryUsage(),
+          nodeVersion: process.version,
+          environment: process.env.NODE_ENV || 'development'
+        },
+        api: {
+          windexaiConfigured: !!process.env.WINDEXAI_API_KEY,
+          openaiConfigured: !!process.env.OPENAI_API_KEY,
+          model: process.env.WINDEXAI_MODEL || 'gpt-4o-mini',
+          maxTokens: parseInt(process.env.WINDEXAI_MAX_TOKENS) || 15000
+        },
+        usage: {
+          totalMessages: 0, // TODO: реализовать подсчет из базы данных
+          totalUsers: 0,    // TODO: реализовать подсчет из базы данных
+          averageResponseTime: 0 // TODO: реализовать метрики
+        },
+        timestamp: new Date().toISOString()
+      };
       
-      if (!stats) {
-        return res.status(404).json({
-          error: 'Статистика недоступна'
-        });
-      }
-
-      res.json(stats);
+      res.json({ 
+        success: true, 
+        data: stats
+      });
 
     } catch (error) {
       logger.error('Error getting usage stats', error);
       res.status(500).json({
-        error: 'Ошибка при получении статистики'
+        error: 'Ошибка при получении статистики',
+        details: error.message
       });
     }
   }
@@ -116,17 +140,33 @@ class ChatController {
   async checkApiStatus(req, res) {
     try {
       const hasApiKey = !!process.env.WINDEXAI_API_KEY;
+      const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
       
-      res.json({
-        status: hasApiKey ? 'configured' : 'not_configured',
-        model: process.env.WINDEXAI_MODEL || 'gpt-4o-mini',
-        timestamp: new Date().toISOString()
-      });
+      // Простая проверка доступности API
+      const apiStatus = {
+        windexai: {
+          configured: hasApiKey,
+          model: process.env.WINDEXAI_MODEL || 'gpt-4o-mini',
+          maxTokens: parseInt(process.env.WINDEXAI_MAX_TOKENS) || 15000
+        },
+        openai: {
+          configured: hasOpenAIKey,
+          ttsModel: process.env.OPENAI_TTS_MODEL || 'tts-1'
+        },
+        server: {
+          status: 'running',
+          environment: process.env.NODE_ENV || 'development',
+          timestamp: new Date().toISOString()
+        }
+      };
+      
+      res.json(apiStatus);
 
     } catch (error) {
       logger.error('Error checking API status', error);
       res.status(500).json({
-        error: 'Ошибка при проверке состояния API'
+        error: 'Ошибка при проверке состояния API',
+        details: error.message
       });
     }
   }

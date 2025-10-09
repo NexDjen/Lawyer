@@ -1,4 +1,4 @@
-# 🤖 AI Lawyer - Интеллектуальная Юридическая Система
+# 🤖 Windex-Юрист - Интеллектуальная Юридическая Система
 
 [![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
@@ -72,7 +72,7 @@
 ## 📁 Структура проекта
 
 ```
-AI Lawyer/
+Windex-Юрист/
 ├── 📁 backend/           # Node.js сервер
 │   ├── 📁 services/      # Бизнес-логика (WindexAI интеграция)
 │   ├── 📁 routes/        # API endpoints
