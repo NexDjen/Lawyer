@@ -9,7 +9,12 @@ const Header = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, isLoading } = useAuth();
+
+  // Не рендерим header пока идет загрузка
+  if (isLoading) {
+    return null;
+  }
 
   const navItems = [
     { path: '/chat', label: 'Консультация' },
