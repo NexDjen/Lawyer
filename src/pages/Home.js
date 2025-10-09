@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  FileText,
-  Users,
-  ArrowRight,
-  Bot,
   Shield,
   Zap,
   Star,
+  Users,
   CheckCircle,
-  Play,
   Mic,
   Download,
   Upload,
@@ -22,49 +18,11 @@ import './Home.css';
 // import translations from '../data/translations';
 
 const Home = () => {
-  const navigate = useNavigate();
-  const [activeFeature, setActiveFeature] = useState(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
-
-  const features = [
-    {
-      id: 'chat',
-      icon: <Bot size={32} />,
-      title: 'ИИ-юрист Галина',
-      description: 'Задайте любой юридический вопрос и получите профессиональный ответ с анализом ситуации',
-      path: '/chat',
-      color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      gradient: 'from-purple-500 to-blue-500',
-      stats: '24/7 доступ',
-      features: ['Анализ документов', 'Консультации', 'Синтез речи']
-    },
-    {
-      id: 'documents',
-      icon: <FileText size={32} />,
-      title: 'Работа с документами',
-      description: 'Загружайте и анализируйте юридические документы с помощью ИИ',
-      path: '/documents',
-      color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-      gradient: 'from-cyan-500 to-blue-500',
-      stats: 'Быстрая обработка',
-      features: ['OCR распознавание', 'Анализ рисков', 'Генерация отчетов']
-    },
-    {
-      id: 'my-documents',
-      icon: <Users size={32} />,
-      title: 'Мои документы',
-      description: 'Управляйте своими документами и историей консультаций',
-      path: '/my-documents',
-      color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-      gradient: 'from-green-500 to-teal-500',
-      stats: 'Безопасное хранение',
-      features: ['Облачное хранение', 'Поиск по документам', 'Экспорт данных']
-    }
-  ];
 
   const stats = [
     { icon: <Shield size={24} />, label: 'Безопасность', value: '100%' },
@@ -82,9 +40,6 @@ const Home = () => {
     { icon: <CheckCircle size={20} />, text: 'Проверка документов' }
   ];
 
-  const handleFeatureClick = (path) => {
-    navigate(path);
-  };
 
   return (
     <div className={`home ${isVisible ? 'home--visible' : ''}`}>
@@ -112,20 +67,9 @@ const Home = () => {
           </p>
           
           <div className="hero__actions">
-            <button 
-              className="hero__btn hero__btn--primary"
-              onClick={() => navigate('/chat')}
-            >
-              <Play size={20} />
-              Начать консультацию
-            </button>
-            <button 
-              className="hero__btn hero__btn--secondary"
-              onClick={() => navigate('/documents')}
-            >
-              <Upload size={20} />
-              Загрузить документ
-            </button>
+            <p className="hero__navigation-hint">
+              Используйте навигацию в верхней части страницы для перехода к нужному разделу
+            </p>
           </div>
         </div>
       </section>
@@ -158,42 +102,15 @@ const Home = () => {
           </p>
         </div>
 
-        <div className="features__grid">
-          {features.map((feature, index) => (
-            <div
-              key={feature.id}
-              className={`feature-card ${activeFeature === feature.id ? 'feature-card--active' : ''}`}
-              onClick={() => handleFeatureClick(feature.path)}
-              onMouseEnter={() => setActiveFeature(feature.id)}
-              onMouseLeave={() => setActiveFeature(null)}
-              style={{ animationDelay: `${index * 0.2}s` }}
-            >
-              <div className="feature-card__header">
-                <div className="feature-card__icon" style={{ background: feature.color }}>
-                  {feature.icon}
-                </div>
-                <div className="feature-card__stats">{feature.stats}</div>
-              </div>
-              
-              <div className="feature-card__content">
-                <h3 className="feature-card__title">{feature.title}</h3>
-                <p className="feature-card__description">{feature.description}</p>
-                
-                <div className="feature-card__features">
-                  {feature.features.map((feat, idx) => (
-                    <div key={idx} className="feature-card__feature">
-                      <CheckCircle size={16} />
-                      <span>{feat}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="feature-card__footer">
-                <ArrowRight size={20} className="feature-card__arrow" />
-              </div>
-            </div>
-          ))}
+        <div className="features__info">
+          <div className="features__description">
+            <h3>Консультация</h3>
+            <p>Получите профессиональную юридическую консультацию от ИИ-юриста Галины. Анализ документов, оценка рисков и практические рекомендации.</p>
+          </div>
+          <div className="features__description">
+            <h3>Документы</h3>
+            <p>Загружайте и анализируйте юридические документы с помощью ИИ. OCR распознавание, анализ рисков и генерация отчетов.</p>
+          </div>
         </div>
       </section>
 
@@ -227,13 +144,9 @@ const Home = () => {
           <p className="cta__description">
             Присоединяйтесь к тысячам пользователей, которые уже доверяют Галине свои юридические вопросы
           </p>
-          <button 
-            className="cta__btn"
-            onClick={() => navigate('/chat')}
-          >
-            <Bot size={20} />
-            Начать бесплатно
-          </button>
+          <p className="cta__hint">
+            Используйте навигацию в верхней части страницы для начала работы
+          </p>
         </div>
       </section>
     </div>
