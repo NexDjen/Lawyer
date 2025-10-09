@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 export const useWebSocketChat = () => {
+  const { user, isLoading: authLoading } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -216,6 +218,7 @@ export const useWebSocketChat = () => {
       wsRef.current.onerror = (error) => {
         console.error('WebSocket error:', error);
         setError('Ошибка соединения');
+        setIsConnected(false);
       };
       
       wsRef.current.onmessage = handleWebSocketMessage;
@@ -277,9 +280,12 @@ export const useWebSocketChat = () => {
     }
   };
 
-  // Подключение при монтировании
+  // Подключение при монтировании и после авторизации
   useEffect(() => {
-    connectWebSocket();
+    // Подключаемся только если пользователь авторизован и загрузка завершена
+    if (!authLoading && user) {
+      connectWebSocket();
+    }
     
     return () => {
       if (reconnectTimeoutRef.current) {
@@ -290,7 +296,7 @@ export const useWebSocketChat = () => {
         wsRef.current.close(1000, 'Component unmounting');
       }
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     isConnected,
