@@ -341,13 +341,18 @@ class Server {
   }
 
   _setupErrorHandling() {
-    // Обработка 404 ошибок только для API запросов
-    this.app.use('/api/*', ErrorHandler.handleNotFound);
-    
     // SPA fallback - все НЕ-API роуты возвращают index.html
-    this.app.get('*', (req, res) => {
+    this.app.get('*', (req, res, next) => {
+      // Если это API запрос - передаем дальше для обработки 404
+      if (req.path.startsWith('/api/')) {
+        return next();
+      }
+      // Для всех остальных - возвращаем SPA
       res.sendFile(path.join(process.cwd(), 'build', 'index.html'));
     });
+    
+    // Обработка 404 ошибок (должна быть последней)
+    this.app.use(ErrorHandler.handleNotFound);
     
     // Глобальная обработка ошибок
     this.app.use(ErrorHandler.handleError);
