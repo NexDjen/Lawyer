@@ -316,21 +316,16 @@ class Server {
         version: '1.0.0'
       });
     });
-    
-    // SPA fallback - все НЕ-API роуты возвращают index.html
-    this.app.get('*', (req, res, next) => {
-      // Если запрос к API или статическим файлам - пропускаем
-      if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/health')) {
-        return next();
-      }
-      // Для всех остальных - возвращаем SPA
-      res.sendFile(path.join(process.cwd(), 'build', 'index.html'));
-    });
   }
 
   _setupErrorHandling() {
-    // Обработка 404 ошибок для API
-    this.app.use('*', ErrorHandler.handleNotFound);
+    // Обработка 404 ошибок только для API запросов
+    this.app.use('/api/*', ErrorHandler.handleNotFound);
+    
+    // SPA fallback - все НЕ-API роуты возвращают index.html
+    this.app.get('*', (req, res) => {
+      res.sendFile(path.join(process.cwd(), 'build', 'index.html'));
+    });
     
     // Глобальная обработка ошибок
     this.app.use(ErrorHandler.handleError);
