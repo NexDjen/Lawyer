@@ -183,17 +183,23 @@ class Server {
 
   async initialize() {
     try {
+      logger.info('Starting server initialization...');
+      
       // Создаем необходимые директории
       await this._createDirectories();
+      logger.info('Directories created successfully');
       
       // Настраиваем middleware
       this._setupMiddleware();
+      logger.info('Middleware setup completed');
       
       // Настраиваем маршруты
       this._setupRoutes();
+      logger.info('Routes setup completed');
       
       // Настраиваем обработку ошибок
       this._setupErrorHandling();
+      logger.info('Error handling setup completed');
       
       logger.info('Server initialized successfully');
       
