@@ -183,23 +183,17 @@ class Server {
 
   async initialize() {
     try {
-      logger.info('Starting server initialization...');
-      
       // Создаем необходимые директории
       await this._createDirectories();
-      logger.info('Directories created successfully');
       
       // Настраиваем middleware
       this._setupMiddleware();
-      logger.info('Middleware setup completed');
       
       // Настраиваем маршруты
       this._setupRoutes();
-      logger.info('Routes setup completed');
       
       // Настраиваем обработку ошибок
       this._setupErrorHandling();
-      logger.info('Error handling setup completed');
       
       logger.info('Server initialized successfully');
       
@@ -305,28 +299,14 @@ class Server {
   }
 
   _setupRoutes() {
-    logger.info('Setting up routes...');
-    
     // API маршруты - сначала специфичные, потом общие
     this.app.use('/api/chat', chatRoutes);
-    logger.info('Registered /api/chat routes');
-    
     this.app.use('/api/admin', adminRoutes);
-    logger.info('Registered /api/admin routes');
-    
     this.app.use('/api/court', courtRoutes);
-    logger.info('Registered /api/court routes');
-    
     this.app.use('/api/wallet', walletRoutes);
-    logger.info('Registered /api/wallet routes');
-    
-    this.app.use('/api/documents', documentRoutes); // Исправлено: добавляем /documents
-    logger.info('Registered /api/documents routes');
-    
-    this.app.use('/api/profile', profileRoutes); // Управление профилями пользователей
-    logger.info('Registered /api/profile routes');
+    this.app.use('/api/documents', documentRoutes);
+    this.app.use('/api/profile', profileRoutes);
 
-    
     // Health check
     this.app.get('/health', (req, res) => {
       res.json({ 
@@ -335,9 +315,6 @@ class Server {
         version: '1.0.0'
       });
     });
-    logger.info('Registered /health route');
-    
-    logger.info('All routes registered successfully');
   }
 
   _setupErrorHandling() {
@@ -493,11 +470,8 @@ class Server {
 // Создание и запуск сервера
 async function startServer() {
   try {
-    console.log('Creating server instance...');
     const server = new Server();
-    console.log('Server instance created, initializing...');
     await server.initialize();
-    console.log('Server initialized, starting...');
     await server.start();
     
     // Graceful shutdown
