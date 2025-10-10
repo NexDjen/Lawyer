@@ -299,13 +299,26 @@ class Server {
   }
 
   _setupRoutes() {
+    logger.info('Setting up routes...');
+    
     // API маршруты - сначала специфичные, потом общие
     this.app.use('/api/chat', chatRoutes);
+    logger.info('Registered /api/chat routes');
+    
     this.app.use('/api/admin', adminRoutes);
+    logger.info('Registered /api/admin routes');
+    
     this.app.use('/api/court', courtRoutes);
+    logger.info('Registered /api/court routes');
+    
     this.app.use('/api/wallet', walletRoutes);
+    logger.info('Registered /api/wallet routes');
+    
     this.app.use('/api/documents', documentRoutes); // Исправлено: добавляем /documents
+    logger.info('Registered /api/documents routes');
+    
     this.app.use('/api/profile', profileRoutes); // Управление профилями пользователей
+    logger.info('Registered /api/profile routes');
 
     
     // Health check
@@ -316,6 +329,9 @@ class Server {
         version: '1.0.0'
       });
     });
+    logger.info('Registered /health route');
+    
+    logger.info('All routes registered successfully');
   }
 
   _setupErrorHandling() {
