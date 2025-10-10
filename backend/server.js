@@ -488,8 +488,11 @@ class Server {
 // Создание и запуск сервера
 async function startServer() {
   try {
+    console.log('Creating server instance...');
     const server = new Server();
+    console.log('Server instance created, initializing...');
     await server.initialize();
+    console.log('Server initialized, starting...');
     await server.start();
     
     // Graceful shutdown
