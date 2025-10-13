@@ -7,18 +7,7 @@
 }
 
 .documents-page--visible {
-  animation: fadeInUp 0.8s ease-out;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  /* Animation removed */
 }
 
 /* Header Section */
@@ -45,13 +34,8 @@
   bottom: 0;
   background: radial-gradient(circle at 30% 20%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
               radial-gradient(circle at 70% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%);
-  animation: gradientShift 8s ease-in-out infinite;
 }
 
-@keyframes gradientShift {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
 
 .documents-header__content {
   position: relative;
@@ -74,18 +58,21 @@
   color: white;
   margin-bottom: 16px;
   text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  background: linear-gradient(45deg, #fff, #f0f0f0);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  letter-spacing: -0.02em;
+  text-align: center;
 }
 
 .documents-header__subtitle {
   font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: white;
   line-height: 1.7;
   margin-bottom: 32px;
   max-width: 500px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.01em;
+  text-align: center;
 }
 
 .documents-header__stats {
@@ -128,20 +115,7 @@
   overflow: hidden;
 }
 
-.documents-header__btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
 
-.documents-header__btn:hover::before {
-  left: 100%;
-}
 
 .documents-header__btn--primary {
   background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
@@ -232,35 +206,44 @@
   display: flex;
   align-items: center;
   background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
-  padding: 12px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 10px 14px;
   backdrop-filter: blur(10px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+  min-width: 300px;
 }
 
 .search-input:focus-within {
-  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .search-input svg {
   color: #667eea;
-  margin-right: 12px;
+  margin-right: 10px;
   flex-shrink: 0;
+  transition: color 0.3s ease;
+}
+
+.search-input:focus-within svg {
+  color: #5a67d8;
 }
 
 .search-input input {
   border: none;
   background: transparent;
-  font-size: 1rem;
-  color: #333;
+  font-size: 0.95rem;
+  color: #2d3748;
   width: 100%;
   outline: none;
+  font-weight: 400;
 }
 
 .search-input input::placeholder {
-  color: #999;
+  color: #a0aec0;
 }
 
 .documents-controls__filters {
@@ -274,25 +257,59 @@
   align-items: center;
   gap: 8px;
   background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   padding: 8px 12px;
   backdrop-filter: blur(10px);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.filter-group:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .filter-group svg {
   color: #667eea;
   flex-shrink: 0;
+  transition: color 0.3s ease;
+}
+
+.filter-group:hover svg {
+  color: #5a67d8;
 }
 
 .filter-select {
   border: none;
   background: transparent;
   font-size: 0.9rem;
-  color: #333;
+  color: #2d3748;
   cursor: pointer;
   outline: none;
   min-width: 120px;
+  font-weight: 500;
+  transition: color 0.3s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.filter-select:hover {
+  color: #1a202c;
+}
+
+.filter-select:focus {
+  color: #2d3748;
+}
+
+.filter-select option {
+  background: white;
+  color: #2d3748;
+  padding: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
 }
 
 .filter-reset-btn {
@@ -323,17 +340,17 @@
   align-items: center;
   gap: 10px;
   font-size: 14px;
-  color: #6c757d;
+  color: white;
 }
 
 .results-count {
   font-weight: 500;
-  color: #495057;
+  color: white;
 }
 
 .results-filtered {
   font-size: 12px;
-  color: #6c757d;
+  color: white;
   font-style: italic;
 }
 
@@ -352,7 +369,6 @@
   border-radius: 20px;
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  animation: fadeInUp 0.8s ease-out;
 }
 
 .documents-empty__icon {
@@ -364,15 +380,17 @@
 .documents-empty__title {
   font-size: 1.8rem;
   font-weight: 600;
-  color: #333;
+  color: #2d3748;
   margin-bottom: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 .documents-empty__description {
   font-size: 1.1rem;
-  color: #666;
+  color: #4a5568;
   line-height: 1.6;
   margin-bottom: 32px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   max-width: 400px;
   margin-left: auto;
   margin-right: auto;
@@ -407,20 +425,31 @@
 }
 
 .document-card {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 24px;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
-  border: 1px solid #e9ecef;
-  animation: fadeInUp 0.6s ease-out both;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+  border-radius: 20px;
+  padding: 28px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
 }
 
 .document-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+}
+
+.document-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  border-radius: 20px 20px 0 0;
 }
 
 .document-card__header {
@@ -433,14 +462,16 @@
 .document-card__icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+  color: #667eea;
+  backdrop-filter: blur(10px);
 }
+
 
 .document-card__status {
   display: flex;
@@ -476,11 +507,12 @@
 }
 
 .document-card__title {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #333;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #2d3748;
   margin-bottom: 12px;
   line-height: 1.4;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   display: -webkit-box;
   line-clamp: 2;
   -webkit-line-clamp: 2;
@@ -490,9 +522,10 @@
 }
 
 .document-card__preview {
-  color: #444;
+  color: #718096;
   font-size: 0.95rem;
   line-height: 1.6;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   margin-bottom: 16px;
   display: -webkit-box;
   line-clamp: 3;
@@ -515,15 +548,17 @@
   align-items: center;
   gap: 6px;
   font-size: 0.85rem;
-  color: #888;
+  color: #a0aec0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 .document-card__analysis {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 12px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  padding: 16px;
   margin-bottom: 16px;
-  border: 1px solid #e9ecef;
+  border: 1px solid rgba(233, 236, 239, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .analysis-item {
@@ -567,18 +602,20 @@
 .document-card__progress-bar {
   position: relative;
   flex: 1;
-  height: 8px;
-  background: #e9ecef;
+  height: 10px;
+  background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%);
   border-radius: 999px;
   overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .document-card__progress-fill {
   position: absolute;
   top: 0; left: 0; bottom: 0;
   width: 0%;
-  background: linear-gradient(90deg, #667eea, #764ba2);
-  transition: width 0.2s ease;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .document-card__progress-label {
@@ -588,18 +625,33 @@
   color: #555;
 }
 
+/* Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
 .document-card__btn {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
   color: white;
   font-size: 0.9rem;
+  position: relative;
+  overflow: hidden;
 }
 
 .document-card__btn--view {
@@ -619,7 +671,6 @@
 }
 
 .document-card__btn:hover {
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 

@@ -4,24 +4,58 @@
   padding: 2rem 0;
 }
 
+.consultation-header {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  text-align: center;
+  position: relative;
+}
+
+.consultation-back-button {
+  position: absolute;
+  left: 1rem;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.consultation-back-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
 .consultation-content {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
   text-align: center;
+  padding-top: 4rem;
 }
 
 .consultation-title {
   font-size: 2.5rem;
   font-weight: 700;
-  color: white;
+  color: #FFF8DC;
   margin-bottom: 1rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .consultation-subtitle {
   font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: #FFF8DC;
   margin-bottom: 3rem;
   max-width: 600px;
   margin-left: auto;

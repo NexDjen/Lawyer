@@ -56,9 +56,12 @@ class ChatController {
       // Генерируем TTS асинхронно в фоне (не блокирует ответ)
       setImmediate(async () => {
         try {
-          if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here') {
-            const { synthesizeSpeech } = require('../services/openaiTTSService');
-            const audioBuffer = await synthesizeSpeech(response, { voice: 'nova', model: 'tts-1' });
+          const googleTTSService = require('../services/googleTTSService');
+          if (googleTTSService.isConfigured()) {
+            const audioBuffer = await googleTTSService.synthesizeSpeech(response, { 
+              voice: 'ru-RU-Chirp3-HD-Orus', 
+              languageCode: 'ru-RU' 
+            });
             
             if (audioBuffer) {
               const fs = require('fs');

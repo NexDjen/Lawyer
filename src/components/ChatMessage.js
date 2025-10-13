@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { Bot, User, MessageCircle, Volume2, Loader, Copy, Download } from 'lucide-react';
+import { Bot, User, MessageCircle, Volume2, Loader, Copy, Download, FileText, Mail, File } from 'lucide-react';
 import { formatTime } from '../utils/dateUtils';
 import { buildApiUrl } from '../config/api';
 import './ChatMessage.css';
 
-const ChatMessage = ({ message, onRetry, isLastMessage, onDownloadDocument }) => {
+const ChatMessage = ({ message, onRetry, isLastMessage, onDownloadDocument, onDownloadPDF, onEmailDocument, isDocumentMessage }) => {
   const { type, content, timestamp, id, hasDownloadableContent } = message;
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [audio, setAudio] = useState(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [email, setEmail] = useState('');
 
   const getMessageIcon = () => {
     switch (type) {
@@ -178,6 +180,12 @@ const ChatMessage = ({ message, onRetry, isLastMessage, onDownloadDocument }) =>
     // Bold / Italic
     text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    
+    // Markdown Headers
+    text = text.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+    text = text.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+    text = text.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+    
     // Headings like "Риски:" / "Рекомендации:" as strong
     text = text.replace(/^(\s*)([^\n:]{2,}):\s*$/gmi, '$1<strong>$2:</strong>');
     // URLs
@@ -202,6 +210,10 @@ const ChatMessage = ({ message, onRetry, isLastMessage, onDownloadDocument }) =>
       } else if (line === '') {
         closeLists();
         html += '<br />';
+      } else if (/^<h[1-6]>/.test(line)) {
+        // Don't wrap headers in <p> tags
+        closeLists();
+        html += line;
       } else {
         closeLists();
         html += `<p>${line}</p>`;
@@ -226,17 +238,80 @@ const ChatMessage = ({ message, onRetry, isLastMessage, onDownloadDocument }) =>
       .slice(0, 80) || 'document';
   };
 
+  const extractDocumentContent = (messageContent) => {
+    // Проверяем, есть ли маркер документа
+    const markerIndex = messageContent.indexOf('📄 ДОКУМЕНТ ГОТОВ К СКАЧИВАНИЮ');
+    if (markerIndex === -1) {
+      return messageContent;
+    }
+    
+    // Ищем разделитель "---" который отделяет консультацию от документа
+    const separatorIndex = messageContent.indexOf('---');
+    if (separatorIndex !== -1 && separatorIndex < markerIndex) {
+      // Извлекаем только документ (текст между "---" и маркером)
+      const documentText = messageContent.substring(separatorIndex + 3, markerIndex).trim();
+      return documentText;
+    }
+    
+    // Если разделителя нет, берем весь текст до маркера
+    return messageContent.substring(0, markerIndex).trim();
+  };
+
   const handleDownloadDocx = async () => {
     if (onDownloadDocument && content) {
       try {
-        const lines = (content || '').split(/\n+/).map(l => l.trim()).filter(Boolean);
+        // Извлекаем только документ без консультации
+        const documentContent = isDocumentMessage(content) 
+          ? extractDocumentContent(content)
+          : content;
+        
+        const lines = documentContent.split(/\n+/).map(l => l.trim()).filter(Boolean);
         const titleCandidate = lines[0] || 'Юридический документ';
         const title = sanitizeFileName(titleCandidate);
-        await onDownloadDocument(content, title);
+        await onDownloadDocument(documentContent, title);
       } catch (error) {
         console.error('Ошибка скачивания документа:', error);
         alert('Не удалось скачать документ');
       }
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (onDownloadPDF && content) {
+      try {
+        const lines = (content || '').split(/\n+/).map(l => l.trim()).filter(Boolean);
+        const titleCandidate = lines[0] || 'Юридический документ';
+        const title = sanitizeFileName(titleCandidate);
+        await onDownloadPDF(content, title);
+      } catch (error) {
+        console.error('Ошибка скачивания PDF:', error);
+        alert('Не удалось скачать PDF документ');
+      }
+    }
+  };
+
+  const handleEmailDocument = async () => {
+    if (onEmailDocument && content && email) {
+      try {
+        const lines = (content || '').split(/\n+/).map(l => l.trim()).filter(Boolean);
+        const titleCandidate = lines[0] || 'Юридический документ';
+        const title = sanitizeFileName(titleCandidate);
+        const success = await onEmailDocument(content, title, email);
+        if (success) {
+          setShowEmailModal(false);
+          setEmail('');
+        }
+      } catch (error) {
+        console.error('Ошибка отправки документа:', error);
+        alert('Не удалось отправить документ по email');
+      }
+    }
+  };
+
+  const handleEmailModalSubmit = (e) => {
+    e.preventDefault();
+    if (email.trim()) {
+      handleEmailDocument();
     }
   };
 
@@ -246,10 +321,56 @@ const ChatMessage = ({ message, onRetry, isLastMessage, onDownloadDocument }) =>
         {getMessageIcon()}
       </div>
       <div className="chat-message__content">
-        <div
-          className="chat-message__text chat-markdown"
-          dangerouslySetInnerHTML={{ __html: toHtml(content) }}
-        />
+        {isDocumentMessage(content) ? (
+          (() => {
+            // Разделяем контент на консультацию и документ
+            const separatorIndex = content.indexOf('---');
+            const markerIndex = content.indexOf('📄 ДОКУМЕНТ ГОТОВ К СКАЧИВАНИЮ');
+            
+            const consultationText = separatorIndex !== -1 
+              ? content.substring(0, separatorIndex).trim() 
+              : '';
+            
+            const documentText = separatorIndex !== -1 && markerIndex !== -1
+              ? content.substring(separatorIndex + 3, markerIndex).trim()
+              : '';
+            
+            return (
+              <>
+                {consultationText && (
+                  <div
+                    className="chat-message__text chat-markdown"
+                    dangerouslySetInnerHTML={{ __html: toHtml(consultationText) }}
+                  />
+                )}
+                {documentText && (
+                  <div className="chat-doc-container">
+                    <div className="chat-doc-header">
+                      <File size={20} />
+                      <span>Готовый документ</span>
+                    </div>
+                    <div className="chat-doc-content">
+                      {documentText}
+                    </div>
+                    <button 
+                      className="btn-download-doc" 
+                      onClick={handleDownloadDocx}
+                      title="Скачать документ в формате DOCX"
+                    >
+                      <Download size={18} />
+                      Скачать документ
+                    </button>
+                  </div>
+                )}
+              </>
+            );
+          })()
+        ) : (
+          <div
+            className="chat-message__text chat-markdown"
+            dangerouslySetInnerHTML={{ __html: toHtml(content) }}
+          />
+        )}
         <div className="chat-message__footer">
           <span className="chat-message__time">
             {formatTime(timestamp)}
@@ -264,13 +385,29 @@ const ChatMessage = ({ message, onRetry, isLastMessage, onDownloadDocument }) =>
                 <Copy size={16} /> Копировать
               </button>
               {hasDownloadableContent && (
-                <button
-                  className="chat-message__tts"
-                  onClick={handleDownloadDocx}
-                  title="Скачать как DOCX"
-                >
-                  <Download size={18} /> Скачать DOCX
-                </button>
+                <>
+                  <button
+                    className="chat-message__tts"
+                    onClick={handleDownloadDocx}
+                    title="Скачать как DOCX"
+                  >
+                    <Download size={18} /> Скачать DOCX
+                  </button>
+                  <button
+                    className="chat-message__tts"
+                    onClick={handleDownloadPDF}
+                    title="Скачать как PDF"
+                  >
+                    <FileText size={18} /> Скачать PDF
+                  </button>
+                  <button
+                    className="chat-message__tts"
+                    onClick={() => setShowEmailModal(true)}
+                    title="Отправить по email"
+                  >
+                    <Mail size={18} /> Отправить
+                  </button>
+                </>
               )}
               <button
                 className="chat-message__tts"
@@ -294,6 +431,52 @@ const ChatMessage = ({ message, onRetry, isLastMessage, onDownloadDocument }) =>
           )}
         </div>
       </div>
+      
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className="email-modal-overlay" onClick={() => setShowEmailModal(false)}>
+          <div className="email-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="email-modal__header">
+              <h3>Отправить документ по email</h3>
+              <button 
+                className="email-modal__close"
+                onClick={() => setShowEmailModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleEmailModalSubmit} className="email-modal__form">
+              <div className="email-modal__field">
+                <label htmlFor="email">Email адрес:</label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="example@email.com"
+                  required
+                />
+              </div>
+              <div className="email-modal__actions">
+                <button 
+                  type="button" 
+                  className="email-modal__cancel"
+                  onClick={() => setShowEmailModal(false)}
+                >
+                  Отмена
+                </button>
+                <button 
+                  type="submit" 
+                  className="email-modal__submit"
+                  disabled={!email.trim()}
+                >
+                  Отправить
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

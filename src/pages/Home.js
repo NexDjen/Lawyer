@@ -67,9 +67,6 @@ const Home = () => {
           </p>
           
           <div className="hero__actions">
-            <p className="hero__navigation-hint">
-              Используйте навигацию в верхней части страницы для перехода к нужному разделу
-            </p>
           </div>
         </div>
       </section>

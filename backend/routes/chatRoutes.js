@@ -61,7 +61,7 @@ router.get('/status', chatController.checkApiStatus);
 // Маршрут для получения информации о модели
 router.get('/model', chatController.getModelInfo);
 
-// TTS WindexAI endpoint
+// TTS endpoint with fallback to OpenAI
 router.post('/tts', ErrorHandler.asyncHandler(async (req, res) => {
   const { text, voice = 'nova', model = 'tts-1' } = req.body;
   
@@ -72,38 +72,79 @@ router.post('/tts', ErrorHandler.asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Text is required' });
   }
   
-  const { synthesizeSpeech } = require('../services/openaiTTSService');
+  let audioBuffer = null;
+  let ttsService = 'none';
   
-  // Проверяем наличие API ключа OpenAI
-  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here') {
-    logger.warn('OpenAI API key not configured - TTS disabled');
-    return res.status(503).json({ error: 'TTS service unavailable - OpenAI API key not configured' });
-  }
-  
+  // Try Google TTS first
   try {
-    logger.info('Calling OpenAI TTS service...');
-    const audioBuffer = await synthesizeSpeech(text, { voice, model });
-    
-    if (!audioBuffer) {
-      throw new Error('OpenAI TTS returned null');
+    const googleTTSService = require('../services/googleTTSService');
+    if (googleTTSService.isConfigured()) {
+      logger.info('🎤 Trying Google TTS...');
+      audioBuffer = await googleTTSService.synthesizeSpeech(text, { 
+        voice: 'ru-RU-Chirp3-HD-Orus', 
+        languageCode: 'ru-RU' 
+      });
+      if (audioBuffer) {
+        ttsService = 'google';
+        logger.info('✅ Google TTS synthesis successful, audio size:', audioBuffer.length);
+      }
     }
-    
-    logger.info('OpenAI TTS synthesis successful, audio size:', audioBuffer.length);
-    
-    res.set({
-      'Content-Type': 'audio/mpeg',
-      'Content-Disposition': 'inline; filename="speech.mp3"',
-      'Content-Length': audioBuffer.length,
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    });
-    
-    res.send(audioBuffer);
-  } catch (e) {
-    logger.error('OpenAI TTS synthesis failed:', e);
-    res.status(503).json({ error: 'TTS service temporarily unavailable', details: e.message });
+  } catch (googleError) {
+    logger.warn('❌ Google TTS failed:', googleError.message);
   }
+  
+  // Fallback to OpenAI TTS
+  if (!audioBuffer) {
+    try {
+      const openaiTTSService = require('../services/openaiTTSService');
+      logger.info('🔄 Using OpenAI TTS fallback...');
+      audioBuffer = await openaiTTSService.synthesizeSpeech(text, { 
+        voice: voice === 'nova' ? 'nova' : 'alloy', 
+        model: model || 'tts-1' 
+      });
+      if (audioBuffer) {
+        ttsService = 'openai';
+        logger.info('✅ OpenAI TTS synthesis successful, audio size:', audioBuffer.length);
+      }
+    } catch (openaiError) {
+      logger.error('❌ OpenAI TTS also failed:', openaiError.message);
+    }
+  }
+  
+  // System TTS fallback (espeak)
+  if (!audioBuffer) {
+    try {
+      const systemTTSService = require('../services/systemTTSService');
+      logger.info('🔄 Using system TTS fallback...');
+      audioBuffer = await systemTTSService.synthesizeSpeech(text);
+      if (audioBuffer) {
+        ttsService = 'system';
+        logger.info('✅ System TTS synthesis successful, audio size:', audioBuffer.length);
+      }
+    } catch (systemError) {
+      logger.error('❌ System TTS also failed:', systemError.message);
+    }
+  }
+  
+  if (!audioBuffer) {
+    logger.error('❌ All TTS services failed');
+    return res.status(503).json({ 
+      error: 'TTS service temporarily unavailable', 
+      details: 'All TTS services (Google, OpenAI, System) failed' 
+    });
+  }
+  
+  res.set({
+    'Content-Type': 'audio/mpeg',
+    'Content-Disposition': 'inline; filename="speech.mp3"',
+    'Content-Length': audioBuffer.length,
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type'
+  });
+  
+  logger.info(`🎵 Sending audio response via ${ttsService} TTS`);
+  res.send(audioBuffer);
 }));
 
 // Transcription endpoint (WindexAI Whisper)
@@ -200,6 +241,11 @@ router.post('/generate-docx', ErrorHandler.asyncHandler(async (req, res) => {
     if (!trimmed) {
       return new Paragraph({ children: [new TextRun({ text: '' })] });
     }
+    
+    // Подсчитываем начальные пробелы для определения выравнивания
+    const leadingSpaces = line.match(/^\s*/)[0].length;
+    const shouldAlignRight = leadingSpaces > 30; // Если много пробелов в начале - выравниваем вправо
+    
     // Horizontal rule
     if (/^\s*-{3,}\s*$/.test(trimmed)) {
       return new Paragraph({
@@ -234,8 +280,18 @@ router.post('/generate-docx', ErrorHandler.asyncHandler(async (req, res) => {
       const inner = trimmed.slice(1, -1);
       return new Paragraph({ children: [new TextRun({ text: inner, italics: true })], spacing: { after: 120 } });
     }
+    
+    // Строки с большим количеством начальных пробелов - выравниваем вправо
+    if (shouldAlignRight) {
+      return new Paragraph({ 
+        children: parseInline(trimmed), 
+        alignment: AlignmentType.RIGHT,
+        spacing: { after: 120 } 
+      });
+    }
+    
     // Default paragraph
-    return new Paragraph({ children: parseInline(line), spacing: { after: 120 } });
+    return new Paragraph({ children: parseInline(trimmed), spacing: { after: 120 } });
   };
 
   const lines = sanitize(content).split('\n');
@@ -296,6 +352,64 @@ router.post('/generate-docx', ErrorHandler.asyncHandler(async (req, res) => {
     'Content-Length': buffer.length
   });
   res.send(buffer);
+}));
+
+// Generate PDF from AI content using LaTeX
+router.post('/generate-pdf', ErrorHandler.asyncHandler(async (req, res) => {
+  const { title = 'Документ', content = '', documentType = 'general' } = req.body || {};
+  
+  if (!content || typeof content !== 'string') {
+    return res.status(400).json({ error: 'content is required' });
+  }
+
+  try {
+    logger.info('PDF generation request received', {
+      title,
+      documentType,
+      contentLength: content.length
+    });
+
+    const latexService = require('../services/latexService');
+    
+    // Detect document type if not specified
+    const detectedType = documentType === 'general' 
+      ? latexService.detectDocumentType(content) 
+      : documentType;
+
+    const pdfBuffer = await latexService.generatePDF(title, content, detectedType);
+    
+    const rawTitle = String(title || 'document');
+    const cleanedTitle = rawTitle
+      .replace(/[\r\n]+/g, ' ')
+      .replace(/[\\/:*?"<>|]+/g, '_')
+      .replace(/[^\w\u0400-\u04FF\-\s]+/g, '_')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 80) || 'document';
+    
+    const asciiTitle = cleanedTitle.replace(/[^\x20-\x7E]+/g, '_') || 'document';
+    const disposition = `attachment; filename="${asciiTitle}.pdf"; filename*=UTF-8''${encodeURIComponent(cleanedTitle)}.pdf`;
+    
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': disposition,
+      'Content-Length': pdfBuffer.length
+    });
+    
+    res.send(pdfBuffer);
+    
+    logger.info('✅ PDF sent successfully', {
+      title: asciiTitle,
+      size: pdfBuffer.length
+    });
+    
+  } catch (error) {
+    logger.error('❌ PDF generation failed:', error);
+    res.status(500).json({ 
+      error: 'PDF generation failed', 
+      details: error.message 
+    });
+  }
 }));
 
 // Voice chat endpoint
@@ -379,6 +493,46 @@ router.get('/chat/audio/:filename', (req, res) => {
     }
   });
 });
+
+// Email document endpoint (placeholder)
+router.post('/email-document', ErrorHandler.asyncHandler(async (req, res) => {
+  const { email, title, content, documentType = 'general' } = req.body || {};
+  
+  if (!email || !content) {
+    return res.status(400).json({ error: 'email and content are required' });
+  }
+
+  // Basic email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  try {
+    logger.info('Email document request received', {
+      email: email.replace(/(.{2}).*(@.*)/, '$1***$2'), // Mask email for logging
+      title,
+      documentType,
+      contentLength: content.length
+    });
+
+    // TODO: Implement actual email sending with nodemailer
+    // For now, just return success message
+    res.json({
+      success: true,
+      message: 'Документ будет отправлен на указанный email (функция в разработке)',
+      email: email.replace(/(.{2}).*(@.*)/, '$1***$2'), // Mask email in response
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    logger.error('❌ Email document failed:', error);
+    res.status(500).json({ 
+      error: 'Email sending failed', 
+      details: error.message 
+    });
+  }
+}));
 
 // GET /api/knowledge-base - Получение базы знаний
 router.get('/knowledge-base', ErrorHandler.asyncHandler(async (req, res) => {

@@ -12,6 +12,7 @@ export const adminService = {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       console.log('📊 Статус ответа:', response.status);
@@ -42,6 +43,7 @@ export const adminService = {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       console.log('📊 Статус ответа:', response.status);
@@ -70,6 +72,7 @@ export const adminService = {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -93,6 +96,7 @@ export const adminService = {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       console.log('📊 Статус ответа:', response.status);
@@ -121,6 +125,7 @@ export const adminService = {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(settings),
       });
 

@@ -13,6 +13,7 @@ import {
   Trash2,
   X
 } from 'lucide-react';
+import DocumentUpload from '../components/DocumentUpload';
 import './Documents.css';
 
 const DocumentsFunctional = () => {
@@ -21,6 +22,7 @@ const DocumentsFunctional = () => {
   // Логирование для диагностики
   console.log('DocumentsFunctional component rendered, current location:', location.pathname);
   
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [documents, setDocuments] = useState([
     {
       id: 1,
@@ -55,7 +57,6 @@ const DocumentsFunctional = () => {
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortBy, setSortBy] = useState('date');
-  const [selectedDocument, setSelectedDocument] = useState(null);
 
   const filteredDocuments = documents
     .filter(doc => {
@@ -127,8 +128,8 @@ const DocumentsFunctional = () => {
       <div className="container">
         {/* Header */}
         <div className="documents-header">
-          <h1>Управление документами</h1>
-          <p>Просмотр и управление всеми документами системы</p>
+          <h1 style={{color: 'white'}}>Управление документами</h1>
+          <p style={{color: 'white'}}>Просмотр и управление всеми документами системы</p>
         </div>
 
         {/* Search and Filters */}
@@ -224,6 +225,17 @@ const DocumentsFunctional = () => {
           )}
         </div>
 
+        {/* Upload Button */}
+        <div className="documents-upload" style={{ marginBottom: '20px' }}>
+          <button 
+            className="btn btn--primary btn--large"
+            onClick={() => setShowUploadModal(true)}
+          >
+            <Plus size={20} />
+            Загрузить новый документ
+          </button>
+        </div>
+
         {/* Documents Grid */}
         <section className="documents-content">
           {filteredDocuments.length === 0 ? (
@@ -275,19 +287,40 @@ const DocumentsFunctional = () => {
                   <div className="document-card__actions">
                     <button 
                       className="btn btn--icon"
-                      onClick={() => setSelectedDocument(doc)}
+                      onClick={() => {
+                        console.log('Просмотр документа:', doc);
+                        alert(`Просмотр документа: ${doc.name}\n\nСодержимое:\n${doc.content.substring(0, 500)}...`);
+                      }}
                       title="Просмотр"
                     >
                       <Eye size={16} />
                     </button>
                     <button 
                       className="btn btn--icon"
+                      onClick={() => {
+                        console.log('Скачивание документа:', doc);
+                        // Создаем и скачиваем файл
+                        const blob = new Blob([doc.content], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${doc.name}.txt`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                      }}
                       title="Скачать"
                     >
                       <Download size={16} />
                     </button>
                     <button 
                       className="btn btn--icon btn--danger"
+                      onClick={() => {
+                        if (window.confirm(`Удалить документ "${doc.name}"?`)) {
+                          setDocuments(prev => prev.filter(d => d.id !== doc.id));
+                        }
+                      }}
                       title="Удалить"
                     >
                       <Trash2 size={16} />
@@ -298,15 +331,29 @@ const DocumentsFunctional = () => {
             </div>
           )}
         </section>
-
-        {/* Upload Button */}
-        <div className="documents-upload">
-          <button className="btn btn--primary btn--large">
-            <Plus size={20} />
-            Загрузить новый документ
-          </button>
-        </div>
       </div>
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <DocumentUpload
+          onTextExtracted={(text, filename) => {
+            // Add new document to the list
+            const newDocument = {
+              id: Date.now(),
+              name: filename,
+              type: 'document',
+              status: 'analyzed',
+              uploadedAt: new Date().toISOString().split('T')[0],
+              size: `${(text.length / 1024).toFixed(1)} KB`,
+              content: text
+            };
+            setDocuments(prev => [newDocument, ...prev]);
+            setShowUploadModal(false);
+          }}
+          onClose={() => setShowUploadModal(false)}
+          storageKey="documents"
+        />
+      )}
     </div>
   );
 };

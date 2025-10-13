@@ -46,6 +46,9 @@ const Chat = () => {
     sendMessage,
     addSystemMessage,
     downloadDocument,
+    downloadPDF,
+    emailDocument,
+    isDocumentMessage,
     setMessages
   } = useChat(user?.id || user?.email || null);
 
@@ -229,6 +232,9 @@ const Chat = () => {
                   message={message}
                   onRetry={handleRetryMessage}
                   onDownloadDocument={downloadDocument}
+                  onDownloadPDF={downloadPDF}
+                  onEmailDocument={emailDocument}
+                  isDocumentMessage={isDocumentMessage}
                   isLastMessage={index === messages.length - 1}
                 />
               ))

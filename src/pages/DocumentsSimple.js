@@ -11,8 +11,8 @@ const DocumentsSimple = () => {
     <div className="documents-page">
       <div className="container">
         <div className="documents-header">
-          <h1>Управление документами</h1>
-          <p>Просмотр и управление всеми документами системы</p>
+          <h1 className="documents-header__title" style={{color: 'white'}}>Управление документами</h1>
+          <p className="documents-header__subtitle" style={{color: 'white'}}>Просмотр и управление всеми документами системы</p>
         </div>
         
         <div className="documents-content">

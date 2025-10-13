@@ -446,7 +446,6 @@ const MyDocuments = () => {
               <div 
                 key={doc.id} 
                 className="document-card"
-                style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="document-card__header">
                   <div className="document-card__icon">

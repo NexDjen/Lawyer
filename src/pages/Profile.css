@@ -119,8 +119,6 @@
 .btn-outline:hover { background: #eef2ff; }
 .btn-secondary { background: #f8fafc; color: #111827; border-color: #cbd5e1; }
 .btn-secondary:hover { background: #f1f5f9; }
-.btn-ai-profile { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.9rem; padding: 8px 16px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
-.btn-ai-profile:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); }
 
 .btn-icon { width: 44px; height: 44px; display: grid; place-items: center; background: white; border-radius: 12px; }
 
@@ -588,5 +586,72 @@
   .pricing-price {
     font-size: 1.4rem;
   }
+}
+
+/* Стили для заголовка секции дополнительных данных */
+.profile-section-header {
+  grid-column: 1 / -1;
+  margin: 24px 0 16px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.profile-section-header h3 {
+  margin: 0 0 8px 0;
+  color: #1e293b;
+  font-size: 1.2rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-section-header h3::before {
+  content: "📋";
+  font-size: 1.1rem;
+}
+
+.profile-section-header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Стили для секции сохранения профиля */
+.profile-save-section {
+  grid-column: 1 / -1;
+  margin: 24px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 16px;
+  border: 1px solid #bae6fd;
+  text-align: center;
+}
+
+.btn-save-profile {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-save-profile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+}
+
+.btn-save-profile:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 

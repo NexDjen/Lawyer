@@ -237,6 +237,15 @@
       "confidence": 0.95,
       "createdAt": "2025-09-25T19:11:07.517Z",
       "expiresAt": null
+    },
+    {
+      "id": "pdf_1760393662294_qb6d4s5m",
+      "kind": "pdf",
+      "filePath": "/Users/artembutko/Documents/layer_3/backend/uploads/document-1760393662282-837646883.pdf",
+      "originalName": "ÐÐ.pdf",
+      "sizeBytes": 336629,
+      "createdAt": "2025-10-13T22:14:22.294Z",
+      "expiresAt": "2025-10-16T22:14:22.294Z"
     }
   ]
 }

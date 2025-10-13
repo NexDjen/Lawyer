@@ -325,7 +325,8 @@ class Server {
         return next();
       }
       // Для всех остальных - возвращаем SPA
-      res.sendFile(path.join(process.cwd(), 'build', 'index.html'));
+      const buildPath = path.join(__dirname, '..', 'build', 'index.html');
+      res.sendFile(buildPath);
     });
     
     // Обработка 404 ошибок (должна быть последней)

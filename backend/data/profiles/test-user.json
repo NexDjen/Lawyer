@@ -1,0 +1,34 @@
+{
+  "userId": "test-user",
+  "createdAt": "2025-10-12T11:57:03.057Z",
+  "updatedAt": "2025-10-12T20:18:07.246Z",
+  "personalData": {
+    "fullName": "Не Было",
+    "firstName": "Не",
+    "lastName": "",
+    "middleName": "",
+    "birthDate": "",
+    "birthPlace": "",
+    "phone": "",
+    "email": "",
+    "address": "",
+    "passportSeries": "",
+    "passportNumber": "",
+    "inn": "",
+    "snils": "",
+    "maritalStatus": "",
+    "occupation": "восстановиться",
+    "workplace": ""
+  },
+  "caseNotes": [],
+  "preferences": {
+    "autoSavePersonalData": true,
+    "dataRetentionDays": 365,
+    "privacyLevel": "standard"
+  },
+  "statistics": {
+    "totalMessages": 0,
+    "dataExtractionCount": 5,
+    "lastActivity": "2025-10-12T20:18:07.246Z"
+  }
+}

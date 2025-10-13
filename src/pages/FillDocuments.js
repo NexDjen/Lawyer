@@ -19,7 +19,7 @@ const FillDocuments = () => {
   const profileDefaults = useMemo(() => {
     // Берём данные из профиля пользователя. Поля могут отсутствовать — обрабатываем мягко
     return {
-      fullName: user?.fullName || user?.name || '',
+      fullName: user?.fullName || '',
       lastName: user?.lastName || '',
       firstName: user?.firstName || '',
       middleName: user?.middleName || '',

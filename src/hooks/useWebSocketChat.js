@@ -181,11 +181,9 @@ export const useWebSocketChat = () => {
         
         // In development, connect to backend port directly
         // In production, use reverse proxy (no port needed)
-        if (process.env.NODE_ENV === 'development' && window.location.port) {
-          // Development: use backend port from REACT_APP_API_URL or default 3007
-          const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3007/api';
-          const backendUrl = new URL(apiUrl);
-          wsUrl = `${protocol}//${backendUrl.host}/api/ws`;
+        if (process.env.NODE_ENV === 'development') {
+          // Development: use backend port 3007 directly
+          wsUrl = `${protocol}//localhost:3007/api/ws`;
         } else {
           // Production: use same host through reverse proxy (w-lawyer.ru/api/ws)
           wsUrl = `${protocol}//${window.location.hostname}/api/ws`;

@@ -17,7 +17,7 @@ const Header = () => {
   }
 
   const navItems = [
-    { path: '/chat', label: 'Консультация' },
+    { path: '/consultation', label: 'Консультация' },
     { path: '/documents', label: 'Документы' }
   ];
 

@@ -22,6 +22,7 @@ const Lawyer = () => {
   const [showAudioFilesList, setShowAudioFilesList] = useState(false);
   
   const speechRecognitionRef = useRef(null);
+  const lastTranscriptRef = useRef('');
   const animationFrameRef = useRef(null);
 
   // Инициализация Web Audio API при первом взаимодействии пользователя
@@ -295,11 +296,12 @@ const Lawyer = () => {
     try {
       console.log('Отправка сообщения к AI:', message);
 
-      const response = await fetch('/api/chat', {
+      const response = await fetch('http://localhost:3007/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           message,
           history: conversationHistory
@@ -314,46 +316,37 @@ const Lawyer = () => {
 
       const data = await response.json();
       console.log('Данные ответа:', data);
-
-      // setCurrentMessage(data.response); // Не отображаем текст ответа
       setConversationHistory(prev => [...prev, { role: 'user', content: message }, { role: 'assistant', content: data.response }]);
 
-      // Автоматически воспроизводим ответ
-      if (data.audioUrl) {
-        console.log('Воспроизведение аудио:', data.audioUrl);
-        // Всегда пытаемся воспроизвести аудио
-        await playAudio(data.audioUrl, data.response);
-      } else {
-        console.log('TTS недоступен, используем браузерный TTS');
-        // Используем браузерный TTS как fallback
-        if ('speechSynthesis' in window) {
-          const utterance = new SpeechSynthesisUtterance(data.response);
-          utterance.lang = 'ru-RU';
-          utterance.rate = 0.9;
-          utterance.pitch = 1.0;
-          utterance.volume = 1.0;
-          
-          // Находим русский голос
-          const voices = speechSynthesis.getVoices();
-          const russianVoice = voices.find(voice => voice.lang.includes('ru'));
-          if (russianVoice) {
-            utterance.voice = russianVoice;
+      // Всегда запрашиваем и воспроизводим OpenAI TTS от сервера, fallback пик браузерный TTS
+      try {
+        console.log('🔊 Запрашиваем OpenAI TTS от сервера...');
+        const ttsRes = await fetch('http://localhost:3007/api/chat/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ text: data.response, voice: 'nova', model: 'tts-1' })
+        });
+        if (ttsRes.ok) {
+          const blob = await ttsRes.blob();
+          const url = URL.createObjectURL(blob);
+          console.log('▶️ Воспроизведение OpenAI TTS:', url);
+          await playAudio(url, data.response);
+        } else {
+          console.warn('⚠️ OpenAI TTS не доступен, использую браузерный TTS');
+          if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(data.response);
+            utterance.lang = 'ru-RU'; utterance.rate = 0.9; utterance.pitch = 1.0; utterance.volume = 1.0;
+            const voices = speechSynthesis.getVoices(); const russianVoice = voices.find(v => v.lang.includes('ru'));
+            if (russianVoice) utterance.voice = russianVoice;
+            utterance.onstart = () => { setIsSpeaking(true); setIsPlaying(true); };
+            utterance.onend = () => { setIsSpeaking(false); setIsPlaying(false); };
+            utterance.onerror = () => { setIsSpeaking(false); setIsPlaying(false); };
+            speechSynthesis.speak(utterance);
           }
-          
-          setIsSpeaking(true);
-          setIsPlaying(true);
-          speechSynthesis.speak(utterance);
-          
-          utterance.onend = () => {
-            setIsSpeaking(false);
-            setIsPlaying(false);
-          };
-          
-          utterance.onerror = () => {
-            setIsSpeaking(false);
-            setIsPlaying(false);
-          };
         }
+      } catch (ttsError) {
+        console.error('❌ Ошибка TTS:', ttsError);
       }
     } catch (error) {
       console.error('Ошибка отправки сообщения:', error);
@@ -364,15 +357,22 @@ const Lawyer = () => {
   }, [conversationHistory, playAudio, handleUserInteraction]);
 
   const handleVoiceInput = useCallback(async (transcript) => {
-    if (!transcript.trim()) return;
+    console.log('🎤 Голосовой ввод получен:', transcript);
+    
+    if (!transcript.trim()) {
+      console.log('⚠️ Пустой транскрипт, пропускаем');
+      return;
+    }
 
     handleUserInteraction(); // Устанавливаем флаг взаимодействия
 
     // Останавливаем текущее воспроизведение если AI говорит
     if (isSpeaking) {
+      console.log('🛑 Останавливаем текущее воспроизведение');
       stopAudio();
     }
 
+    console.log('📤 Отправляем запрос к AI...');
     // Отправляем запрос к AI
     await sendToAI(transcript);
   }, [isSpeaking, stopAudio, sendToAI, handleUserInteraction]);
@@ -402,12 +402,13 @@ const Lawyer = () => {
     document.addEventListener('keydown', handleFirstInteraction);
 
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      console.log('🎤 Инициализация SpeechRecognition...');
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       speechRecognitionRef.current = new SpeechRecognition();
       speechRecognitionRef.current.continuous = true;
       speechRecognitionRef.current.interimResults = true;
       speechRecognitionRef.current.lang = 'ru-RU';
-
+      console.log('✅ SpeechRecognition инициализирован:', speechRecognitionRef.current);
       speechRecognitionRef.current.onstart = () => {
         console.log('Speech recognition started');
         handleUserInteraction(); // Устанавливаем флаг взаимодействия
@@ -415,17 +416,25 @@ const Lawyer = () => {
       };
 
       speechRecognitionRef.current.onresult = (event) => {
+        // Сохраняем последний полученный транскрипт
+        console.log('🎯 Результат распознавания речи:', event);
         let finalTranscript = '';
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
+          const confidence = event.results[i][0].confidence;
+          console.log(`📝 Транскрипт ${i}: "${transcript}" (уверенность: ${confidence}, финальный: ${event.results[i].isFinal})`);
+          // Обновляем interim или final
           if (event.results[i].isFinal) {
             finalTranscript += transcript;
+            lastTranscriptRef.current = finalTranscript;
+          } else {
+            lastTranscriptRef.current = transcript;
           }
         }
 
         if (finalTranscript) {
-          console.log('Final transcript:', finalTranscript);
+          console.log('✅ Финальный транскрипт:', finalTranscript);
           handleUserInteraction(); // Устанавливаем флаг взаимодействия
           handleVoiceInput(finalTranscript);
         }
@@ -437,6 +446,12 @@ const Lawyer = () => {
       };
 
       speechRecognitionRef.current.onend = () => {
+        // После окончания распознавания, если нет final, но есть interim
+        if (lastTranscriptRef.current) {
+          console.log('🛑 Speech recognition ended, using last interim transcript:', lastTranscriptRef.current);
+          handleVoiceInput(lastTranscriptRef.current);
+          lastTranscriptRef.current = '';
+        }
         console.log('Speech recognition ended');
         setIsListening(false);
         if (isContinuousMode) {
@@ -448,6 +463,9 @@ const Lawyer = () => {
           }, 100);
         }
       };
+    } else {
+      console.error('❌ SpeechRecognition не поддерживается в этом браузере');
+      alert('Голосовое распознавание не поддерживается в вашем браузере. Используйте Chrome или Safari.');
     }
 
     return () => {
@@ -520,12 +538,18 @@ const Lawyer = () => {
 
   const startContinuousMode = async () => {
     try {
+      console.log('🚀 Запуск непрерывного режима...');
       setUserInteracted(true); // Отмечаем пользовательское взаимодействие
       setIsContinuousMode(true);
       setIsListening(true);
       
+      console.log('🎤 SpeechRecognition ref:', speechRecognitionRef.current);
       if (speechRecognitionRef.current) {
+        console.log('▶️ Запускаем распознавание речи...');
         speechRecognitionRef.current.start();
+      } else {
+        console.error('❌ SpeechRecognition не инициализирован!');
+        alert('Распознавание речи не инициализировано. Перезагрузите страницу.');
       }
     } catch (error) {
       console.error('Ошибка запуска непрерывного режима:', error);
@@ -534,11 +558,13 @@ const Lawyer = () => {
   };
 
   const stopContinuousMode = () => {
+    console.log('🛑 Остановка непрерывного режима...');
     handleUserInteraction(); // Устанавливаем флаг взаимодействия
     setIsContinuousMode(false);
     setIsListening(false);
-    
+
     if (speechRecognitionRef.current) {
+      console.log('⏹️ Останавливаем распознавание речи...');
       speechRecognitionRef.current.stop();
     }
   };
@@ -610,10 +636,13 @@ const Lawyer = () => {
             <button 
               className={`voice-button ${isContinuousMode ? 'active' : ''}`}
               onClick={() => {
+                console.log('🖱️ Кнопка нажата, isContinuousMode:', isContinuousMode);
                 handleUserInteraction();
                 if (isContinuousMode) {
+                  console.log('🛑 Останавливаем непрерывный режим');
                   stopContinuousMode();
                 } else {
+                  console.log('▶️ Запускаем непрерывный режим');
                   startContinuousMode();
                 }
               }}
@@ -623,29 +652,7 @@ const Lawyer = () => {
               <span>{isContinuousMode ? 'Остановить диалог' : 'Начать диалог'}</span>
             </button>
             
-            <button 
-              className="hearing-button"
-              onClick={() => {
-                handleUserInteraction();
-                setShowCourtHearing(true);
-              }}
-              title="Прослушивание судебного заседания"
-            >
-              <Headphones size={32} />
-              <span>Прослушивание</span>
-            </button>
             
-            <button 
-              className="files-button"
-              onClick={() => {
-                handleUserInteraction();
-                setShowAudioFilesList(true);
-              }}
-              title="Список аудиозаписей"
-            >
-              <List size={32} />
-              <span>Записи</span>
-            </button>
             
             {isSpeaking && (
               <button 

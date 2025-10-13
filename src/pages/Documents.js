@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FileText, 
-  Download, 
-  Trash2, 
-  Eye, 
-  Plus, 
-  Search, 
+import {
+  FileText,
+  Download,
+  Trash2,
+  Eye,
+  Plus,
+  Search,
   Upload,
   Filter,
   Calendar,
@@ -18,7 +18,9 @@ import {
   Info,
   Camera,
   Scan,
-  X
+  X,
+  MessageCircle,
+  Phone
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './Documents.css';
@@ -330,14 +332,21 @@ const Documents = () => {
           </div>
           
           <div className="documents-header__actions">
-            <button 
+            <button
               className="documents-header__btn documents-header__btn--primary"
               onClick={() => navigate('/chat')}
             >
-              <FileText size={20} />
-              Консультация
+              <MessageCircle size={20} />
+              Чат
             </button>
-            <button 
+            <button
+              className="documents-header__btn documents-header__btn--primary"
+              onClick={() => navigate('/lawyer')}
+            >
+              <Phone size={20} />
+              Звонок
+            </button>
+            <button
               className="documents-header__btn documents-header__btn--secondary"
               onClick={() => setShowUpload(true)}
             >
@@ -499,7 +508,6 @@ const Documents = () => {
                   <div 
                     key={doc.id} 
                     className="document-card"
-                    style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     <div className="document-card__header">
                       <div className="document-card__icon">

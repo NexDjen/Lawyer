@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, Phone } from 'lucide-react';
+import { MessageCircle, Phone, ArrowLeft } from 'lucide-react';
 import './Consultation.css';
 
 const Consultation = () => {
@@ -17,11 +17,19 @@ const Consultation = () => {
   return (
     <div className="consultation-page">
       <div className="container">
-        <div className="consultation-content">
+        <div className="consultation-header">
+          <button
+            className="consultation-back-button"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft size={20} />
+            Назад
+          </button>
           <h1 className="consultation-title">Выберите тип консультации</h1>
           <p className="consultation-subtitle">
             Получите профессиональную юридическую помощь удобным для вас способом
           </p>
+        </div>
           
           <div className="consultation-options">
             <div className="consultation-option" onClick={handleChatClick}>
@@ -56,7 +64,6 @@ const Consultation = () => {
               </div>
             </div>
           </div>
-        </div>
       </div>
     </div>
   );

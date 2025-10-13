@@ -32,30 +32,15 @@ export const useChat = (userId = null) => {
 
   // Форматирование ответа AI
   const formatAIResponse = useCallback((response) => {
-    const templatePhrases = [
-      'Обнаружены потенциальные риски',
-      'Рекомендуется уточнить условия',
-      'Добавить пункт о форс-мажоре',
-      'Документ соответствует основным требованиям',
-      'Отсутствуют важные условия',
-      'Не указаны санкции',
-      'Включить раздел об ответственности',
-      'Добавить условия расторжения',
-      'Требуются доработки',
-      'Риски',
-      'Рекомендации',
-      'Соответствие законодательству'
-    ];
-
-    const hasTemplatePhrases = templatePhrases.some(phrase => 
-      response.toLowerCase().includes(phrase.toLowerCase())
-    );
-
-    const hasAnalysisStructure = response.includes('📄 АНАЛИЗ ДОКУМЕНТА') || 
-                                response.includes('🔍 Тип документа') ||
-                                response.includes('👥 Стороны');
-
-    if (hasTemplatePhrases && !hasAnalysisStructure) {
+    // Отключаем агрессивную логику детекции шаблонных ответов
+    // которая заменяла нормальные ответы на шаблон анализа документа
+    
+    // Проверяем только на действительно шаблонные ответы
+    const isTrulyTemplate = response.includes('требуется определить') && 
+                           response.includes('требуется указать') &&
+                           response.length < 200; // Очень короткие шаблоны
+    
+    if (isTrulyTemplate) {
       return `📄 АНАЛИЗ ДОКУМЕНТА
 
 🔍 Тип документа: [Требуется определить точный тип документа]
@@ -190,6 +175,7 @@ export const useChat = (userId = null) => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include credentials for CORS
         body: JSON.stringify({
           message: message,
           conversationHistory: messages.slice(-10),
@@ -226,10 +212,10 @@ export const useChat = (userId = null) => {
       setMessages(prev => [...prev, botMessage]);
       setApiStatus(API_STATUS.CONNECTED);
 
-      // Проверяем, содержит ли ответ ключевые слова для показа кнопки скачивания
-      const wantsDoc = /документ|претензи|заявлени|договор|скачать|docx/i.test(data.response || '');
-      if (wantsDoc) {
-        data.hasDownloadableContent = true;
+      // Проверяем, содержит ли ответ документ для показа кнопок скачивания
+      const isDoc = isDocumentMessage(data.response || '');
+      if (isDoc) {
+        botMessage.hasDownloadableContent = true;
       }
 
 
@@ -274,15 +260,39 @@ export const useChat = (userId = null) => {
     setMessages([]);
   }, []);
 
+  // Функция для извлечения содержимого документа из сообщения
+  const extractDocumentContent = useCallback((messageContent) => {
+    // Проверяем, есть ли маркер документа
+    const markerIndex = messageContent.indexOf('📄 ДОКУМЕНТ ГОТОВ К СКАЧИВАНИЮ');
+    if (markerIndex === -1) {
+      // Если маркера нет, возвращаем весь контент (не документ)
+      return messageContent;
+    }
+    
+    // Ищем разделитель "---" который отделяет консультацию от документа
+    const separatorIndex = messageContent.indexOf('---');
+    if (separatorIndex !== -1 && separatorIndex < markerIndex) {
+      // Извлекаем только документ (текст между "---" и маркером)
+      const documentText = messageContent.substring(separatorIndex + 3, markerIndex).trim();
+      return documentText;
+    }
+    
+    // Если разделителя нет, берем весь текст до маркера
+    return messageContent.substring(0, markerIndex).trim();
+  }, []);
+
   // Функция для скачивания документа из сообщения
   const downloadDocument = useCallback(async (messageContent, title = 'Юридический документ') => {
     try {
+      const documentContent = extractDocumentContent(messageContent);
+      
       const resp = await fetch('/api/chat/generate-docx', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           title: title,
-          content: messageContent.replace(/\n{2,}/g, '\n')
+          content: documentContent.replace(/\n{2,}/g, '\n')
         })
       });
 
@@ -305,6 +315,77 @@ export const useChat = (userId = null) => {
     }
   }, []);
 
+  // Функция для скачивания PDF документа из сообщения
+  const downloadPDF = useCallback(async (messageContent, title = 'Юридический документ') => {
+    try {
+      const documentContent = extractDocumentContent(messageContent);
+      
+      const resp = await fetch('/api/chat/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: title,
+          content: documentContent.replace(/\n{2,}/g, '\n')
+        })
+      });
+
+      if (resp.ok) {
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const downloadLink = document.createElement('a');
+        downloadLink.href = url;
+        downloadLink.download = `${title}-${Date.now()}.pdf`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        URL.revokeObjectURL(url);
+      } else {
+        throw new Error('Не удалось сгенерировать PDF документ');
+      }
+    } catch (error) {
+      console.error('Ошибка скачивания PDF документа:', error);
+      alert('Ошибка при скачивании PDF документа');
+    }
+  }, []);
+
+  // Функция для отправки документа по email
+  const emailDocument = useCallback(async (messageContent, title, email) => {
+    try {
+      const documentContent = extractDocumentContent(messageContent);
+      
+      const resp = await fetch('/api/chat/email-document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          email: email,
+          title: title,
+          content: documentContent.replace(/\n{2,}/g, '\n')
+        })
+      });
+
+      if (resp.ok) {
+        const result = await resp.json();
+        alert(result.message || 'Документ будет отправлен на указанный email');
+        return true;
+      } else {
+        const error = await resp.json();
+        throw new Error(error.error || 'Не удалось отправить документ по email');
+      }
+    } catch (error) {
+      console.error('Ошибка отправки документа по email:', error);
+      alert('Ошибка при отправке документа по email: ' + error.message);
+      return false;
+    }
+  }, []);
+
+  // Функция для определения, содержит ли сообщение готовый документ
+  const isDocumentMessage = useCallback((content) => {
+    // Показываем кнопку скачивания только для готовых документов
+    return content.includes('📄 ДОКУМЕНТ ГОТОВ К СКАЧИВАНИЮ');
+  }, []);
+
   return {
     messages,
     isLoading,
@@ -318,6 +399,9 @@ export const useChat = (userId = null) => {
     addSystemMessage,
     clearChat,
     downloadDocument,
+    downloadPDF,
+    emailDocument,
+    isDocumentMessage,
     setRetryCount,
     setIsRetrying,
     setMessages

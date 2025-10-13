@@ -4,11 +4,14 @@ const logger = require('../utils/logger');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 
 async function synthesizeSpeech(text, { model = 'tts-1', voice = 'alloy', format = 'mp3', speed = 1.0 } = {}) {
-  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here') {
-    logger.error('OPENAI_API_KEY is not set or invalid');
+  // Determine API key: prefer OPENAI_API_KEY, fallback to WINDEXAI_API_KEY
+  const openaiKey = (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here')
+    ? process.env.OPENAI_API_KEY
+    : process.env.WINDEXAI_API_KEY;
+  if (!openaiKey) {
+    logger.error('No valid OPENAI_API_KEY or WINDEXAI_API_KEY set for TTS');
     return null;
   }
-  
   try {
     // Configure proxy if set
     const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
@@ -18,7 +21,7 @@ async function synthesizeSpeech(text, { model = 'tts-1', voice = 'alloy', format
     
     // Initialize OpenAI client with proxy agent
     const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY || process.env.WINDEXAI_API_KEY,
+      apiKey: openaiKey,
       httpAgent: agent,
       httpsAgent: agent
     });

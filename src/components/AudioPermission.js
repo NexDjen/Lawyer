@@ -111,10 +111,6 @@ const AudioPermission = ({ onGranted, onDenied, isVisible }) => {
               <Volume2 size={16} />
               <span>Автоматическое озвучивание</span>
             </div>
-            <div className="audio-permission__feature">
-              <Play size={16} />
-              <span>Тестовое воспроизведение</span>
-            </div>
           </div>
           
           {permissionState === 'requesting' && (
@@ -124,13 +120,6 @@ const AudioPermission = ({ onGranted, onDenied, isVisible }) => {
                 onClick={requestPermission}
               >
                 Разрешить аудио
-              </button>
-              <button 
-                className="audio-permission__btn audio-permission__btn--secondary"
-                onClick={handleTestAudio}
-                disabled={testAudio !== null}
-              >
-                {testAudio ? 'Тестирование...' : 'Тестировать аудио'}
               </button>
             </div>
           )}

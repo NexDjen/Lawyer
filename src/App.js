@@ -23,17 +23,21 @@ import './App.css';
 
 export const LanguageContext = createContext({ lang: 'ru', setLang: () => {} });
 
+// Компонент для логирования навигации
+const NavigationLogger = () => {
+  const location = useLocation();
+  
+  useEffect(() => {
+    console.log('Route changed to:', location.pathname);
+  }, [location.pathname]);
+  
+  return null;
+};
 
 // Внутренний компонент для работы с авторизацией
 const AppContent = () => {
   const { isLoading } = useAuth();
-  const location = useLocation();
   const [lang, setLang] = useState(() => localStorage.getItem('lang') || 'ru');
-
-  // Логирование навигации
-  useEffect(() => {
-    console.log('Route changed to:', location.pathname);
-  }, [location.pathname]);
 
   useEffect(() => {
     localStorage.setItem('lang', lang);
@@ -76,6 +80,7 @@ const AppContent = () => {
   return (
     <LanguageContext.Provider value={{ lang, setLang }}>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <NavigationLogger />
         <div className="App">
             <Routes>
               {/* Публичные маршруты */}

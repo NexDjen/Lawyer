@@ -1,4 +1,148 @@
 /* Современный дизайн сообщений чата - 2024 UI/UX тенденции */
+
+/* Email Modal Styles */
+.email-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.email-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 0;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.email-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.email-modal__header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.email-modal__close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.email-modal__close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.email-modal__form {
+  padding: 24px;
+}
+
+.email-modal__field {
+  margin-bottom: 20px;
+}
+
+.email-modal__field label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #374151;
+  font-size: 14px;
+}
+
+.email-modal__field input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.email-modal__field input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.email-modal__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.email-modal__cancel,
+.email-modal__submit {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.email-modal__cancel {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.email-modal__cancel:hover {
+  background: #e5e7eb;
+}
+
+.email-modal__submit {
+  background: #3b82f6;
+  color: white;
+}
+
+.email-modal__submit:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.email-modal__submit:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
 .chat-message { display: flex; gap: var(--space-3); max-width: 880px; animation: messageSlideIn 0.22s ease-out; position: relative; margin-bottom: var(--space-2); align-self: stretch; }
 
 @keyframes messageSlideIn {
@@ -133,6 +277,37 @@
 }
 .chat-markdown a { color: var(--text-primary); text-decoration: none; }
 .chat-markdown a:hover { text-decoration: underline; }
+
+/* Markdown Headers */
+.chat-markdown h1 { 
+  font-size: 1.5rem; 
+  font-weight: 700; 
+  color: var(--text-primary); 
+  margin: 16px 0 12px 0; 
+  line-height: 1.3;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 8px;
+}
+.chat-markdown h2 { 
+  font-size: 1.3rem; 
+  font-weight: 600; 
+  color: var(--text-primary); 
+  margin: 14px 0 10px 0; 
+  line-height: 1.3;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 6px;
+}
+.chat-markdown h3 { 
+  font-size: 1.1rem; 
+  font-weight: 600; 
+  color: var(--text-primary); 
+  margin: 12px 0 8px 0; 
+  line-height: 1.3;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+}
 
 .chat-message__text::before { display: none; }
 
@@ -449,4 +624,70 @@
   .chat-message--bot .chat-message__text { background: linear-gradient(180deg, var(--surface), var(--surface-muted)); }
   .chat-message__time { color: var(--text-muted); }
   .typing-indicator { background: var(--surface); border-color: var(--border); }
+}
+
+/* Styles for document download container */
+.chat-doc-container {
+  margin-top: 20px;
+  padding: 20px;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.chat-doc-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.chat-doc-header svg {
+  color: #3b82f6;
+}
+
+.chat-doc-header span {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 1.05rem;
+}
+
+.chat-doc-content {
+  background: #ffffff;
+  color: #000000;
+  padding: 20px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin-bottom: 15px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.btn-download-doc {
+  background: #ffffff;
+  color: #000000;
+  border: 2px solid #000000;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-download-doc:hover {
+  background: #f9fafb;
+  border-color: #374151;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }

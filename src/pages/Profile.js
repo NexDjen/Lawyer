@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User as UserIcon, Mail, Lock, BarChart3, Wallet, Plus, Minus, ArrowUpRight, ArrowDownLeft, Brain } from 'lucide-react';
+import { User as UserIcon, Mail, Lock, BarChart3, Wallet, Plus, Minus, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { buildApiUrl } from '../config/api';
-import UserProfile from '../components/UserProfile';
 import './Profile.css';
 
 const Profile = () => {
@@ -10,19 +9,28 @@ const Profile = () => {
   const [form, setForm] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    password: user?.password || ''
+    password: user?.password || '',
+    // Дополнительные поля
+    lastName: user?.lastName || '',
+    firstName: user?.firstName || '',
+    middleName: user?.middleName || '',
+    fullName: user?.fullName || '',
+    snils: user?.snils || '',
+    passportSeries: user?.passportSeries || '',
+    passportNumber: user?.passportNumber || '',
+    birthDate: user?.birthDate || '',
+    address: user?.address || ''
   });
   // Separate state for wallet balance, always fetched from backend
   const [walletBalance, setWalletBalance] = useState(0);
   const [message, setMessage] = useState('');
   const [walletAmount, setWalletAmount] = useState('');
   const [showAddFunds, setShowAddFunds] = useState(false);
-  const [showAIProfile, setShowAIProfile] = useState(false);
 
   // Список транзакций пользователя
   const [transactions, setTransactions] = useState([]);
 
-  // Загрузка реального баланса
+  // Загрузка реального баланса и профиля
   useEffect(() => {
     const loadBalance = async () => {
       try {
@@ -35,8 +43,36 @@ const Profile = () => {
         console.error('Failed to load wallet balance:', error);
       }
     };
+
+    const loadProfile = async () => {
+      try {
+        const res = await fetch(buildApiUrl(`profile/${user.id}`));
+        const json = await res.json();
+        if (json.personalData) {
+          setForm(prev => ({
+            ...prev,
+            fullName: json.personalData.fullName || '',
+            firstName: json.personalData.firstName || '',
+            lastName: json.personalData.lastName || '',
+            middleName: json.personalData.middleName || '',
+            email: json.personalData.email || prev.email,
+            birthDate: json.personalData.birthDate || '',
+            address: json.personalData.address || '',
+            passportSeries: json.personalData.passportSeries || '',
+            passportNumber: json.personalData.passportNumber || '',
+            snils: json.personalData.snils || ''
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+      }
+    };
+
     loadBalance();
-  }, []);
+    if (user?.id) {
+      loadProfile();
+    }
+  }, [user?.id]);
 
   // Загрузка истории транзакций
   useEffect(() => {
@@ -59,26 +95,61 @@ const Profile = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    const updates = {
-      name: form.name,
-      email: form.email,
-      password: form.password,
-      walletBalance: Number(form.walletBalance) || 0,
-      lastName: form.lastName,
-      firstName: form.firstName,
-      middleName: form.middleName,
-      fullName: form.fullName,
-      snils: form.snils,
-      passportSeries: form.passportSeries,
-      passportNumber: form.passportNumber,
-      birthDate: form.birthDate,
-      address: form.address
-    };
-    updateCurrentUser(updates);
-    setMessage('Профиль сохранён');
-    setTimeout(() => setMessage(''), 2000);
+    
+    try {
+      const updates = {
+        personalData: {
+          fullName: form.fullName,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          middleName: form.middleName,
+          email: form.email,
+          birthDate: form.birthDate,
+          address: form.address,
+          passportSeries: form.passportSeries,
+          passportNumber: form.passportNumber,
+          snils: form.snils
+        }
+      };
+
+      const response = await fetch(buildApiUrl(`profile/${user.id}`), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(updates)
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        setMessage('Профиль успешно сохранён!');
+        // Обновляем локальное состояние пользователя всеми полями профиля
+        updateCurrentUser({
+          name: form.name,
+          email: form.email,
+          fullName: form.fullName,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          middleName: form.middleName,
+          snils: form.snils,
+          passportSeries: form.passportSeries,
+          passportNumber: form.passportNumber,
+          birthDate: form.birthDate,
+          address: form.address
+        });
+      } else {
+        setMessage(`Ошибка сохранения: ${result.message || 'Неизвестная ошибка'}`);
+      }
+    } catch (error) {
+      console.error('Ошибка при сохранении профиля:', error);
+      setMessage('Ошибка при сохранении профиля');
+    }
+    
+    setTimeout(() => setMessage(''), 3000);
   };
 
   const handleAddFunds = async (e) => {
@@ -170,15 +241,6 @@ const Profile = () => {
             </div>
           </div>
           <div className="profile-header-actions">
-            <button 
-              type="button"
-              className="btn btn-ai-profile"
-              onClick={() => setShowAIProfile(true)}
-              title="Профиль AI с автоматически извлеченными данными"
-            >
-              <Brain size={18} />
-              AI Профиль
-            </button>
             {message && <div className="profile-badge">{message}</div>}
           </div>
         </div>
@@ -297,6 +359,13 @@ const Profile = () => {
               onChange={handleChange}
               placeholder="г. Москва, ул. Пример, д. 1"
             />
+          </div>
+
+          {/* Кнопка сохранения профиля */}
+          <div className="profile-save-section">
+            <button type="submit" className="btn btn-primary btn-save-profile">
+              Сохранить профиль
+            </button>
           </div>
 
           <div className="metrics-card">
@@ -418,7 +487,7 @@ const Profile = () => {
           <div className="pricing-card">
             <div className="metrics-header">
               <div className="metrics-title">
-                <Brain size={18} />
+                <BarChart3 size={18} />
                 <span>Тарификация Windex-Юрист</span>
               </div>
             </div>
@@ -471,18 +540,9 @@ const Profile = () => {
 
           <div className="profile-actions">
             <button type="button" className="btn btn-outline" onClick={logout}>Выйти</button>
-            <button type="submit" className="btn btn-primary">Сохранить</button>
           </div>
         </form>
       </div>
-      
-      {/* AI Профиль с автоматически извлеченными данными */}
-      {showAIProfile && (
-        <UserProfile 
-          userId={user.id || user.email || 'default_user'} 
-          onClose={() => setShowAIProfile(false)} 
-        />
-      )}
     </div>
   );
 };

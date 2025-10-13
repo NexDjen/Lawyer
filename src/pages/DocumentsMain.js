@@ -14,9 +14,9 @@ const DocumentsMain = () => {
     <div className="documents-main-page">
       <div className="container">
         <div className="documents-main-content">
-          <h1 className="documents-main-title">Документы</h1>
+          <h1 className="documents-main-title">Управление документами</h1>
           <p className="documents-main-subtitle">
-            Управляйте документами и получайте помощь в их заполнении
+            Просмотр и управление всеми документами системы
           </p>
           
           <div className="documents-main-options">
