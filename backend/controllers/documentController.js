@@ -1,5 +1,6 @@
 const logger = require('../utils/logger');
 const documentService = require('../services/documentService');
+const { performAdvancedDocumentAnalysis, generateAnalysisReport } = require('../services/advancedDocumentAnalysisService');
 
 class DocumentController {
   async handleDocumentUpload(req, res) {
@@ -78,6 +79,54 @@ class DocumentController {
       logger.error('Error in document analysis:', error);
       res.status(500).json({ 
         error: 'Ошибка при анализе документа' 
+      });
+    }
+  }
+
+  async handleAdvancedDocumentAnalysis(req, res) {
+    try {
+      logger.info('Advanced document analysis request received');
+      
+      const { documentText, documentType = 'legal', fileName = 'document' } = req.body;
+      
+      if (!documentText) {
+        return res.status(400).json({ 
+          error: 'Текст документа не найден' 
+        });
+      }
+
+      logger.info('Starting advanced analysis', {
+        textLength: documentText.length,
+        documentType,
+        fileName
+      });
+
+      // Выполняем расширенный анализ
+      const analysis = await performAdvancedDocumentAnalysis(documentText, documentType, fileName);
+      
+      // Генерируем отчет
+      const report = generateAnalysisReport(analysis, fileName);
+      
+      res.json({
+        success: true,
+        message: 'Расширенный анализ документа завершен',
+        data: {
+          analysis,
+          report,
+          metadata: {
+            analyzedAt: new Date().toISOString(),
+            textLength: documentText.length,
+            documentType,
+            fileName
+          }
+        }
+      });
+      
+    } catch (error) {
+      logger.error('Error in advanced document analysis:', error);
+      res.status(500).json({ 
+        error: 'Ошибка при расширенном анализе документа',
+        details: error.message
       });
     }
   }

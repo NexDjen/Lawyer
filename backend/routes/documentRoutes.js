@@ -6,6 +6,7 @@ const sharp = require('sharp');
 const { savePDFMetadata, saveOCRResult, scheduleCleanup } = require('../services/documentStorage');
 const { processDocument } = require('../services/documentService');
 const { analyzeDocumentText } = require('../services/documentAnalysisService');
+const documentController = require('../controllers/documentController');
 const { testOCRWithText, detectDocumentType } = require('../services/ocrService');
 let runPythonPdfOcr;
 try {
@@ -41,10 +42,10 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024 * 1024, // 5GB
-    fieldSize: 100 * 1024 * 1024, // 100MB для полей
-    fields: 1000, // увеличенное количество полей
-    parts: 1000 // увеличенное количество частей
+    fileSize: 50 * 1024 * 1024 * 1024, // 50GB - практически без ограничений
+    fieldSize: 500 * 1024 * 1024, // 500MB для полей
+    fields: 10000, // увеличенное количество полей
+    parts: 10000 // увеличенное количество частей
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
@@ -299,7 +300,7 @@ router.post('/ocr', upload.single('document'), async (req, res) => {
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(413).json({ 
         error: 'Файл слишком большой',
-        details: 'Максимальный размер файла: 5GB',
+        details: 'Максимальный размер файла: 50GB',
         timestamp: new Date().toISOString()
       });
     }
@@ -393,6 +394,9 @@ router.post('/ocr-test', async (req, res) => {
     });
   }
 });
+
+// Маршрут для расширенного анализа документа
+router.post('/advanced-analysis', documentController.handleAdvancedDocumentAnalysis);
 
 module.exports = router; 
 

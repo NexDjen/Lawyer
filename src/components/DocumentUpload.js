@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Upload, X, Camera, FileText, Edit3, Save, RotateCcw } from 'lucide-react';
+import { Upload, X, Camera, FileText, Edit3, Save, RotateCcw, Brain, Loader } from 'lucide-react';
 import { buildApiUrl } from '../config/api';
+import DocumentAnalysisResults from './DocumentAnalysisResults';
 import './DocumentUpload.css';
 
 const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storageKey = 'documents', profileDefaults = {} }) => {
@@ -25,6 +26,9 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
   const pendingIdRef = useRef(null);
   const progressValueRef = useRef(0);
   const xhrRef = useRef(null);
+  const [showAdvancedAnalysis, setShowAdvancedAnalysis] = useState(false);
+  const [advancedAnalysis, setAdvancedAnalysis] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const applyExtractedToProfile = (fields) => {
     try {
@@ -68,6 +72,43 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
       docs.unshift(fallbackNewDoc);
     }
     localStorage.setItem(storageKey, JSON.stringify(docs));
+  };
+
+  // Функция для выполнения расширенного анализа документа
+  const performAdvancedAnalysis = async (documentText, fileName) => {
+    try {
+      setIsAnalyzing(true);
+      
+      const response = await fetch(buildApiUrl('documents/advanced-analysis'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          documentText,
+          documentType: documentType?.id || 'legal',
+          fileName: fileName || 'document'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setAdvancedAnalysis(result.data);
+        setShowAdvancedAnalysis(true);
+      } else {
+        throw new Error(result.error || 'Ошибка при анализе документа');
+      }
+    } catch (error) {
+      console.error('Ошибка при расширенном анализе:', error);
+      alert(`Ошибка при анализе документа: ${error.message}`);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   // Определяем поля для разных типов документов
@@ -125,8 +166,8 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
   };
 
   const handleFileUpload = async (file) => {
-    // Проверяем размер файла на клиенте (5GB лимит)
-    const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
+    // Проверяем размер файла на клиенте (50GB лимит)
+    const MAX_FILE_SIZE = 50 * 1024 * 1024 * 1024; // 50GB - практически без ограничений
     if (file.size > MAX_FILE_SIZE) {
       alert(`Файл слишком большой. Максимальный размер: ${formatSize(MAX_FILE_SIZE)}. Размер вашего файла: ${formatSize(file.size)}`);
       return;
@@ -538,7 +579,7 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
               <div className="upload-area">
                 <Upload size={48} />
                 <h3>Загрузите изображение или PDF</h3>
-                <p>Поддерживаются форматы: JPG, PNG, PDF (до 5 ГБ)</p>
+                <p>Поддерживаются форматы: JPG, PNG, PDF (без ограничений по размеру)</p>
                 
                 <div className="upload-buttons">
                   <button 
@@ -642,6 +683,32 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
                         <span>Уверенность распознавания: {Math.round(ocrResult.confidence * 100)}%</span>
                       </div>
                     )}
+                    
+                    {/* Кнопка для расширенного анализа */}
+                    {ocrResult.recognizedText && (
+                      <div className="advanced-analysis-section">
+                        <button 
+                          className="btn btn--primary btn--advanced-analysis"
+                          onClick={() => performAdvancedAnalysis(ocrResult.recognizedText, lastUploadMeta?.filename || 'document')}
+                          disabled={isAnalyzing}
+                        >
+                          {isAnalyzing ? (
+                            <>
+                              <Loader size={16} className="spinning" />
+                              Анализируем...
+                            </>
+                          ) : (
+                            <>
+                              <Brain size={16} />
+                              Глубокий анализ документа
+                            </>
+                          )}
+                        </button>
+                        <p className="analysis-description">
+                          Найти тонкие места, ошибки и проблемы в документе с помощью ИИ
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
                 {ocrResult && ocrResult.kind === 'pdf' && (
@@ -668,6 +735,32 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
                         {Object.entries(ocrResult.extractedData).map(([k, v]) => (
                           <div key={k} className="field-group"><label className="field-label">{k}</label><div className="field-value">{String(v)}</div></div>
                         ))}
+                      </div>
+                    )}
+                    
+                    {/* Кнопка для расширенного анализа PDF */}
+                    {ocrResult.recognizedText && (
+                      <div className="advanced-analysis-section">
+                        <button 
+                          className="btn btn--primary btn--advanced-analysis"
+                          onClick={() => performAdvancedAnalysis(ocrResult.recognizedText, lastUploadMeta?.filename || 'PDF документ')}
+                          disabled={isAnalyzing}
+                        >
+                          {isAnalyzing ? (
+                            <>
+                              <Loader size={16} className="spinning" />
+                              Анализируем...
+                            </>
+                          ) : (
+                            <>
+                              <Brain size={16} />
+                              Глубокий анализ документа
+                            </>
+                          )}
+                        </button>
+                        <p className="analysis-description">
+                          Найти тонкие места, ошибки и проблемы в документе с помощью ИИ
+                        </p>
                       </div>
                     )}
                   </div>
@@ -758,6 +851,19 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
                 }}
               >Отмена</button>
             </div>
+        </div>
+      )}
+      
+      {/* Модальное окно для результатов расширенного анализа */}
+      {showAdvancedAnalysis && (
+        <div className="modal-overlay">
+          <div className="modal-content analysis-modal">
+            <DocumentAnalysisResults 
+              analysis={advancedAnalysis?.analysis}
+              fileName={advancedAnalysis?.metadata?.fileName}
+              onClose={() => setShowAdvancedAnalysis(false)}
+            />
+          </div>
         </div>
       )}
       </div>
