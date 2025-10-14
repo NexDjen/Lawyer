@@ -19,6 +19,8 @@ const { metricsMiddleware, metrics } = require('./middleware/metrics');
 const chatRoutes = require('./routes/chatRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
 const courtRoutes = require('./routes/courtRoutes');
 const walletRoutes = require('./routes/walletRoutes');
 const profileRoutes = require('./routes/profileRoutes');
@@ -300,6 +302,8 @@ class Server {
 
   _setupRoutes() {
     // API маршруты - сначала специфичные, потом общие
+    this.app.use('/api/auth', authRoutes);
+    this.app.use('/api/users', userRoutes);
     this.app.use('/api/chat', chatRoutes);
     this.app.use('/api/admin', adminRoutes);
     this.app.use('/api/court', courtRoutes);

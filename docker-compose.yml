@@ -60,14 +60,6 @@ services:
       - app-network
     restart: unless-stopped
 
-  ngrok:
-    image: wernight/ngrok
-    command: http backend-1:3007 --authtoken ${NGROK_AUTHTOKEN:-}
-    ports:
-      - "4040:4040"
-    networks:
-      - app-network
-
 networks:
   app-network:
     driver: bridge

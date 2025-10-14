@@ -1,98 +1,97 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs').promises;
-const path = require('path');
-
-// Путь к файлу статистики
-const STATS_FILE = path.join(__dirname, '../data/windexai_stats.json');
-const DAILY_STATS_FILE = path.join(__dirname, '../data/daily_stats.json');
-
-// Инициализация файлов статистики если они не существуют
-async function initializeStatsFiles() {
-  try {
-    await fs.access(STATS_FILE);
-  } catch {
-    const initialStats = {
-      totalTokens: 0,
-      totalCost: 0,
-      totalRequests: 0,
-      avgTokensPerRequest: 0,
-      avgCostPerRequest: 0,
-      currentMonth: new Date().toISOString().slice(0, 7),
-      lastUpdated: new Date().toISOString()
-    };
-    await fs.writeFile(STATS_FILE, JSON.stringify(initialStats, null, 2));
-  }
-
-  try {
-    await fs.access(DAILY_STATS_FILE);
-  } catch {
-    await fs.writeFile(DAILY_STATS_FILE, JSON.stringify([], null, 2));
-  }
-}
+const User = require('../models/User');
+const WindexAIStats = require('../models/WindexAIStats');
+const database = require('../database/database');
+const logger = require('../utils/logger');
 
 // Получение статистики WindexAI
 router.get('/windexai-stats', async (req, res) => {
   try {
-    await initializeStatsFiles();
-    const statsData = await fs.readFile(STATS_FILE, 'utf8');
-    const stats = JSON.parse(statsData);
+    const stats = await WindexAIStats.getOverallStats();
     
-    res.json(stats);
+    res.json({
+      success: true,
+      ...stats
+    });
   } catch (error) {
-    console.error('Ошибка при получении статистики OpenAI:', error);
-    res.status(500).json({ error: 'Ошибка при получении статистики' });
+    logger.error('Ошибка при получении статистики WindexAI:', error);
+    res.status(500).json({ 
+      error: 'Ошибка при получении статистики',
+      details: error.message 
+    });
   }
 });
 
 // Получение статистики OpenAI (алиас для совместимости)
 router.get('/openai-stats', async (req, res) => {
   try {
-    await initializeStatsFiles();
-    const statsData = await fs.readFile(STATS_FILE, 'utf8');
-    const stats = JSON.parse(statsData);
+    const stats = await WindexAIStats.getOverallStats();
     
-    res.json(stats);
+    res.json({
+      success: true,
+      ...stats
+    });
   } catch (error) {
-    console.error('Ошибка при получении статистики OpenAI:', error);
-    res.status(500).json({ error: 'Ошибка при получении статистики' });
+    logger.error('Ошибка при получении статистики OpenAI:', error);
+    res.status(500).json({ 
+      error: 'Ошибка при получении статистики',
+      details: error.message 
+    });
   }
 });
 
 // Получение дневной статистики
 router.get('/daily-stats', async (req, res) => {
   try {
-    await initializeStatsFiles();
-    const dailyData = await fs.readFile(DAILY_STATS_FILE, 'utf8');
-    const dailyStats = JSON.parse(dailyData);
+    const dailyStats = await WindexAIStats.getDailyStats(30);
     
-    res.json(dailyStats);
+    res.json({
+      success: true,
+      stats: dailyStats
+    });
   } catch (error) {
-    console.error('Ошибка при получении дневной статистики:', error);
-    res.status(500).json({ error: 'Ошибка при получении дневной статистики' });
+    logger.error('Ошибка при получении дневной статистики:', error);
+    res.status(500).json({ 
+      error: 'Ошибка при получении дневной статистики',
+      details: error.message 
+    });
+  }
+});
+
+// Получение всех пользователей
+router.get('/users', async (req, res) => {
+  try {
+    const users = await User.findAll();
+    
+    res.json({
+      success: true,
+      users: users.map(user => user.toJSON())
+    });
+  } catch (error) {
+    logger.error('Ошибка при получении пользователей:', error);
+    res.status(500).json({ 
+      error: 'Ошибка при получении пользователей',
+      details: error.message 
+    });
   }
 });
 
 // Сброс статистики
 router.post('/reset-stats', async (req, res) => {
   try {
-    const initialStats = {
-      totalTokens: 0,
-      totalCost: 0,
-      totalRequests: 0,
-      avgTokensPerRequest: 0,
-      avgCostPerRequest: 0,
-      currentMonth: new Date().toISOString().slice(0, 7),
-      lastUpdated: new Date().toISOString()
-    };
+    await WindexAIStats.cleanupOldRecords(0); // Удаляем все записи
     
-    await fs.writeFile(STATS_FILE, JSON.stringify(initialStats, null, 2));
-    await fs.writeFile(DAILY_STATS_FILE, JSON.stringify([], null, 2));
-    
-    res.json({ message: 'Статистика успешно сброшена' });
+    res.json({ 
+      success: true,
+      message: 'Статистика успешно сброшена' 
+    });
   } catch (error) {
-    console.error('Ошибка при сбросе статистики:', error);
-    res.status(500).json({ error: 'Ошибка при сбросе статистики' });
+    logger.error('Ошибка при сбросе статистики:', error);
+    res.status(500).json({ 
+      error: 'Ошибка при сбросе статистики',
+      details: error.message 
+    });
   }
 });
 
@@ -100,16 +99,58 @@ router.post('/reset-stats', async (req, res) => {
 router.get('/api-settings', async (req, res) => {
   try {
     const settings = {
-      model: process.env.OPENAI_MODEL || 'gpt-4.1-nano',
-      maxTokens: parseInt(process.env.MAX_TOKENS) || 4000,
-      temperature: parseFloat(process.env.TEMPERATURE) || 0.7,
-      apiStatus: process.env.OPENAI_API_KEY ? 'active' : 'inactive'
+      model: process.env.WINDEXAI_MODEL || 'gpt-4o-mini',
+      maxTokens: parseInt(process.env.WINDEXAI_MAX_TOKENS) || 4000,
+      temperature: parseFloat(process.env.WINDEXAI_TEMPERATURE) || 0.7,
+      apiStatus: process.env.WINDEXAI_API_KEY ? 'active' : 'inactive'
     };
     
-    res.json(settings);
+    res.json({
+      success: true,
+      ...settings
+    });
   } catch (error) {
-    console.error('Ошибка при получении настроек API:', error);
-    res.status(500).json({ error: 'Ошибка при получении настроек API' });
+    logger.error('Ошибка при получении настроек API:', error);
+    res.status(500).json({ 
+      error: 'Ошибка при получении настроек API',
+      details: error.message 
+    });
+  }
+});
+
+// Получение статистики базы данных
+router.get('/database-stats', async (req, res) => {
+  try {
+    const stats = await database.getStats();
+    
+    res.json({
+      success: true,
+      stats
+    });
+  } catch (error) {
+    logger.error('Ошибка при получении статистики БД:', error);
+    res.status(500).json({ 
+      error: 'Ошибка при получении статистики БД',
+      details: error.message 
+    });
+  }
+});
+
+// Получение детальной статистики для админ-панели
+router.get('/admin-stats', async (req, res) => {
+  try {
+    const adminStats = await WindexAIStats.getAdminStats();
+    
+    res.json({
+      success: true,
+      ...adminStats
+    });
+  } catch (error) {
+    logger.error('Ошибка при получении админ статистики:', error);
+    res.status(500).json({ 
+      error: 'Ошибка при получении админ статистики',
+      details: error.message 
+    });
   }
 });
 
@@ -121,16 +162,23 @@ router.put('/api-settings', async (req, res) => {
     // В реальном приложении здесь нужно обновить переменные окружения
     // Для демонстрации просто возвращаем обновленные настройки
     const settings = {
-      model: model || process.env.OPENAI_MODEL || 'gpt-4.1-nano',
-      maxTokens: maxTokens || parseInt(process.env.MAX_TOKENS) || 4000,
-      temperature: temperature || parseFloat(process.env.TEMPERATURE) || 0.7,
-      apiStatus: process.env.OPENAI_API_KEY ? 'active' : 'inactive'
+      model: model || process.env.WINDEXAI_MODEL || 'gpt-4o-mini',
+      maxTokens: maxTokens || parseInt(process.env.WINDEXAI_MAX_TOKENS) || 4000,
+      temperature: temperature || parseFloat(process.env.WINDEXAI_TEMPERATURE) || 0.7,
+      apiStatus: process.env.WINDEXAI_API_KEY ? 'active' : 'inactive'
     };
     
-    res.json({ message: 'Настройки обновлены', settings });
+    res.json({ 
+      success: true,
+      message: 'Настройки обновлены', 
+      settings 
+    });
   } catch (error) {
-    console.error('Ошибка при обновлении настроек API:', error);
-    res.status(500).json({ error: 'Ошибка при обновлении настроек API' });
+    logger.error('Ошибка при обновлении настроек API:', error);
+    res.status(500).json({ 
+      error: 'Ошибка при обновлении настроек API',
+      details: error.message 
+    });
   }
 });
 

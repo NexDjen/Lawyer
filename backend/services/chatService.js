@@ -5,6 +5,7 @@ const { readDb } = require('./documentStorage');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const PersonalDataExtractor = require('./personalDataExtractor');
 const UserProfileService = require('./userProfileService');
+const WindexAIStats = require('../models/WindexAIStats');
 
 class ChatService {
   constructor() {
@@ -581,6 +582,20 @@ class ChatService {
         model: config.windexai.model
       });
 
+      // Записываем статистику использования WindexAI
+      try {
+        await WindexAIStats.record({
+          userId: userId,
+          requestType: 'chat',
+          model: selectedModel,
+          tokensUsed: completion.usage?.total_tokens || 0,
+          cost: this.calculateCost(completion.usage),
+          responseTime: Date.now() - startTime
+        });
+      } catch (statsError) {
+        logger.warn('Ошибка записи статистики:', statsError);
+      }
+
       return response;
 
     } catch (error) {
@@ -836,6 +851,20 @@ class ChatService {
       });
       return '';
     }
+  }
+
+  // Расчет стоимости использования WindexAI
+  calculateCost(usage) {
+    if (!usage) return 0;
+    
+    // Примерные цены для WindexAI (нужно уточнить актуальные)
+    const inputPricePer1K = 0.0005;  // $0.0005 за 1K input tokens
+    const outputPricePer1K = 0.0015; // $0.0015 за 1K output tokens
+    
+    const inputCost = (usage.prompt_tokens || 0) / 1000 * inputPricePer1K;
+    const outputCost = (usage.completion_tokens || 0) / 1000 * outputPricePer1K;
+    
+    return Math.round((inputCost + outputCost) * 10000) / 10000; // Округляем до 4 знаков
   }
 }
 
