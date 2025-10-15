@@ -105,13 +105,19 @@ const ChatInput = ({
 
   // Обработка загрузки файлов
   const handleFileUpload = () => {
+    console.log('File upload button clicked');
     if (fileInputRef.current) {
+      console.log('Triggering file input click');
       fileInputRef.current.click();
+    } else {
+      console.error('fileInputRef is null');
     }
   };
 
   const handleFileChange = async (event) => {
+    console.log('File change event triggered');
     const files = Array.from(event.target.files);
+    console.log('Selected files:', files);
     if (files.length === 0) return;
 
     setIsUploading(true);
