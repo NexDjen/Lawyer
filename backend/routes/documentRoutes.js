@@ -57,7 +57,10 @@ const upload = multer({
       'image/webp',
       'image/tiff',
       'image/bmp',
-      'application/pdf'
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
     ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
@@ -391,6 +394,112 @@ router.post('/ocr-test', async (req, res) => {
     res.status(500).json({ 
       error: 'Ошибка при тестировании OCR',
       details: error.message 
+    });
+  }
+});
+
+// Маршрут для простой загрузки файлов (для чата)
+router.post('/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Файл не был загружен' });
+    }
+
+    logger.info('Файл загружен через чат', {
+      filename: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    });
+
+    // Обрабатываем файл в зависимости от типа
+    let recognizedText = '';
+    let extractedData = null;
+    let confidence = null;
+
+    // PDF обработка
+    if (req.file.mimetype === 'application/pdf') {
+      const MAX_PARSE_SIZE = 100 * 1024 * 1024; // 100MB
+      
+      if (pdfParse && req.file.size <= MAX_PARSE_SIZE) {
+        try {
+          const dataBuffer = fs.readFileSync(req.file.path);
+          const parsed = await pdfParse(dataBuffer);
+          recognizedText = (parsed.text || '').trim();
+          
+          if (recognizedText && recognizedText.length > 20) {
+            const documentType = 'unknown';
+            const testRes = await testOCRWithText(recognizedText, documentType);
+            extractedData = testRes.extractedData;
+            confidence = testRes.confidence;
+          }
+        } catch (e) {
+          logger.warn('PDF text extraction failed', { error: e.message });
+        }
+      }
+    } 
+    // Word документы
+    else if (req.file.mimetype === 'application/msword' || 
+             req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      try {
+        // Для Word документов пока просто возвращаем информацию о файле
+        // В будущем можно добавить парсинг Word документов
+        recognizedText = `Word документ: ${req.file.originalname}`;
+        extractedData = { text: recognizedText };
+        confidence = 1.0;
+      } catch (e) {
+        logger.warn('Word document processing failed', { error: e.message });
+      }
+    }
+    // Текстовые файлы
+    else if (req.file.mimetype === 'text/plain') {
+      try {
+        const textContent = fs.readFileSync(req.file.path, 'utf8');
+        recognizedText = textContent.trim();
+        extractedData = { text: recognizedText };
+        confidence = 1.0;
+      } catch (e) {
+        logger.warn('Text file processing failed', { error: e.message });
+      }
+    }
+    // Обработка изображений
+    else {
+      const documentType = 'unknown';
+      const result = await processDocument(req.file.path, documentType);
+      recognizedText = result.recognizedText || '';
+      extractedData = result.extractedData;
+      confidence = result.confidence;
+    }
+
+    // Удаляем временный файл
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+
+    res.json({
+      success: true,
+      message: 'Файл успешно обработан',
+      recognizedText: recognizedText,
+      extractedData: extractedData,
+      confidence: confidence,
+      filename: req.file.originalname,
+      size: req.file.size,
+      type: req.file.mimetype
+    });
+
+  } catch (error) {
+    logger.error('Ошибка обработки файла в чате', {
+      error: error.message,
+      stack: error.stack
+    });
+
+    // Удаляем файл в случае ошибки
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+
+    res.status(500).json({ 
+      error: 'Ошибка при обработке файла',
+      details: error.message
     });
   }
 });

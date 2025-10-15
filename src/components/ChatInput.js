@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Paperclip, Mic, ArrowUpCircle } from 'lucide-react';
+import { Send, Paperclip, Mic, ArrowUpCircle, FileText, Image, File } from 'lucide-react';
 import { buildApiUrl } from '../config/api';
 import './ChatInput.css';
 
@@ -11,9 +11,12 @@ const ChatInput = ({
   const [message, setMessage] = useState('');
   const [isComposing, setIsComposing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Автоматическое изменение высоты textarea
   useEffect(() => {
@@ -100,15 +103,104 @@ const ChatInput = ({
     }
   };
 
+  // Обработка загрузки файлов
+  const handleFileUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = async (event) => {
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+
+    setIsUploading(true);
+    
+    try {
+      for (const file of files) {
+        await processFile(file);
+      }
+    } catch (error) {
+      console.error('File processing error:', error);
+    } finally {
+      setIsUploading(false);
+      // Очищаем input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const processFile = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const response = await fetch(buildApiUrl('documents/upload'), {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка загрузки файла');
+      }
+
+      const result = await response.json();
+      
+      if (result.recognizedText) {
+        // Отправляем распознанный текст как сообщение
+        onSendMessage(`📎 Загружен файл: ${file.name}\n\nРаспознанный текст:\n${result.recognizedText}`);
+      } else {
+        onSendMessage(`📎 Загружен файл: ${file.name}`);
+      }
+      
+      // Добавляем файл в список загруженных
+      setUploadedFiles(prev => [...prev, {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        uploadedAt: new Date()
+      }]);
+      
+    } catch (error) {
+      console.error('File processing error:', error);
+      onSendMessage(`❌ Ошибка обработки файла ${file.name}: ${error.message}`);
+    }
+  };
+
+  const getFileIcon = (fileType) => {
+    if (fileType.startsWith('image/')) return <Image size={16} />;
+    if (fileType.includes('pdf')) return <FileText size={16} />;
+    if (fileType.includes('word') || fileType.includes('document')) return <FileText size={16} />;
+    return <File size={16} />;
+  };
+
 
 
   return (
     <div className="chat-input">
       <div className="chat-input__container">
         <div className="chat-input__left">
-          <button className="chat-input__button" title="Вложить файл" onClick={() => {}}>
-            <Paperclip size={18} />
+          <button 
+            className="chat-input__button" 
+            title="Вложить файл" 
+            onClick={handleFileUpload}
+            disabled={disabled || isUploading}
+          >
+            {isUploading ? (
+              <div className="spinner" />
+            ) : (
+              <Paperclip size={18} />
+            )}
           </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.tiff"
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
         </div>
         <textarea
           ref={textareaRef}
@@ -159,6 +251,21 @@ const ChatInput = ({
       {message.length > 0 && (
         <div className="chat-input__counter">
           {message.length}/4000
+        </div>
+      )}
+      
+      {uploadedFiles.length > 0 && (
+        <div className="chat-input__files">
+          <div className="chat-input__files-title">Загруженные файлы:</div>
+          {uploadedFiles.map((file, index) => (
+            <div key={index} className="chat-input__file-item">
+              {getFileIcon(file.type)}
+              <span className="chat-input__file-name">{file.name}</span>
+              <span className="chat-input__file-size">
+                ({(file.size / 1024).toFixed(1)} KB)
+              </span>
+            </div>
+          ))}
         </div>
       )}
     </div>
