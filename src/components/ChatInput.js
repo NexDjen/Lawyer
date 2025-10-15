@@ -105,6 +105,7 @@ const ChatInput = ({
 
   // Обработка загрузки файлов
   const handleFileUpload = () => {
+    alert('Upload button clicked');
     console.log('File upload button clicked');
     if (fileInputRef.current) {
       console.log('Triggering file input click');
