@@ -6,6 +6,7 @@ const { HttpsProxyAgent } = require('https-proxy-agent');
 const PersonalDataExtractor = require('./personalDataExtractor');
 const UserProfileService = require('./userProfileService');
 const WindexAIStats = require('../models/WindexAIStats');
+const webSearchService = require('./webSearchService');
 
 class ChatService {
   constructor() {
@@ -164,8 +165,21 @@ class ChatService {
       ? '\n\nОбращайся к пользователю уважительно, но без персональных данных. Учитывай контекст предыдущих сообщений в разговоре.'
       : '\n\nОбращайся к пользователю уважительно, но без персональных данных. НЕ упоминай предыдущие темы или контекст - это новый разговор.';
 
+    // Выполняем веб-поиск если включен
+    let webSearchResults = '';
+    if (useWebSearch) {
+      logger.info('🌐 Performing web search for context');
+      const searchResults = await webSearchService.searchWithContext(message, 3);
+      if (searchResults) {
+        webSearchResults = searchResults;
+        logger.info('✅ Web search completed', { hasResults: !!searchResults });
+      } else {
+        logger.info('ℹ️ No web search results found');
+      }
+    }
+
     const webSearchContext = useWebSearch 
-      ? '\n\nИспользуй актуальную информацию из интернета для более точных ответов.'
+      ? '\n\nИспользуй актуальную информацию из интернета для более точных ответов, особенно судебную практику.'
       : '\n\nОтвечай только на основе базовых знаний, без веб-поиска.';
 
     // Получаем контекст пользователя только для сложных вопросов
@@ -184,7 +198,7 @@ class ChatService {
       logger.info('🚫 Skipping user context loading for new chat');
     }
 
-    return `${basePrompt}${personalization}${historyContext}${webSearchContext}${userContext}\n\nВопрос: ${message}\n\nОтвет:`;
+    return `${basePrompt}${personalization}${historyContext}${webSearchContext}${webSearchResults}${userContext}\n\nВопрос: ${message}\n\nОтвет:`;
   }
 
   // Обработка сообщения через WindexAI
