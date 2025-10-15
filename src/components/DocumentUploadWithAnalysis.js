@@ -23,13 +23,17 @@ const DocumentUploadWithAnalysis = () => {
       formData.append('file', file);
       formData.append('userId', 'current-user'); // В реальном приложении получить из контекста
 
+      console.log('Загружаем файл:', file.name, 'размер:', file.size);
+      
       const uploadResponse = await fetch('/api/documents/upload', {
         method: 'POST',
         body: formData,
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Ошибка загрузки файла');
+        const errorText = await uploadResponse.text();
+        console.error('Ошибка загрузки файла:', uploadResponse.status, errorText);
+        throw new Error(`Ошибка загрузки файла: ${uploadResponse.status}`);
       }
 
       const uploadData = await uploadResponse.json();
@@ -37,11 +41,14 @@ const DocumentUploadWithAnalysis = () => {
         name: file.name,
         size: file.size,
         type: file.type,
-        content: uploadData.text || 'Текст не распознан'
+        content: uploadData.recognizedText || 'Текст не распознан'
       });
 
       // Начинаем анализ
       setIsAnalyzing(true);
+      
+      console.log('Начинаем анализ документа:', file.name);
+      console.log('Текст для анализа:', uploadData.recognizedText?.substring(0, 100) + '...');
       
       const analysisResponse = await fetch('/api/documents/advanced-analysis', {
         method: 'POST',
@@ -49,17 +56,20 @@ const DocumentUploadWithAnalysis = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          documentText: uploadData.text || '',
+          documentText: uploadData.recognizedText || '',
           documentName: file.name,
           userId: 'current-user'
         }),
       });
 
       if (!analysisResponse.ok) {
-        throw new Error('Ошибка анализа документа');
+        const errorText = await analysisResponse.text();
+        console.error('Ошибка анализа документа:', analysisResponse.status, errorText);
+        throw new Error(`Ошибка анализа документа: ${analysisResponse.status}`);
       }
 
       const analysisData = await analysisResponse.json();
+      console.log('Анализ завершен:', analysisData);
       setAnalysisResult(analysisData);
       
     } catch (err) {
