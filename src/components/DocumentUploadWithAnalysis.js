@@ -161,13 +161,18 @@ const DocumentUploadWithAnalysis = () => {
               <h5>🚨 Риски</h5>
               <div className="risk-level">
                 <span className="level-label">Уровень риска:</span>
-                <span className={`level-value level-${analysisResult.riskLevel || 'medium'}`}>
-                  {analysisResult.riskLevel || 'Средний'}
+                <span className={`level-value level-${analysisResult.data?.analysis?.summary?.riskLevel || 'medium'}`}>
+                  {analysisResult.data?.analysis?.summary?.riskLevel === 'high' ? 'Высокий' : 
+                   analysisResult.data?.analysis?.summary?.riskLevel === 'low' ? 'Низкий' : 'Средний'}
                 </span>
               </div>
               <ul className="risk-list">
-                {analysisResult.risks?.map((risk, index) => (
-                  <li key={index}>{risk}</li>
+                {analysisResult.data?.analysis?.risks?.map((risk, index) => (
+                  <li key={index}>
+                    <strong>{risk.category}:</strong> {risk.description}
+                    <br />
+                    <small>Вероятность: {risk.probability}, Влияние: {risk.impact}</small>
+                  </li>
                 ))}
               </ul>
             </div>
@@ -175,8 +180,12 @@ const DocumentUploadWithAnalysis = () => {
             <div className="analysis-card recommendations">
               <h5>💡 Рекомендации</h5>
               <ul className="recommendation-list">
-                {analysisResult.recommendations?.map((rec, index) => (
-                  <li key={index}>{rec}</li>
+                {analysisResult.data?.analysis?.recommendations?.map((rec, index) => (
+                  <li key={index}>
+                    <strong>{rec.category}:</strong> {rec.description}
+                    <br />
+                    <small>Приоритет: {rec.priority}, Реализация: {rec.implementation}</small>
+                  </li>
                 ))}
               </ul>
             </div>
@@ -185,19 +194,24 @@ const DocumentUploadWithAnalysis = () => {
               <h5>⚖️ Соответствие</h5>
               <div className="compliance-status">
                 <span className="status-label">Статус:</span>
-                <span className={`status-value status-${analysisResult.compliance || 'medium'}`}>
-                  {analysisResult.compliance || 'Требует внимания'}
+                <span className={`status-value status-${analysisResult.data?.analysis?.summary?.overallQuality || 'medium'}`}>
+                  {analysisResult.data?.analysis?.summary?.overallQuality === 'good' ? 'Хорошее' : 
+                   analysisResult.data?.analysis?.summary?.overallQuality === 'poor' ? 'Плохое' : 'Среднее'}
                 </span>
               </div>
               <p className="compliance-note">
-                {analysisResult.complianceNote || 'Документ требует дополнительной проверки'}
+                {analysisResult.data?.analysis?.complianceIssues?.length > 0 
+                  ? `Найдено ${analysisResult.data.analysis.complianceIssues.length} нарушений соответствия`
+                  : 'Документ соответствует требованиям'}
               </p>
             </div>
 
             <div className="analysis-card summary">
               <h5>📋 Краткое резюме</h5>
               <p className="summary-text">
-                {analysisResult.summary || 'Анализ завершен. Обратите внимание на выявленные риски и рекомендации.'}
+                <strong>Тип документа:</strong> {analysisResult.data?.analysis?.summary?.documentType}<br />
+                <strong>Основные проблемы:</strong> {analysisResult.data?.analysis?.summary?.mainIssues?.join(', ')}<br />
+                <strong>Всего найдено проблем:</strong> {analysisResult.data?.analysis?.statistics?.totalIssues}
               </p>
             </div>
           </div>
