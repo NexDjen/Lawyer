@@ -6,16 +6,16 @@ const isProd = process.env.NODE_ENV === 'production';
 const DEV_API_URL = 'http://localhost:3007/api';
 
 // In production use relative paths to let nginx handle SSL and ports
-export const API_BASE_URL = envApiBase
-  ? envApiBase.replace(/\/$/, '')
-  : (isProd ? '/api' : DEV_API_URL);
+export const API_BASE_URL = isProd
+  ? '/api'
+  : (envApiBase ? envApiBase.replace(/\/$/, '') : DEV_API_URL);
 
 // Optional explicit WS URL override
 // In production, connect to nginx proxy port 1041 with WebSocket support
-export const WS_BASE_URL = process.env.REACT_APP_WS_URL
-  ? process.env.REACT_APP_WS_URL.replace(/\/$/, '')
-  : (isProd
-      ? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`
+export const WS_BASE_URL = isProd
+  ? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`
+  : (process.env.REACT_APP_WS_URL
+      ? process.env.REACT_APP_WS_URL.replace(/\/$/, '')
       : 'ws://localhost:3007');
 
 // Debug logs
