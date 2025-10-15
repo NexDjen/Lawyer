@@ -10,6 +10,8 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
   const [uploadedImage, setUploadedImage] = useState(null);
   const [ocrResult, setOcrResult] = useState(null);
   const [isProcessing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedFields, setEditedFields] = useState({});
   const [showRawText, setShowRawText] = useState(false);
@@ -269,6 +271,11 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
       if (result && result.extractedData) {
         applyExtractedToProfile(result.extractedData);
       }
+      
+      // Запускаем LLM анализ если есть распознанный текст
+      if (result && result.recognizedText && result.recognizedText.trim().length > 50) {
+        performLLMAnalysis(result.recognizedText, file.name);
+      }
       // Обновляем карточку документа из background
       upsertDocumentInStorage(
         (d) => d.id === clientId,
@@ -516,6 +523,42 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
     setOcrResult(null);
     setEditedFields({});
     setIsEditing(false);
+    setAnalysisResult(null);
+  };
+
+  const performLLMAnalysis = async (documentText, fileName) => {
+    try {
+      setIsAnalyzing(true);
+      console.log('Начинаем LLM анализ документа:', fileName);
+      
+      const analysisResponse = await fetch(buildApiUrl('documents/advanced-analysis'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          documentText: documentText,
+          documentName: fileName,
+          userId: user?.id || 'current-user'
+        }),
+      });
+
+      if (!analysisResponse.ok) {
+        const errorText = await analysisResponse.text();
+        console.error('Ошибка LLM анализа:', analysisResponse.status, errorText);
+        throw new Error(`Ошибка анализа документа: ${analysisResponse.status}`);
+      }
+
+      const analysisData = await analysisResponse.json();
+      console.log('LLM анализ завершен:', analysisData);
+      setAnalysisResult(analysisData);
+      
+    } catch (error) {
+      console.error('Ошибка LLM анализа:', error);
+      // Не показываем ошибку пользователю, просто не показываем анализ
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const fields = documentType ? getDocumentFields(documentType.id) : {};
@@ -646,6 +689,72 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
                     
                   </div>
                 )}
+                
+                {/* LLM Анализ результатов */}
+                {isAnalyzing && (
+                  <div className="analysis-loading">
+                    <div className="loading-spinner">
+                      <Brain size={24} className="spinning" />
+                    </div>
+                    <p>ИИ анализирует документ...</p>
+                  </div>
+                )}
+                
+                {analysisResult && (
+                  <div className="analysis-results">
+                    <h4 className="results-title">
+                      <Brain size={20} />
+                      Результаты LLM анализа
+                    </h4>
+                    
+                    <div className="analysis-grid">
+                      <div className="analysis-card risks">
+                        <h5>🚨 Риски</h5>
+                        <div className="risk-level">
+                          <span className="level-label">Уровень риска:</span>
+                          <span className={`level-value level-${analysisResult.data?.analysis?.riskLevel || 'medium'}`}>
+                            {analysisResult.data?.analysis?.riskLevel || 'Средний'}
+                          </span>
+                        </div>
+                        <ul className="risk-list">
+                          {analysisResult.data?.analysis?.risks?.map((risk, index) => (
+                            <li key={index}>{risk}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="analysis-card recommendations">
+                        <h5>💡 Рекомендации</h5>
+                        <ul className="recommendation-list">
+                          {analysisResult.data?.analysis?.recommendations?.map((rec, index) => (
+                            <li key={index}>{rec}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="analysis-card compliance">
+                        <h5>⚖️ Соответствие</h5>
+                        <div className="compliance-status">
+                          <span className="status-label">Статус:</span>
+                          <span className={`status-value status-${analysisResult.data?.analysis?.compliance || 'medium'}`}>
+                            {analysisResult.data?.analysis?.compliance || 'Требует внимания'}
+                          </span>
+                        </div>
+                        <p className="compliance-note">
+                          {analysisResult.data?.analysis?.complianceNote || 'Документ требует дополнительной проверки'}
+                        </p>
+                      </div>
+
+                      <div className="analysis-card summary">
+                        <h5>📋 Краткое резюме</h5>
+                        <p className="summary-text">
+                          {analysisResult.data?.analysis?.summary || 'Анализ завершен. Обратите внимание на выявленные риски и рекомендации.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 {ocrResult && ocrResult.kind === 'pdf' && (
                   <div className="ocr-results">
                     <div className="ocr-header">
