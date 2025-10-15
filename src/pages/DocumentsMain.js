@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Brain, FileCheck, FolderOpen, CheckCircle, Calendar, File, Share2, X } from 'lucide-react';
+import { Brain, FileCheck, FolderOpen, CheckCircle, Calendar, File, Share2, X, FileText } from 'lucide-react';
 import './DocumentsMain.css';
 
 const DocumentsMain = () => {
