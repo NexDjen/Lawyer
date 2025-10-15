@@ -1,0 +1,138 @@
+/* Страница анализа документов */
+.documents-analysis-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem 0;
+}
+
+.documents-analysis-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Заголовок страницы */
+.analysis-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.analysis-header__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  color: white;
+}
+
+.analysis-header__text {
+  flex: 1;
+}
+
+.analysis-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 1rem 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.analysis-subtitle {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Информационные блоки */
+.analysis-info {
+  margin-top: 3rem;
+}
+
+.analysis-info__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.analysis-info__card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.analysis-info__card:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.analysis-info__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  color: white;
+  margin-bottom: 1.5rem;
+}
+
+.analysis-info__title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 1rem 0;
+}
+
+.analysis-info__description {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .analysis-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .analysis-header__icon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .analysis-title {
+    font-size: 2rem;
+  }
+
+  .analysis-subtitle {
+    font-size: 1rem;
+  }
+
+  .analysis-info__grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .analysis-info__card {
+    padding: 1.5rem;
+  }
+}

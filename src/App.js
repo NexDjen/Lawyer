@@ -10,6 +10,7 @@ import WebSocketChat from './pages/WebSocketChat';
 import Consultation from './pages/Consultation';
 import DocumentsMain from './pages/DocumentsMain';
 import DocumentsFunctional from './pages/DocumentsFunctional';
+import DocumentsAnalysis from './pages/DocumentsAnalysis';
 import About from './pages/About';
 import TestPDF from './pages/TestPDF';
 import Login from './components/Login';
@@ -139,6 +140,14 @@ const AppContent = () => {
                   <Header />
                   <main className="main-content">
                     <DocumentsFunctional />
+                  </main>
+                </ProtectedRoute>
+              } />
+              <Route path="/documents-analysis" element={
+                <ProtectedRoute>
+                  <Header />
+                  <main className="main-content">
+                    <DocumentsAnalysis />
                   </main>
                 </ProtectedRoute>
               } />
