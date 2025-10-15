@@ -1,282 +1,373 @@
-.fill-docs-page {
-  max-width: 1000px;
+/* FillDocuments.css */
+.fill-documents-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem 0;
+}
+
+.fill-documents-header {
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
-  color: #000000;
-  line-height: 1.5;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  padding: 0 2rem;
+  margin-bottom: 3rem;
 }
 
-.fill-docs-header .title {
+.back-button {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 2rem;
 }
 
-.fill-docs-header h2 {
-  margin: 0;
-  font-size: 24px;
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(-4px);
+}
+
+.fill-documents-header h1 {
+  color: white;
+  font-size: 3rem;
   font-weight: 700;
-  color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.subtitle {
-  color: #ffffff;
-  font-size: 14px;
-  margin-top: 8px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+.fill-documents-header p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.2rem;
+  margin-bottom: 0;
 }
 
-.contract-fill-card {
-  margin-top: 16px;
-  padding: 16px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
+.fill-documents-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
 }
 
-.contract-fill-header {
+/* Templates Section */
+.templates-section h2 {
+  color: white;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.template-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.template-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+}
+
+.template-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.template-card h3 {
+  color: #333;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.template-card p {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.template-fields {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+/* Upload Section */
+.upload-section {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.selected-template {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #eee;
+}
+
+.selected-template h2 {
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.selected-template p {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.change-template-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.change-template-btn:hover {
+  background: #5a6fd8;
+}
+
+.upload-zone {
+  text-align: center;
+  padding: 3rem;
+  border: 2px dashed #ccc;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.upload-zone:hover {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.upload-zone h3 {
+  color: #333;
+  margin: 1rem 0 0.5rem;
+}
+
+.upload-zone p {
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.file-input {
+  display: none;
+}
+
+.upload-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.upload-btn:hover {
+  background: #5a6fd8;
+  transform: translateY(-2px);
+}
+
+/* Processing */
+.processing {
+  text-align: center;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  margin-top: 2rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.processing p {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+/* Result Section */
+.result-section {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.result-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
 }
 
-.contract-fill-header h3 {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  font-weight: 600;
-  color: #111827;
+.result-header h2 {
+  color: #333;
   margin: 0;
 }
 
-.role-toggle {
+.result-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.edit-btn, .download-btn, .new-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.toggle-btn {
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  cursor: pointer;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  font-size: 14px;
-}
-
-.toggle-btn.active {
-  background: #eef2ff;
-  border-color: #c7d2fe;
-}
-
-.contract-textarea {
-  width: 100%;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 14px;
-  color: #111827;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 10px;
-  background: #fff;
-}
-
-.preview {
-  margin-top: 12px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 8px;
-  padding: 10px;
-  background: #f8fafc;
-}
-
-.preview-title {
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.preview-body {
-  white-space: pre-wrap;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 14px;
-}
-
-.ocr-upload {
-  margin-top: 12px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 10px;
-}
-
-.ocr-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.ocr-controls select {
-  padding: 6px 8px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-}
-
-.ocr-buttons .btn {
-  background: #eef2ff;
-}
-
-.ocr-loading {
-  grid-column: 1 / -1;
-  color: #4b5563;
-}
-
-.profile-hints {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.hint {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #ffffff;
-  color: #111827;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 14px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-}
-
-.doc-type-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.doc-type {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 16px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-}
-
-.doc-type .emoji {
-  font-size: 22px;
-  line-height: 1;
-}
-
-.doc-type span { white-space: nowrap; }
-
-.doc-type:hover {
-  border-color: #c7d2fe;
-  background: #f5f7ff;
-}
-
-.doc-type.active {
-  border-color: #818cf8;
-  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2);
-}
-
-.actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 18px;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-radius: 8px;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
   border: none;
+  border-radius: 6px;
   cursor: pointer;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  font-size: 14px;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.edit-btn {
+  background: #28a745;
+  color: white;
+}
+
+.edit-btn:hover {
+  background: #218838;
+}
+
+.download-btn {
+  background: #007bff;
+  color: white;
+}
+
+.download-btn:hover {
+  background: #0056b3;
+}
+
+.new-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.new-btn:hover {
+  background: #545b62;
+}
+
+.document-preview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.document-content h3,
+.fields-editor h3 {
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.content-text {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  max-height: 400px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.fields-editor {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.field-editor {
+  margin-bottom: 1rem;
+}
+
+.field-editor label {
+  display: block;
+  color: #333;
   font-weight: 500;
+  margin-bottom: 0.5rem;
 }
 
-.btn-primary {
-  background: #6366f1;
-  color: #fff;
+.field-editor input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
 }
 
-.btn-secondary {
-  background: #e5e7eb;
-  color: #111827;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-@media screen {
-/* Update header layout */
-.fill-docs-header {
+.save-btn {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-3);
+  gap: 0.5rem;
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  margin-top: 1rem;
 }
 
-/* Align action buttons to right */
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-3);
-  margin-top: var(--space-4);
+.save-btn:hover {
+  background: #218838;
 }
 
-/* Subtitle styling to match theme */
-.subtitle {
-  color: #ffffff;
-  font-size: 0.95rem;
-  margin-top: var(--space-2);
-}
-
-/* Responsive stacking for small screens */
+/* Responsive */
 @media (max-width: 768px) {
-  .fill-docs-header {
+  .fill-documents-header h1 {
+    font-size: 2rem;
+  }
+  
+  .templates-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .document-preview {
+    grid-template-columns: 1fr;
+  }
+  
+  .result-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .result-header {
     flex-direction: column;
     align-items: flex-start;
-  }
-  .contract-fill-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-2);
-  }
-  .actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .actions .btn {
-    width: 100%;
+    gap: 1rem;
   }
 }
-
-@media (max-width: 480px) {
-  .fill-docs-page {
-    padding: var(--space-4);
-  }
-  .contract-textarea {
-    font-size: 0.95rem;
-  }
-}
-
-}
-

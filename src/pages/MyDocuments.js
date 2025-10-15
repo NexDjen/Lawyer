@@ -191,12 +191,7 @@ const MyDocuments = () => {
       uploadedAt: new Date().toISOString(),
       type: uploadDocumentType?.id || 'legal',
       status: 'analyzed',
-      size: `${(text.length / 1024).toFixed(1)} KB`,
-      analysis: {
-        risks: Math.floor(Math.random() * 5) + 1,
-        recommendations: Math.floor(Math.random() * 5) + 1,
-        compliance: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)]
-      }
+      size: `${(text.length / 1024).toFixed(1)} KB`
     };
     
     setDocuments(prev => [newDocument, ...prev]);
@@ -474,28 +469,6 @@ const MyDocuments = () => {
                     </div>
                   </div>
                   
-                  {doc.analysis && (
-                    <div className="document-card__analysis">
-                      <div className="analysis-item">
-                        <span className="analysis-label">Риски:</span>
-                        <span className="analysis-value">{doc.analysis.risks}</span>
-                      </div>
-                      <div className="analysis-item">
-                        <span className="analysis-label">Рекомендации:</span>
-                        <span className="analysis-value">{doc.analysis.recommendations}</span>
-                      </div>
-                      <div className="analysis-item">
-                        <span className="analysis-label">Соответствие:</span>
-                        <span 
-                          className="analysis-value"
-                          style={{ color: getComplianceColor(doc.analysis.compliance) }}
-                        >
-                          {doc.analysis.compliance === 'high' ? 'Высокое' : 
-                           doc.analysis.compliance === 'medium' ? 'Среднее' : 'Низкое'}
-                        </span>
-                      </div>
-                    </div>
-                  )}
                 </div>
                 
                 <div className="document-card__actions">
@@ -582,40 +555,6 @@ const MyDocuments = () => {
                 </div>
               </div>
               
-              {selectedDocument.analysis && (
-                <div className="document-modal__analysis">
-                  <h4>Результаты анализа:</h4>
-                  <div className="analysis-grid">
-                    <div className="analysis-card">
-                      <div className="analysis-card__header">
-                        <AlertCircle size={20} />
-                        <span>Риски</span>
-                      </div>
-                      <div className="analysis-card__value">{selectedDocument.analysis.risks}</div>
-                    </div>
-                    <div className="analysis-card">
-                      <div className="analysis-card__header">
-                        <CheckCircle size={20} />
-                        <span>Рекомендации</span>
-                      </div>
-                      <div className="analysis-card__value">{selectedDocument.analysis.recommendations}</div>
-                    </div>
-                    <div className="analysis-card">
-                      <div className="analysis-card__header">
-                        <Star size={20} />
-                        <span>Соответствие</span>
-                      </div>
-                      <div 
-                        className="analysis-card__value"
-                        style={{ color: getComplianceColor(selectedDocument.analysis.compliance) }}
-                      >
-                        {selectedDocument.analysis.compliance === 'high' ? 'Высокое' : 
-                         selectedDocument.analysis.compliance === 'medium' ? 'Среднее' : 'Низкое'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
             
             <div className="document-modal__footer">

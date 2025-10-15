@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FileText, FileCheck, FolderOpen, CheckCircle, Calendar, File, Share2, X } from 'lucide-react';
+import { Brain, FileCheck, FolderOpen, CheckCircle, Calendar, File, Share2, X } from 'lucide-react';
 import './DocumentsMain.css';
 
 const DocumentsMain = () => {
@@ -23,22 +23,22 @@ const DocumentsMain = () => {
             <div 
               className="documents-main-option"
               onClick={() => {
-                console.log('Заполнение документов clicked, navigating to /fill-documents');
-                navigate('/fill-documents');
+                console.log('Анализ документов clicked, navigating to /documents-manage');
+                navigate('/documents-manage');
               }}
             >
               <div className="documents-main-icon fill-icon">
-                <FileText size={48} />
+                <Brain size={48} />
               </div>
-              <h3 className="documents-main-option-title">Заполнение документов</h3>
+              <h3 className="documents-main-option-title">Анализ документов</h3>
               <p className="documents-main-option-description">
-                Автоматическое заполнение документов с помощью ИИ. 
-                Загрузите шаблон и получите готовый документ.
+                Глубокий анализ документов с помощью ИИ. 
+                Загрузите документ и получите детальный отчет о рисках, ошибках и рекомендациях.
               </p>
               <div className="documents-main-features">
-                <span className="feature-tag">Автоматически</span>
-                <span className="feature-tag">Быстро</span>
-                <span className="feature-tag">Точно</span>
+                <span className="feature-tag">Риски</span>
+                <span className="feature-tag">Рекомендации</span>
+                <span className="feature-tag">Глубокий анализ</span>
               </div>
             </div>
 

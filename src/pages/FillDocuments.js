@@ -1,258 +1,260 @@
-import React, { useMemo, useState, useRef } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import DocumentUpload from '../components/DocumentUpload';
-import { Upload, FileText, Camera, User as UserIcon, Calendar, Badge, CreditCard } from 'lucide-react';
-import { buildApiUrl } from '../config/api';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FileText, Upload, Download, Edit3, Save, RotateCcw, ArrowLeft } from 'lucide-react';
 import './FillDocuments.css';
 
 const FillDocuments = () => {
-  const { user, updateCurrentUser } = useAuth();
-  const [showUpload, setShowUpload] = useState(false);
-  const [documentType, setDocumentType] = useState(null);
-  const [role, setRole] = useState('buyer'); // buyer | seller
-  const [contractText, setContractText] = useState('');
-  const [filledText, setFilledText] = useState('');
-  
-  const [isOcrLoading, setIsOcrLoading] = useState(false);
-  const fileInputRef = useRef(null);
+  const navigate = useNavigate();
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [filledDocument, setFilledDocument] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedFields, setEditedFields] = useState({});
 
-  const profileDefaults = useMemo(() => {
-    // Берём данные из профиля пользователя. Поля могут отсутствовать — обрабатываем мягко
-    return {
-      fullName: user?.fullName || '',
-      lastName: user?.lastName || '',
-      firstName: user?.firstName || '',
-      middleName: user?.middleName || '',
-      snils: user?.snils || '',
-      passportSeries: user?.passportSeries || '',
-      passportNumber: user?.passportNumber || '',
-      birthDate: user?.birthDate || '',
-      address: user?.address || ''
-    };
-  }, [user]);
-
-  const docTypes = [
-    { id: 'passport', name: 'Паспорт РФ', icon: '🛂' },
-    { id: 'snils', name: 'СНИЛС', icon: '📋' }
+  // Шаблоны документов для заполнения
+  const documentTemplates = [
+    {
+      id: 'contract',
+      name: 'Договор купли-продажи',
+      description: 'Стандартный договор купли-продажи недвижимости',
+      icon: '📄',
+      fields: ['seller', 'buyer', 'property', 'price', 'date', 'conditions']
+    },
+    {
+      id: 'employment',
+      name: 'Трудовой договор',
+      description: 'Типовой трудовой договор с работником',
+      icon: '👔',
+      fields: ['employer', 'employee', 'position', 'salary', 'startDate', 'conditions']
+    },
+    {
+      id: 'rental',
+      name: 'Договор аренды',
+      description: 'Договор аренды жилого помещения',
+      icon: '🏠',
+      fields: ['landlord', 'tenant', 'property', 'rent', 'period', 'conditions']
+    },
+    {
+      id: 'power_of_attorney',
+      name: 'Доверенность',
+      description: 'Генеральная доверенность на представление интересов',
+      icon: '📋',
+      fields: ['principal', 'agent', 'powers', 'period', 'notary', 'date']
+    },
+    {
+      id: 'complaint',
+      name: 'Жалоба',
+      description: 'Жалоба в государственные органы',
+      icon: '📝',
+      fields: ['applicant', 'respondent', 'issue', 'request', 'date', 'evidence']
+    },
+    {
+      id: 'statement',
+      name: 'Заявление',
+      description: 'Заявление в суд или государственные органы',
+      icon: '📄',
+      fields: ['applicant', 'recipient', 'subject', 'request', 'date', 'attachments']
+    }
   ];
 
-  const extractCityFromAddress = (address = '') => {
-    try {
-      const m = address.match(/г\.?\s*([\p{L} -]+)/u) || address.match(/город\s+([\p{L} -]+)/u);
-      return (m && m[1] ? m[1].trim().replace(/[,]+$/, '') : '').trim();
-    } catch (_) { return ''; }
+  const handleTemplateSelect = (template) => {
+    setSelectedTemplate(template);
+    setEditedFields({});
   };
 
-  const buildFullName = () => {
-    if (profileDefaults.fullName && profileDefaults.fullName.trim().length > 0) return profileDefaults.fullName.trim();
-    return [profileDefaults.lastName, profileDefaults.firstName, profileDefaults.middleName].filter(Boolean).join(' ').trim();
-  };
-
-  const fillContractFromProfile = (text, overrides = {}) => {
-    if (!text || typeof text !== 'string') return '';
-    let result = text;
-    const fullName = (overrides.fullName || '').trim() || buildFullName();
-    const series = (overrides.passportSeries || '').trim() || (profileDefaults.passportSeries || '').trim();
-    const number = (overrides.passportNumber || '').trim() || (profileDefaults.passportNumber || '').trim();
-    const address = (overrides.address || '').trim() || (profileDefaults.address || '').trim();
-    const city = extractCityFromAddress(address);
-
-    // № ______ → номер по дате/времени
-    const autoNo = new Date().toISOString().replace(/[-:T.Z]/g, '').slice(2, 10);
-    result = result.replace(/No\s*_{2,}/g, `No ${autoNo}`);
-
-    // г.«»YYYY г. → г.«Город» YYYY г.
-    result = result.replace(/г\.?\s*«»\s*(\d{4})\s*г\./g, (_, y) => `г.«${city || ''}» ${y} г.`);
-
-    if (role === 'buyer') {
-      // Покупатель: гражданин ____ → Покупатель: гражданин ФИО
-      result = result.replace(/Покупатель:\s*гражданин\s*,?/i, () => `Покупатель: гражданин ${fullName}`);
-      // паспорт: серия No → паспорт: серия {series} No {number}
-      result = result.replace(/паспорт:\s*серия\s*No\s*,?/i, () => `паспорт: серия ${series} No ${number}`);
-      // зарегистрированный по адресу: → зарегистрированный по адресу: {address}
-      result = result.replace(/адресу:\s*(?=\n|$)/i, () => `адресу: ${address}`);
-    } else {
-      // Продавец: → Продавец: ФИО,
-      result = result.replace(/Продавец:\s*,?/i, () => `Продавец: ${fullName},`);
-    }
-
-    return result;
-  };
-
-  const handleAutoFill = () => {
-    setFilledText(fillContractFromProfile(contractText));
-  };
-
-  const handleDownloadDocx = async () => {
-    try {
-      const res = await fetch(buildApiUrl('generate-pdf'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          documentType: 'Договор',
-          content: filledText || contractText,
-          userData: {
-            fullName: buildFullName(),
-            passportSeries: profileDefaults.passportSeries,
-            passportNumber: profileDefaults.passportNumber,
-            address: profileDefaults.address,
-            role
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setUploadedFile(file);
+      // Здесь будет логика обработки файла с помощью ИИ
+      setIsProcessing(true);
+      setTimeout(() => {
+        setIsProcessing(false);
+        // Симуляция заполненного документа
+        const mockFilledDocument = {
+          template: selectedTemplate,
+          content: `Заполненный документ на основе шаблона "${selectedTemplate.name}"`,
+          fields: {
+            seller: 'Иванов Иван Иванович',
+            buyer: 'Петров Петр Петрович',
+            property: 'Квартира по адресу: г. Москва, ул. Примерная, д. 1, кв. 1',
+            price: '5 000 000 рублей',
+            date: new Date().toLocaleDateString(),
+            conditions: 'Стандартные условия договора'
           }
-        })
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
+        };
+        setFilledDocument(mockFilledDocument);
+      }, 2000);
+    }
+  };
+
+  const handleFieldEdit = (fieldName, value) => {
+    setEditedFields(prev => ({
+      ...prev,
+      [fieldName]: value
+    }));
+  };
+
+  const handleSaveDocument = () => {
+    // Логика сохранения документа
+    console.log('Сохранение документа:', filledDocument);
+    setIsEditing(false);
+  };
+
+  const handleDownloadDocument = () => {
+    // Логика скачивания документа
+    const blob = new Blob([filledDocument.content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Договор_${new Date().toISOString().slice(0,10)}.docx`;
+    a.download = `${selectedTemplate.name}_заполненный.txt`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (e) {
-      alert(`Ошибка скачивания: ${e.message}`);
-    }
-  };
-
-  const applyExtractedToProfile = (fields) => {
-    try {
-      const updates = {};
-      if (fields.lastName && !user?.lastName) updates.lastName = fields.lastName;
-      if (fields.firstName && !user?.firstName) updates.firstName = fields.firstName;
-      if (fields.middleName && !user?.middleName) updates.middleName = fields.middleName;
-      const inferredFullName = [fields.lastName, fields.firstName, fields.middleName].filter(Boolean).join(' ').trim();
-      if (inferredFullName && !user?.fullName) updates.fullName = inferredFullName;
-      if (fields.series && !user?.passportSeries) updates.passportSeries = fields.series;
-      if (fields.number && !user?.passportNumber) updates.passportNumber = fields.number;
-      if (fields.address && !user?.address) updates.address = fields.address;
-      if (Object.keys(updates).length > 0) updateCurrentUser(updates);
-    } catch (_) {}
-  };
-
-  const handleOcrFile = async (file) => {
-    if (!file) return;
-    setIsOcrLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append('document', file);
-
-      const res = await fetch(buildApiUrl('documents/ocr'), { method: 'POST', body: formData });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-
-      const fields = data?.extractedData || {};
-      const overrides = {
-        fullName: [fields.lastName, fields.firstName, fields.middleName].filter(Boolean).join(' ').trim(),
-        passportSeries: fields.series || '',
-        passportNumber: fields.number || '',
-        address: fields.address || ''
-      };
-      const next = fillContractFromProfile(contractText, overrides);
-      setFilledText(next);
-      applyExtractedToProfile(fields);
-    } catch (e) {
-      alert(`Ошибка распознавания: ${e.message}`);
-    } finally {
-      setIsOcrLoading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="fill-docs-page">
-      <div className="fill-docs-header">
-        <div className="title">
-          <FileText size={24} />
-          <h2>Заполнение документов</h2>
-        </div>
-        <p className="subtitle">Загрузите или отсканируйте шаблон. ИИ заполнит прочерки вашими данными из профиля (ФИО, дата рождения, СНИЛС и др.).</p>
+    <div className="fill-documents-page">
+      <div className="fill-documents-header">
+        <button 
+          className="back-button"
+          onClick={() => navigate('/documents')}
+        >
+          <ArrowLeft size={20} />
+          Назад к документам
+        </button>
+        <h1>Заполнение документов</h1>
+        <p>Автоматическое заполнение документов с помощью ИИ</p>
       </div>
 
-      {/* Автозаполнение текста договора */}
-      <div className="contract-fill-card">
-        <div className="contract-fill-header">
-          <h3>Автозаполнение текста договора</h3>
-          <div className="role-toggle">
-            <span>Моя роль:</span>
-            <button className={`toggle-btn ${role==='buyer'?'active':''}`} onClick={() => setRole('buyer')}>Покупатель</button>
-            <button className={`toggle-btn ${role==='seller'?'active':''}`} onClick={() => setRole('seller')}>Продавец</button>
+      <div className="fill-documents-content">
+        {!selectedTemplate ? (
+          <div className="templates-section">
+            <h2>Выберите шаблон документа</h2>
+            <div className="templates-grid">
+              {documentTemplates.map((template) => (
+                <div
+                  key={template.id}
+                  className="template-card"
+                  onClick={() => handleTemplateSelect(template)}
+                >
+                  <div className="template-icon">
+                    <span>{template.icon}</span>
+                  </div>
+                  <h3>{template.name}</h3>
+                  <p>{template.description}</p>
+                  <div className="template-fields">
+                    <span>Поля: {template.fields.length}</span>
           </div>
         </div>
-        <textarea
-          className="contract-textarea"
-          placeholder="Вставьте сюда текст договора"
-          value={contractText}
-          onChange={(e) => setContractText(e.target.value)}
-          rows={10}
-        />
-        <div className="actions" style={{ justifyContent: 'flex-start' }}>
-          <button className="btn btn-primary" onClick={handleAutoFill}>Заполнить из профиля</button>
-          <button className="btn btn-secondary" onClick={handleDownloadDocx} disabled={!contractText && !filledText}>Скачать DOCX</button>
+              ))}
         </div>
-        <div className="ocr-upload">
-          
-          <div className="ocr-buttons">
-            <button className="btn" onClick={() => fileInputRef.current?.click()} disabled={isOcrLoading}>
-              <Upload size={16} /> Загрузить фото/файл для автозаполнения
-            </button>
-            <input ref={fileInputRef} type="file" accept="image/*,application/pdf" style={{ display: 'none' }} onChange={(e) => handleOcrFile(e.target.files?.[0] || null)} />
           </div>
-          {isOcrLoading && <div className="ocr-loading">Распознаю…</div>}
+        ) : !filledDocument ? (
+          <div className="upload-section">
+            <div className="selected-template">
+              <h2>Выбранный шаблон: {selectedTemplate.name}</h2>
+              <p>{selectedTemplate.description}</p>
+              <button 
+                className="change-template-btn"
+                onClick={() => setSelectedTemplate(null)}
+              >
+                Изменить шаблон
+              </button>
+            </div>
+
+            <div className="upload-area">
+              <div className="upload-zone">
+                <Upload size={48} />
+                <h3>Загрузите документ для заполнения</h3>
+                <p>Поддерживаются форматы: PDF, DOC, DOCX, TXT</p>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt"
+                  onChange={handleFileUpload}
+                  className="file-input"
+                />
+                <button className="upload-btn">Выбрать файл</button>
+              </div>
         </div>
-        {(filledText || contractText) && (
-          <div className="preview">
-            <div className="preview-title">Предпросмотр</div>
-            <pre className="preview-body">{filledText || contractText}</pre>
+
+            {isProcessing && (
+              <div className="processing">
+                <div className="spinner"></div>
+                <p>Обработка документа с помощью ИИ...</p>
           </div>
         )}
       </div>
+        ) : (
+          <div className="result-section">
+            <div className="result-header">
+              <h2>Заполненный документ</h2>
+              <div className="result-actions">
+                <button 
+                  className="edit-btn"
+                  onClick={() => setIsEditing(!isEditing)}
+                >
+                  <Edit3 size={16} />
+                  {isEditing ? 'Завершить редактирование' : 'Редактировать'}
+                </button>
+                <button 
+                  className="download-btn"
+                  onClick={handleDownloadDocument}
+                >
+                  <Download size={16} />
+                  Скачать
+                </button>
+                <button 
+                  className="new-btn"
+                  onClick={() => {
+                    setSelectedTemplate(null);
+                    setFilledDocument(null);
+                    setEditedFields({});
+                  }}
+                >
+                  Новый документ
+                </button>
+        </div>
+        </div>
 
-      <div className="profile-hints">
-        <div className="hint">
-          <UserIcon size={16} /> <span>ФИО: {profileDefaults.fullName || `${profileDefaults.lastName} ${profileDefaults.firstName} ${profileDefaults.middleName}` || '—'}</span>
-        </div>
-        <div className="hint">
-          <Badge size={16} /> <span>СНИЛС: {profileDefaults.snils || '—'}</span>
-        </div>
-        <div className="hint">
-          <CreditCard size={16} /> <span>Паспорт: {`${profileDefaults.passportSeries} ${profileDefaults.passportNumber}`.trim() || '—'}</span>
-        </div>
-        <div className="hint">
-          <Calendar size={16} /> <span>Дата рождения: {profileDefaults.birthDate || '—'}</span>
+            <div className="document-preview">
+              <div className="document-content">
+                <h3>Предварительный просмотр:</h3>
+                <div className="content-text">
+                  {filledDocument.content}
         </div>
       </div>
 
-      <div className="doc-type-grid">
-        {docTypes.map((t) => (
-          <button key={t.id} className={`doc-type ${documentType?.id === t.id ? 'active' : ''}`} onClick={() => setDocumentType(t)}>
-            <span className="emoji">{t.icon}</span>
-            <span>{t.name}</span>
+              {isEditing && (
+                <div className="fields-editor">
+                  <h3>Редактирование полей:</h3>
+                  {Object.entries(filledDocument.fields).map(([field, value]) => (
+                    <div key={field} className="field-editor">
+                      <label>{field}:</label>
+                      <input
+                        type="text"
+                        value={editedFields[field] || value}
+                        onChange={(e) => handleFieldEdit(field, e.target.value)}
+                      />
+                    </div>
+                  ))}
+                  <button 
+                    className="save-btn"
+                    onClick={handleSaveDocument}
+                  >
+                    <Save size={16} />
+                    Сохранить изменения
           </button>
-        ))}
+                </div>
+              )}
+            </div>
       </div>
-
-      <div className="actions">
-        <button className="btn btn-primary" onClick={() => setShowUpload(true)} disabled={!documentType}>
-          <Upload size={18} /> <span>Загрузить файл</span>
-        </button>
-        <button className="btn btn-secondary" onClick={() => setShowUpload(true)} disabled={!documentType}>
-          <Camera size={18} /> <span>Сканировать камерой</span>
-        </button>
+        )}
       </div>
-
-      {showUpload && (
-        <DocumentUpload
-          onTextExtracted={() => setShowUpload(false)}
-          onClose={() => setShowUpload(false)}
-          documentType={documentType}
-          storageKey="documents"
-          profileDefaults={profileDefaults}
-        />
-      )}
     </div>
   );
 };
 
 export default FillDocuments;
-
