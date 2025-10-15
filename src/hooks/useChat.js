@@ -130,7 +130,7 @@ export const useChat = (userId = null) => {
   }, []);
 
   // Отправка сообщения
-  const sendMessage = useCallback(async (message, forceSend = false) => {
+  const sendMessage = useCallback(async (message, forceSend = false, docId = null) => {
     if (!message.trim() && !forceSend) return;
 
     // Ограничения по подписке (free: 10 сообщений/день)
@@ -170,18 +170,20 @@ export const useChat = (userId = null) => {
     setApiStatus(API_STATUS.LOADING);
 
     try {
+      const payload = {
+        message: message,
+        conversationHistory: messages.slice(-10),
+        useWebSearch: useWebSearch,
+        userId: userId // Добавляем userId для извлечения персональных данных
+      };
+      if (docId) payload.docId = docId;
       const response = await fetch(API_ENDPOINTS.CHAT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include', // Include credentials for CORS
-        body: JSON.stringify({
-          message: message,
-          conversationHistory: messages.slice(-10),
-          useWebSearch: useWebSearch,
-          userId: userId // Добавляем userId для извлечения персональных данных
-        })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {

@@ -507,6 +507,12 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 // Маршрут для расширенного анализа документа
 router.post('/advanced-analysis', documentController.handleAdvancedDocumentAnalysis);
 
+// Маршрут для получения сохраненного анализа документа
+router.get('/analysis/:docId', documentController.handleGetAnalysis);
+
+// Маршрут для получения списка всех анализов документов
+router.get('/analysis', documentController.handleListAnalysis);
+
 module.exports = router; 
 
 // Инициализируем периодическую очистку просроченных PDF (однократно при загрузке роутера)

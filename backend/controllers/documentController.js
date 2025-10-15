@@ -106,19 +106,33 @@ class DocumentController {
       
       // Генерируем отчет
       const report = generateAnalysisReport(analysis, fileName);
-      
+
+      // Persist analysis result
+      const fs = require('fs');
+      const path = require('path');
+      const analysisFilePath = path.resolve(__dirname, '../data/analysis.json');
+      let analysisStore = { items: [] };
+      if (fs.existsSync(analysisFilePath)) {
+        analysisStore = JSON.parse(fs.readFileSync(analysisFilePath, 'utf8'));
+      }
+      const docId = `analysis_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;
+      const newEntry = {
+        id: docId,
+        userId: req.body.userId || null,
+        analysis,
+        report,
+        metadata: { analyzedAt: new Date().toISOString(), textLength: documentText.length, documentType, fileName, docId }
+      };
+      analysisStore.items.push(newEntry);
+      fs.writeFileSync(analysisFilePath, JSON.stringify(analysisStore, null, 2));
+      // Append docId to response metadata
       res.json({
         success: true,
         message: 'Расширенный анализ документа завершен',
         data: {
           analysis,
           report,
-          metadata: {
-            analyzedAt: new Date().toISOString(),
-            textLength: documentText.length,
-            documentType,
-            fileName
-          }
+          metadata: { analyzedAt: new Date().toISOString(), textLength: documentText.length, documentType, fileName, docId }
         }
       });
       
@@ -128,6 +142,45 @@ class DocumentController {
         error: 'Ошибка при расширенном анализе документа',
         details: error.message
       });
+    }
+  }
+
+  async handleGetAnalysis(req, res) {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const analysisFilePath = path.resolve(__dirname, '../data/analysis.json');
+      if (!fs.existsSync(analysisFilePath)) {
+        return res.status(404).json({ error: 'Analysis store not found' });
+      }
+      const store = JSON.parse(fs.readFileSync(analysisFilePath, 'utf8'));
+      const entry = store.items.find(item => item.id === req.params.docId);
+      if (!entry) {
+        return res.status(404).json({ error: 'Analysis not found' });
+      }
+      res.json({ success: true, data: entry });
+    } catch (error) {
+      logger.error('Error retrieving analysis:', error);
+      res.status(500).json({ error: 'Error retrieving analysis' });
+    }
+  }
+
+  // List all saved analyses
+  async handleListAnalysis(req, res) {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const analysisFilePath = path.resolve(__dirname, '../data/analysis.json');
+      if (!fs.existsSync(analysisFilePath)) {
+        return res.json({ success: true, data: [] });
+      }
+      const store = JSON.parse(fs.readFileSync(analysisFilePath, 'utf8'));
+      // Return only metadata for selection
+      const list = store.items.map(item => ({ id: item.id, metadata: item.metadata }));
+      res.json({ success: true, data: list });
+    } catch (error) {
+      logger.error('Error listing analyses:', error);
+      res.status(500).json({ error: 'Error listing analyses' });
     }
   }
 }

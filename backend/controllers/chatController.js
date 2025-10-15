@@ -10,7 +10,8 @@ class ChatController {
         conversationHistory = [], 
         history = [], // Поддержка нового формата истории
         useWebSearch = true,
-        userId = null // ID пользователя для персонализации
+        userId = null, // ID пользователя для персонализации
+        docId // ID документа для анализа
       } = req.body;
 
       // Валидация входных данных
@@ -28,6 +29,26 @@ class ChatController {
       // Объединяем историю из разных форматов
       const allHistory = [...conversationHistory, ...history];
       const validatedHistory = chatService.validateConversationHistory(allHistory);
+
+      // If a document analysis ID is provided, load its analysis and include in context
+      if (docId) {
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const analysisFilePath = path.resolve(__dirname, '../data/analysis.json');
+          if (fs.existsSync(analysisFilePath)) {
+            const store = JSON.parse(fs.readFileSync(analysisFilePath, 'utf8'));
+            const entry = store.items.find(item => item.id === docId);
+            if (entry) {
+              const summary = entry.analysis.summary;
+              const contextMsg = `Сводка анализа документа: Тип: ${summary.documentType}, Уровень риска: ${summary.riskLevel}, Основные проблемы: ${summary.mainIssues.join(', ')}`;
+              allHistory.unshift({ role: 'system', content: contextMsg });
+            }
+          }
+        } catch (err) {
+          logger.warn('Не удалось загрузить контекст анализа документа', { docId, error: err.message });
+        }
+      }
 
       logger.info('Processing chat message', {
         messageLength: message.length,
