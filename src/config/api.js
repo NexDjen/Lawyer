@@ -8,7 +8,7 @@ const DEV_API_URL = 'http://localhost:3007/api';
 // In production, use nginx proxy port 1041
 export const API_BASE_URL = envApiBase
   ? envApiBase.replace(/\/$/, '')
-  : (isProd ? `${window.location.origin.replace(/:\d+$/, ':1041')}/api` : DEV_API_URL);
+  : (isProd ? `http://${window.location.hostname}:1041/api` : DEV_API_URL);
 
 // Optional explicit WS URL override
 // In production, connect to nginx proxy port 1041 with WebSocket support
