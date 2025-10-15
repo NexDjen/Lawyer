@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Brain, FileCheck, FolderOpen, CheckCircle, Calendar, File, Share2, X, FileText } from 'lucide-react';
+import DocumentUploadWithAnalysis from '../components/DocumentUploadWithAnalysis';
 import './DocumentsMain.css';
 
 const DocumentsMain = () => {
@@ -18,6 +19,9 @@ const DocumentsMain = () => {
           <p className="documents-main-subtitle">
             Просмотр и управление всеми документами системы
           </p>
+          
+          {/* Компонент загрузки и анализа документов */}
+          <DocumentUploadWithAnalysis />
           
           <div className="documents-main-options">
             <div 
