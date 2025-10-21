@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { 
   FileText, 
@@ -8,9 +8,6 @@ import {
   CheckCircle,
   Upload,
   Plus,
-  Eye,
-  Download,
-  Trash2,
   X
 } from 'lucide-react';
 import DocumentUpload from '../components/DocumentUpload';
@@ -293,7 +290,10 @@ const DocumentsFunctional = () => {
                       }}
                       title="Просмотр"
                     >
-                      <Eye size={16} />
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye">
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
                     </button>
                     <button 
                       className="btn btn--icon"
@@ -312,7 +312,11 @@ const DocumentsFunctional = () => {
                       }}
                       title="Скачать"
                     >
-                      <Download size={16} />
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7,10 12,15 17,10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                      </svg>
                     </button>
                     <button 
                       className="btn btn--icon btn--danger"
@@ -323,7 +327,13 @@ const DocumentsFunctional = () => {
                       }}
                       title="Удалить"
                     >
-                      <Trash2 size={16} />
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash2">
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                        <line x1="10" x2="10" y1="11" y2="17"></line>
+                        <line x1="14" x2="14" y1="11" y2="17"></line>
+                      </svg>
                     </button>
                   </div>
                 </div>

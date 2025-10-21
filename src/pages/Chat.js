@@ -3,7 +3,6 @@
  * Рефакторенная версия с улучшенной архитектурой
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
 import './Chat.css';
 import { buildApiUrl } from '../config/api';
 
@@ -33,18 +32,6 @@ import {
  * Компонент чата
  */
 const Chat = () => {
-  // Document analysis selection
-  const location = useLocation();
-  const urlParams = new URLSearchParams(location.search);
-  const initialDocId = urlParams.get('docId');
-  const [analyses, setAnalyses] = useState([]);
-  const [selectedDocId, setSelectedDocId] = useState(initialDocId);
-  useEffect(() => {
-    fetch(buildApiUrl('/documents/analysis'))
-      .then(res => res.json())
-      .then(data => { if (data.success) setAnalyses(data.data); })
-      .catch(err => console.error('Failed to load analyses list:', err));
-  }, []);
 
   const { user } = useAuth();
   const messagesEndRef = useRef(null);
@@ -153,8 +140,8 @@ const Chat = () => {
    * Обработка отправки сообщения
    */
   const handleSendMessage = useCallback((message) => {
-    sendMessage(message, false, selectedDocId);
-  }, [sendMessage, selectedDocId]);
+    sendMessage(message, false, null);
+  }, [sendMessage]);
 
   /**
    * Обработка извлечения текста из документа
@@ -236,20 +223,6 @@ const Chat = () => {
             </div>
           )}
           
-          {/* Document analysis selector */}
-          <div className="chat-document-selector">
-            <label htmlFor="doc-select">Обсудить документ:</label>
-            <select
-              id="doc-select"
-              value={selectedDocId || ''}
-              onChange={e => setSelectedDocId(e.target.value)}
-            >
-              <option value="">--нет документа--</option>
-              {analyses.map(item => (
-                <option key={item.id} value={item.id}>{item.metadata.fileName}</option>
-              ))}
-            </select>
-          </div>
 
           {/* Сообщения чата */}
           <div className="chat-messages">

@@ -555,6 +555,153 @@ const MyDocuments = () => {
                 </div>
               </div>
               
+              {/* Анализ документа */}
+              {selectedDocument.analysis && (
+                <div className="document-modal__analysis">
+                  <h4>Результаты анализа:</h4>
+                  
+                  {/* Сводка анализа */}
+                  {selectedDocument.analysis.summary && (
+                    <div className="analysis-summary">
+                      <h5>Общая оценка:</h5>
+                      <div className="summary-grid">
+                        <div className="summary-item">
+                          <span className="summary-label">Тип документа:</span>
+                          <span className="summary-value">{selectedDocument.analysis.summary.documentType || 'Не определен'}</span>
+                        </div>
+                        <div className="summary-item">
+                          <span className="summary-label">Качество:</span>
+                          <span className={`summary-value quality-${selectedDocument.analysis.summary.overallQuality || 'average'}`}>
+                            {selectedDocument.analysis.summary.overallQuality === 'excellent' ? 'Отличное' :
+                             selectedDocument.analysis.summary.overallQuality === 'good' ? 'Хорошее' :
+                             selectedDocument.analysis.summary.overallQuality === 'average' ? 'Среднее' : 'Плохое'}
+                          </span>
+                        </div>
+                        <div className="summary-item">
+                          <span className="summary-label">Уровень риска:</span>
+                          <span className={`summary-value risk-${selectedDocument.analysis.summary.riskLevel || 'medium'}`}>
+                            {selectedDocument.analysis.summary.riskLevel === 'low' ? 'Низкий' :
+                             selectedDocument.analysis.summary.riskLevel === 'medium' ? 'Средний' :
+                             selectedDocument.analysis.summary.riskLevel === 'high' ? 'Высокий' : 'Критический'}
+                          </span>
+                        </div>
+                      </div>
+                      {selectedDocument.analysis.summary.mainIssues && selectedDocument.analysis.summary.mainIssues.length > 0 && (
+                        <div className="main-issues">
+                          <h6>Основные проблемы:</h6>
+                          <ul>
+                            {selectedDocument.analysis.summary.mainIssues.map((issue, index) => (
+                              <li key={index}>{issue}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Юридические ошибки */}
+                  {selectedDocument.analysis.legalErrors && selectedDocument.analysis.legalErrors.length > 0 && (
+                    <div className="analysis-section">
+                      <h5>🚨 Юридические ошибки:</h5>
+                      <div className="errors-list">
+                        {selectedDocument.analysis.legalErrors.map((error, index) => (
+                          <div key={index} className={`error-item severity-${error.severity || 'medium'}`}>
+                            <div className="error-header">
+                              <span className="error-type">{error.type}</span>
+                              <span className={`error-severity severity-${error.severity || 'medium'}`}>
+                                {error.severity === 'critical' ? 'Критическая' :
+                                 error.severity === 'high' ? 'Высокая' :
+                                 error.severity === 'medium' ? 'Средняя' : 'Низкая'}
+                              </span>
+                            </div>
+                            <div className="error-description">{error.description}</div>
+                            {error.location && <div className="error-location">📍 Место: {error.location}</div>}
+                            {error.solution && <div className="error-solution">💡 Решение: {error.solution}</div>}
+                            {error.legalBasis && <div className="error-basis">⚖️ Правовая основа: {error.legalBasis}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Риски */}
+                  {selectedDocument.analysis.risks && selectedDocument.analysis.risks.length > 0 && (
+                    <div className="analysis-section">
+                      <h5>⚠️ Риски:</h5>
+                      <div className="risks-list">
+                        {selectedDocument.analysis.risks.map((risk, index) => (
+                          <div key={index} className={`risk-item probability-${risk.probability || 'medium'}`}>
+                            <div className="risk-header">
+                              <span className="risk-category">{risk.category}</span>
+                              <span className={`risk-probability probability-${risk.probability || 'medium'}`}>
+                                Вероятность: {risk.probability === 'high' ? 'Высокая' :
+                                            risk.probability === 'medium' ? 'Средняя' : 'Низкая'}
+                              </span>
+                            </div>
+                            <div className="risk-description">{risk.description}</div>
+                            {risk.legalConsequences && <div className="risk-consequences">⚖️ Последствия: {risk.legalConsequences}</div>}
+                            {risk.mitigation && <div className="risk-mitigation">🛡️ Меры: {risk.mitigation}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Рекомендации */}
+                  {selectedDocument.analysis.recommendations && selectedDocument.analysis.recommendations.length > 0 && (
+                    <div className="analysis-section">
+                      <h5>💡 Рекомендации:</h5>
+                      <div className="recommendations-list">
+                        {selectedDocument.analysis.recommendations.map((rec, index) => (
+                          <div key={index} className={`recommendation-item priority-${rec.priority || 'medium'}`}>
+                            <div className="recommendation-header">
+                              <span className="recommendation-category">{rec.category}</span>
+                              <span className={`recommendation-priority priority-${rec.priority || 'medium'}`}>
+                                {rec.priority === 'high' ? 'Высокий приоритет' :
+                                 rec.priority === 'medium' ? 'Средний приоритет' : 'Низкий приоритет'}
+                              </span>
+                            </div>
+                            <div className="recommendation-description">{rec.description}</div>
+                            {rec.implementation && <div className="recommendation-implementation">📋 План: {rec.implementation}</div>}
+                            {rec.deadline && <div className="recommendation-deadline">⏰ Срок: {rec.deadline}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Экспертное мнение */}
+                  {selectedDocument.analysis.expertOpinion && (
+                    <div className="analysis-section">
+                      <h5>👩‍⚖️ Экспертное мнение:</h5>
+                      <div className="expert-opinion">
+                        <div className="expert-assessment">{selectedDocument.analysis.expertOpinion.overallAssessment}</div>
+                        {selectedDocument.analysis.expertOpinion.criticalPoints && (
+                          <div className="critical-points">
+                            <h6>Критические моменты:</h6>
+                            <ul>
+                              {selectedDocument.analysis.expertOpinion.criticalPoints.map((point, index) => (
+                                <li key={index}>{point}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {selectedDocument.analysis.expertOpinion.nextSteps && (
+                          <div className="next-steps">
+                            <h6>Следующие шаги:</h6>
+                            <ul>
+                              {selectedDocument.analysis.expertOpinion.nextSteps.map((step, index) => (
+                                <li key={index}>{step}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
             </div>
             
             <div className="document-modal__footer">

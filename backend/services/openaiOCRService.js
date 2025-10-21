@@ -2,39 +2,15 @@ const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
 const logger = require('../utils/logger');
+const Tesseract = require('tesseract.js');
 
 // Функция для обновления статистики OpenAI
 const updateOpenAIStats = async (tokens, cost = 0) => {
   try {
-    const statsFile = path.join(__dirname, '../data/windexai_stats.json');
-    let stats = {
-      totalTokens: 0,
-      totalCost: 0,
-      totalRequests: 0,
-      avgTokensPerRequest: 0,
-      avgCostPerRequest: 0,
-      currentMonth: new Date().toISOString().slice(0, 7),
-      lastUpdated: new Date().toISOString()
-    };
-
-    // Читаем существующую статистику
-    if (fs.existsSync(statsFile)) {
-      const data = fs.readFileSync(statsFile, 'utf8');
-      stats = JSON.parse(data);
-    }
-
-    // Обновляем статистику
-    stats.totalTokens += tokens;
-    stats.totalCost += cost;
-    stats.totalRequests += 1;
-    stats.avgTokensPerRequest = stats.totalTokens / stats.totalRequests;
-    stats.avgCostPerRequest = stats.totalCost / stats.totalRequests;
-    stats.lastUpdated = new Date().toISOString();
-
-    // Сохраняем обновленную статистику
-    fs.writeFileSync(statsFile, JSON.stringify(stats, null, 2));
+    const apiStatsService = require('./apiStatsService');
+    await apiStatsService.updateApiStats('system', 'ocr', 'gpt-4o', tokens, cost, 0);
     
-    logger.info('OpenAI статистика обновлена', { tokens, cost, totalTokens: stats.totalTokens });
+    logger.info('OpenAI статистика обновлена в БД', { tokens, cost });
   } catch (error) {
     logger.warn('Не удалось обновить статистику OpenAI', { error: error.message });
   }
@@ -188,7 +164,21 @@ class OpenAIVisionOCR {
 
     } catch (error) {
       logger.error('OpenAI Vision OCR failed', { error: error.message });
-      throw error;
+      // Fallback to Tesseract OCR for better robustness
+      logger.warn('Using Tesseract.js fallback for OCR');
+      try {
+        const result = await Tesseract.recognize(imagePath, 'rus+eng', { logger: m => logger.info('Tesseract OCR', m) });
+        const fallbackText = result.data.text;
+        logger.info('Tesseract OCR completed', { textLength: fallbackText.length });
+        return {
+          text: fallbackText,
+          confidence: result.data.confidence || 0.7,
+          tokens: 0
+        };
+      } catch (tErr) {
+        logger.error('Tesseract OCR fallback failed', { error: tErr.message });
+        throw tErr;
+      }
     }
   }
 

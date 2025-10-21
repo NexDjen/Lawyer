@@ -13,6 +13,7 @@
   "dependencies": {
     "@google-cloud/text-to-speech": "^5.0.0",
     "axios": "^1.6.0",
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "docx": "^8.5.0",
     "dotenv": "^16.3.1",
@@ -25,7 +26,7 @@
     "pdf-parse": "^1.1.1",
     "sharp": "^0.34.3",
     "sqlite3": "^5.1.6",
-    "bcrypt": "^5.1.1",
+    "tesseract.js": "^6.0.1",
     "winston": "^3.11.0",
     "ws": "^8.18.3"
   },

@@ -338,21 +338,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Маршрут для удаления документа
-router.delete('/:id', async (req, res) => {
-  try {
-    const documentId = req.params.id;
-    // Здесь можно добавить логику для удаления документа из базы данных
-    res.json({ 
-      success: true, 
-      message: 'Документ успешно удален' 
-    });
-  } catch (error) {
-    logger.error('Ошибка удаления документа', error);
-    res.status(500).json({ error: 'Ошибка при удалении документа' });
-  }
-});
-
 // Тестовый маршрут для демонстрации OCR
 router.post('/ocr-test', async (req, res) => {
   try {
@@ -504,14 +489,70 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-// Маршрут для расширенного анализа документа
-router.post('/advanced-analysis', documentController.handleAdvancedDocumentAnalysis);
+// Форсируем userId из тела запроса для временного обхода отсутствующей аутентификации
+router.post('/advanced-analysis', (req, res, next) => {
+  req.user = { id: req.body.userId || '1' };
+  next();
+}, documentController.handleAdvancedDocumentAnalysis);
 
 // Маршрут для получения сохраненного анализа документа
 router.get('/analysis/:docId', documentController.handleGetAnalysis);
 
 // Маршрут для получения списка всех анализов документов
 router.get('/analysis', documentController.handleListAnalysis);
+
+// New document storage routes
+router.post('/save', documentController.handleSaveDocument);
+router.get('/user/:userId', documentController.handleGetUserDocuments);
+router.get('/:id', documentController.handleGetDocument);
+router.delete('/:id', documentController.handleDeleteDocument);
+router.post('/migrate', documentController.handleMigrateDocuments);
+
+// Маршрут для чата с документом
+router.post('/:id/chat', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { message, history, documentContext } = req.body;
+    
+    // Получить документ из БД
+    const document = await documentController.getDocumentById(id);
+    if (!document) {
+      return res.status(404).json({ error: 'Документ не найден' });
+    }
+    
+    // Получить содержимое документа
+    const documentContent = document.content || document.extracted_text || document.extractedText || 'Содержимое документа недоступно';
+    
+    // Ограничиваем длину содержимого документа
+    const maxContentLength = 5000;
+    const truncatedContent = documentContent.length > maxContentLength 
+      ? documentContent.substring(0, maxContentLength) + '...'
+      : documentContent;
+    
+    // Создаем краткий анализ
+    const analysisSummary = document.analysis ? {
+      summary: document.analysis.summary || 'Анализ недоступен',
+      risks: Array.isArray(document.analysis.risks) ? document.analysis.risks.slice(0, 3) : [],
+      recommendations: Array.isArray(document.analysis.recommendations) ? document.analysis.recommendations.slice(0, 3) : []
+    } : null;
+    
+    // Добавить контекст документа в промпт
+    const contextualMessage = {
+      systemContext: `Вы - Галина, юридический помощник. Обсуждаем документ: "${document.name}"\n\nСодержимое документа:\n${truncatedContent}\n\nКраткий анализ: ${analysisSummary ? JSON.stringify(analysisSummary, null, 2) : 'Анализ недоступен'}\n\nИспользуй информацию из документа для ответов на вопросы пользователя.`,
+      userMessage: message,
+      history: history || []
+    };
+    
+    // Отправить в chatService
+    const chatService = require('../services/chatService');
+    const response = await chatService.generateResponseWithContext(contextualMessage.userMessage, contextualMessage.history, contextualMessage.systemContext);
+    
+    res.json({ success: true, response });
+  } catch (error) {
+    logger.error('Ошибка в чате с документом:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 module.exports = router; 
 

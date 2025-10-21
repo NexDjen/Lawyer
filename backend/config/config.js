@@ -1,10 +1,10 @@
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env'), override: true });
+require('dotenv').config({ path: path.resolve(__dirname, '../.env'), override: true });
 
 const config = {
   // Server configuration
   server: {
-    port: parseInt(process.env.PORT, 10) || 80,
+    port: parseInt(process.env.PORT, 10) || 3007,
     host: process.env.HOST || '0.0.0.0'
   },
 

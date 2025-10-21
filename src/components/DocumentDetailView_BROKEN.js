@@ -1,0 +1,655 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowLeft, Send } from 'lucide-react';
+import './DocumentDetailView.css';
+
+const DocumentDetailView = ({ document, onBack }) => {
+  console.log('🔍 DocumentDetailView received document:', document);
+  console.log('🔍 document.analysis:', document.analysis);
+  console.log('🔍 document.extracted_text:', document.extracted_text);
+  
+  const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+  const [initialAnalysisData, setInitialAnalysisData] = useState(null);
+  
+  // Инициализировать чат с контекстом документа
+  useEffect(() => {
+    const welcomeMessage = {
+      id: 'welcome',
+      role: 'assistant',
+      content: `Здравствуйте! Я Галина, ваш юридический помощник. Давайте обсудим документ "${document.name}". Что вас интересует?`,
+      timestamp: new Date().toISOString()
+    };
+    setMessages([welcomeMessage]);
+  }, [document]);
+
+  useEffect(() => {
+    const key = `analysis_${document.metadata?.docId}`;
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        setInitialAnalysisData(parsed.analysis);
+      } catch {}
+    }
+  }, [document.metadata?.docId]);
+  
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+  
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || isLoading) return;
+    
+    const userMessage = {
+      id: `user_${Date.now()}`,
+      role: 'user',
+      content: inputMessage.trim(),
+      timestamp: new Date().toISOString()
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsLoading(true);
+    
+    try {
+      // Отправляем сообщение в API с контекстом документа
+      const response = await fetch(`/api/documents/${document.id}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: inputMessage.trim(),
+          history: messages,
+          documentContext: {
+            name: document.name,
+            content: document.content || document.extracted_text || document.extractedText,
+            analysis: document.analysis
+          }
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const assistantMessage = {
+          id: `assistant_${Date.now()}`,
+          role: 'assistant',
+          content: data.response,
+          timestamp: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+      } else {
+        throw new Error('Failed to get response');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage = {
+        id: `error_${Date.now()}`,
+        role: 'assistant',
+        content: 'Извините, произошла ошибка при обработке вашего сообщения. Попробуйте еще раз.',
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+  
+  const toDisplayText = (content) => {
+    if (typeof content === 'string') {
+      return content;
+    }
+    if (typeof content === 'object' && content !== null) {
+      return JSON.stringify(content, null, 2);
+    }
+    return String(content);
+  };
+
+  // Функция для генерации анализа риска с помощью LLM
+  const generateRiskAnalysis = async (riskText) => {
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: `Проанализируй следующий риск и дай детальный анализ с конкретными рекомендациями: "${riskText}". 
+          
+          Ответь в формате JSON:
+          {
+            "level": "high|medium|low",
+            "label": "ВЫСОКИЙ|СРЕДНИЙ|НИЗКИЙ", 
+            "category": "Тип риска",
+            "impact": "Описание воздействия",
+            "analysis": "Детальный анализ риска",
+            "recommendations": ["Рекомендация 1", "Рекомендация 2", "Рекомендация 3"]
+          }`,
+          history: []
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const aiResponse = data.response;
+        
+        // Пытаемся извлечь JSON из ответа
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            return JSON.parse(jsonMatch[0]);
+          } catch (e) {
+            console.warn('Не удалось распарсить JSON из ответа LLM:', e);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Ошибка при генерации анализа риска:', error);
+    }
+    
+    return null;
+  };
+
+  const getComplianceStatus = (compliance) => {
+    const status = compliance.toLowerCase();
+    
+    if (status.includes('high') || status.includes('высокий') || status.includes('полное')) {
+      return (
+        <div className="compliance-item compliance-high">
+          <div className="compliance-header">
+            <span className="compliance-icon">✅</span>
+            <span className="compliance-label">ПОЛНОЕ СООТВЕТСТВИЕ</span>
+            <div className="compliance-rating">
+              <span className="rating-score">5/5</span>
+              <div className="rating-stars">⭐⭐⭐⭐⭐</div>
+            </div>
+          </div>
+          <p>Документ полностью соответствует всем требованиям законодательства</p>
+          <div className="compliance-details">
+            <h5>✅ Соответствующие требования:</h5>
+            <ul>
+              <li>Все необходимые реквизиты присутствуют</li>
+              <li>Соблюдены процессуальные сроки</li>
+              <li>Документ подписан уполномоченными лицами</li>
+              <li>Содержание соответствует правовым нормам</li>
+            </ul>
+          </div>
+        </div>
+      );
+    }
+    
+    if (status.includes('medium') || status.includes('средний') || status.includes('частичное')) {
+      return (
+        <div className="compliance-item compliance-medium">
+          <div className="compliance-header">
+            <span className="compliance-icon">⚠️</span>
+            <span className="compliance-label">ЧАСТИЧНОЕ СООТВЕТСТВИЕ</span>
+            <div className="compliance-rating">
+              <span className="rating-score">3/5</span>
+              <div className="rating-stars">⭐⭐⭐☆☆</div>
+            </div>
+          </div>
+          <p>Документ соответствует основным требованиям, но есть замечания</p>
+          <div className="compliance-details">
+            <h5>⚠️ Выявленные несоответствия:</h5>
+            <ul>
+              <li>Отсутствует подпись уполномоченного лица</li>
+              <li>Не указана дата составления документа</li>
+              <li>Нарушены процессуальные сроки подачи</li>
+              <li>Недостаточно обоснована правовая позиция</li>
+            </ul>
+            <h5>✅ Соответствующие требования:</h5>
+            <ul>
+              <li>Основная структура документа корректна</li>
+              <li>Соблюдены базовые правовые нормы</li>
+            </ul>
+          </div>
+        </div>
+      );
+    }
+    
+    if (status.includes('low') || status.includes('низкий') || status.includes('несоответствие')) {
+      return (
+        <div className="compliance-item compliance-low">
+          <div className="compliance-header">
+            <span className="compliance-icon">❌</span>
+            <span className="compliance-label">НЕСООТВЕТСТВИЕ</span>
+            <div className="compliance-rating">
+              <span className="rating-score">1/5</span>
+              <div className="rating-stars">⭐☆☆☆☆</div>
+            </div>
+          </div>
+          <p>Документ не соответствует требованиям, требуется доработка</p>
+          <div className="compliance-details">
+            <h5>❌ Критические несоответствия:</h5>
+            <ul>
+              <li>Отсутствуют обязательные реквизиты</li>
+              <li>Нарушены существенные процессуальные требования</li>
+              <li>Документ не подписан уполномоченными лицами</li>
+              <li>Содержание противоречит действующему законодательству</li>
+              <li>Пропущены установленные сроки</li>
+            </ul>
+          </div>
+        </div>
+      );
+    }
+    
+    // По умолчанию средний уровень
+    return (
+      <div className="compliance-item compliance-medium">
+        <div className="compliance-header">
+          <span className="compliance-icon">⚠️</span>
+          <span className="compliance-label">ТРЕБУЕТ ПРОВЕРКИ</span>
+          <div className="compliance-rating">
+            <span className="rating-score">2/5</span>
+            <div className="rating-stars">⭐⭐☆☆☆</div>
+          </div>
+        </div>
+        <p>Необходима дополнительная проверка соответствия требованиям</p>
+        <div className="compliance-details">
+          <h5>🔍 Требуется проверка:</h5>
+          <ul>
+            <li>Проверить наличие всех обязательных реквизитов</li>
+            <li>Убедиться в соблюдении процессуальных требований</li>
+            <li>Проверить соответствие содержания правовым нормам</li>
+            <li>Подтвердить полномочия подписантов</li>
+          </ul>
+        </div>
+      </div>
+    );
+  };
+  
+  return (
+    <div className="document-detail-view">
+      <div className="document-detail-header">
+        <button className="back-button" onClick={onBack}>
+          <ArrowLeft size={20} />
+          Назад к списку
+        </button>
+        <h2 className="document-title">{document.name}</h2>
+      </div>
+      
+      <div className="document-detail-content">
+        <div className="document-panel">
+          {/* ✅ Raw document content removed - only AI analysis below */}
+          
+          {/* Expert Analysis Section */}
+          {document.analysis && (
+            <div className="llm-analysis-container">
+              <div className="analysis-header-new">
+                <h3>📊 Экспертный анализ от Галины</h3>
+                <p className="analysis-subtitle">Профессиональное заключение по документу</p>
+              </div>
+              
+              {/* Expert Opinion */}
+              {document.analysis.expertOpinion && (
+                <div className="analysis-section expert-opinion-section">
+                  <div className="section-header">
+                    <span className="section-icon">💼</span>
+                    <h4>Экспертное мнение</h4>
+                  </div>
+                  <div className="section-content">
+                    <p className="expert-text">{document.analysis.expertOpinion}</p>
+                    {document.analysis.criticalIssues && document.analysis.criticalIssues.length > 0 && (
+                      <div className="critical-section">
+                        <strong>🔴 Критические моменты:</strong>
+                        <ul className="critical-list">
+                          {document.analysis.criticalIssues.map((issue, idx) => (
+                            <li key={idx}>{issue}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Legal Errors */}
+              {document.analysis.legalErrors && document.analysis.legalErrors.length > 0 && (
+                <div className="analysis-section errors-section">
+                  <div className="section-header">
+                    <span className="section-icon">⚠️</span>
+                    <h4>Юридические ошибки ({document.analysis.legalErrors.length})</h4>
+                  </div>
+                  <div className="section-content">
+                    {document.analysis.legalErrors.map((error, idx) => {
+                      // Parse error if it's an object
+                      let errorObj = error;
+                      if (typeof error === 'string') {
+                        errorObj = { description: error, severity: 'medium' };
+                      }
+                      
+                      return (
+                        <div key={idx} className={`error-box severity-${errorObj.severity || 'medium'}`}>
+                          <div className="error-header-new">
+                            <span className="error-type-badge">{errorObj.type || 'ошибка'}</span>
+                            <span className={`severity-badge severity-${errorObj.severity || 'medium'}`}>
+                              {errorObj.severity || 'medium'}
+                            </span>
+                          </div>
+                          <p className="error-text">{errorObj.description || error}</p>
+                          {errorObj.location && (
+                            <p className="error-meta"><strong>📍 Расположение:</strong> {errorObj.location}</p>
+                          )}
+                          {errorObj.solution && (
+                            <p className="error-meta"><strong>✅ Решение:</strong> {errorObj.solution}</p>
+                          )}
+                          {errorObj.basis && (
+                            <p className="error-meta"><strong>📜 Основание:</strong> {errorObj.basis}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              {/* Risks */}
+              {document.analysis.risks && document.analysis.risks.length > 0 && (
+                <div className="analysis-section risks-section">
+                  <div className="section-header">
+                    <span className="section-icon">🚨</span>
+                    <h4>Выявленные риски</h4>
+                  </div>
+                  {document.analysis.riskLevel && (
+                    <div className="risk-level-bar">
+                      <span>Уровень риска:</span>
+                      <span className={`risk-level-badge level-${document.analysis.riskLevel.toLowerCase()}`}>
+                        {document.analysis.riskLevel === 'high' ? '🔴 Высокий' : 
+                         document.analysis.riskLevel === 'medium' ? '🔵 Средний' : 
+                         '🟢 Низкий'}
+                      </span>
+                    </div>
+                  )}
+                  <div className="risks-grid">
+                    {document.analysis.risks.map((risk, idx) => {
+                      let riskObj = risk;
+                      if (typeof risk === 'string') {
+                        riskObj = { title: risk, text: risk };
+                      }
+                      
+                      return (
+                        <div key={idx} className="risk-card">
+                          <div className="risk-header">
+                            <span className="risk-category">{riskObj.category || riskObj.type || 'Риск'}</span>
+                            {riskObj.level && <span className={`risk-level risk-level-${riskObj.level.toLowerCase()}`}>{riskObj.level}</span>}
+                          </div>
+                          <div className="risk-title">{riskObj.title || riskObj.category || 'риск'}</div>
+                          <p className="risk-text">{riskObj.text || riskObj.description || risk}</p>
+                          {riskObj.minimization && (
+                            <div className="risk-meta">
+                              <strong>🔧 Как минимизировать:</strong>
+                              <p>{riskObj.minimization}</p>
+                            </div>
+                          )}
+                          {riskObj.consequences && (
+                            <div className="risk-meta">
+                              <strong>⚖️ Правовые последствия:</strong>
+                              <p>{riskObj.consequences}</p>
+                            </div>
+                          )}
+                          {riskObj.probability && (
+                            <div className="risk-meta">
+                              <strong>📊 Вероятность:</strong>
+                              <p>{riskObj.probability}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              {/* Recommendations */}
+              {document.analysis.recommendations && document.analysis.recommendations.length > 0 && (
+                <div className="analysis-section recommendations-section">
+                  <div className="section-header">
+                    <span className="section-icon">💡</span>
+                    <h4>Рекомендации Галины</h4>
+                  </div>
+                  <div className="recommendations-grid">
+                    {document.analysis.recommendations.map((rec, idx) => {
+                      let recObj = rec;
+                      if (typeof rec === 'string') {
+                        recObj = { title: rec, text: rec, priority: 'normal' };
+                      } else if (typeof rec !== 'object' || rec === null) {
+                        recObj = { title: String(rec), text: String(rec), priority: 'normal' };
+                      }
+                      
+                      const priority = recObj.priority === 'high' || recObj.priority === 'critical' ? 'high' : 'normal';
+                      const title = recObj.title || recObj.description || rec;
+                      const description = recObj.text || recObj.description || '';
+                      
+                      return (
+                        <div key={idx} className={`rec-card priority-${priority}`}>
+                          <div className="rec-header-new">
+                            <span className={`priority-dot priority-${priority}`}></span>
+                            <strong>{title}</strong>
+                          </div>
+                          {description && description !== title && (
+                            <p className="rec-text">{description}</p>
+                          )}
+                          {recObj.implementation && (
+                            <div className="rec-meta">
+                              <strong>📋 Как реализовать:</strong>
+                              <p>{recObj.implementation}</p>
+                            </div>
+                          )}
+                          {(recObj.deadline || recObj.timeline) && (
+                            <div className="rec-meta">
+                              <strong>⏰ Сроки:</strong>
+                              <p>{recObj.deadline || recObj.timeline}</p>
+                            </div>
+                          )}
+                          {recObj.complexity && (
+                            <div className="rec-meta">
+                              <strong>🎯 Сложность:</strong>
+                              <p>{recObj.complexity}</p>
+                            </div>
+                          )}
+                          {recObj.impact && (
+                            <div className="rec-meta">
+                              <strong>💫 Воздействие:</strong>
+                              <p>{recObj.impact}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              {/* Next Steps */}
+              {document.analysis.nextSteps && document.analysis.nextSteps.length > 0 && (
+                <div className="analysis-section next-steps-section">
+                  <div className="section-header">
+                    <span className="section-icon">🎯</span>
+                    <h4>Следующие шаги</h4>
+                  </div>
+                  <ol className="steps-list">
+                    {document.analysis.nextSteps.map((step, idx) => {
+                      const stepText = typeof step === 'string' ? step : (step.description || step.title || JSON.stringify(step));
+                      return <li key={idx}>{stepText}</li>;
+                    })}
+                  </ol>
+                </div>
+              )}
+              
+              {/* Compliance */}
+              {document.analysis.compliance && (
+                <div className="analysis-section">
+                  <div className="section-header">
+                    <span className="section-icon">✅</span>
+                    <h4>Соответствие требованиям</h4>
+                  </div>
+                  <div className="section-content">
+                    {getComplianceStatus(document.analysis.compliance)}
+                  </div>
+                </div>
+              )}
+              
+              
+              {/* Summary Section */}
+              {document.analysis && (
+                <div className="analysis-section">
+                  <div className="section-header">
+                    <span className="section-icon">📈</span>
+                    <h4>Общее резюме анализа</h4>
+                  </div>
+                  <div className="section-content">
+                    <div className="summary-stats">
+                      <div className="stat-item">
+                        <span className="stat-label">Всего выявлено проблем:</span>
+                        <span className="stat-value">{(document.analysis.legalErrors?.length || 0) + (document.analysis.risks?.length || 0)}</span>
+                      </div>
+                      <div className="stat-item">
+                        <span className="stat-label">Критических:</span>
+                        <span className="stat-value critical">{document.analysis.legalErrors?.filter(e => e.severity === 'high')?.length || 0}</span>
+                      </div>
+                      <div className="stat-item">
+                        <span className="stat-label">Средних:</span>
+                        <span className="stat-value warning">{document.analysis.legalErrors?.filter(e => e.severity === 'medium')?.length || 0}</span>
+                      </div>
+                      <div className="stat-item">
+                        <span className="stat-label">Некритических:</span>
+                        <span className="stat-value info">{document.analysis.legalErrors?.filter(e => e.severity === 'low')?.length || 0}</span>
+                      </div>
+                    </div>
+                    {document.analysis.overallAssessment && (
+                      <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                        <p style={{ margin: 0, color: '#555' }}>{document.analysis.overallAssessment}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+                            {/* Save Button */}
+              <div className="preview-actions">
+                <button className="save-btn" onClick={() => {
+                  const analysis = JSON.stringify(document.analysis, null, 2);
+                  const element = document.createElement('a');
+                  const file = new Blob([analysis], { type: 'application/json' });
+                  element.href = URL.createObjectURL(file);
+                  element.download = `analysis_${document.name}_${Date.now()}.json`;
+                  document.body.appendChild(element);
+                  element.click();
+                  document.body.removeChild(element);
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-save">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                  </svg>
+                  Сохранить анализ
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {initialAnalysisData && (
+            <div className="initial-analysis-raw">
+              <h3>🕒 Первичный анализ (при первой загрузке)</h3>
+              <pre className="initial-analysis-json">{JSON.stringify(initialAnalysisData, null, 2)}</pre>
+            </div>
+          )}
+          
+          {document.analysis && (
+            <div className="initial-analysis">
+              <h3>🧠 Первичный анализ документа</h3>
+              <p><strong>Краткое резюме:</strong> {
+                Array.isArray(document.analysis.summary?.mainIssues) 
+                  ? document.analysis.summary.mainIssues.join(', ') 
+                  : (typeof document.analysis.summary === 'string' ? document.analysis.summary : 'Анализ документа выполнен')
+              }</p>
+              <p><strong>Риски:</strong> {
+                Array.isArray(document.analysis.risks)
+                  ? document.analysis.risks.map(r => typeof r === 'string' ? r : (r.title || r.description || r.category || 'Риск')).join(', ')
+                  : 'Риски не выявлены'
+              }</p>
+              <p><strong>Рекомендации:</strong> {
+                Array.isArray(document.analysis.recommendations)
+                  ? document.analysis.recommendations.map(rec => typeof rec === 'string' ? rec : (rec.title || rec.description || 'Рекомендация')).join(', ')
+                  : 'Рекомендации отсутствуют'
+              }</p>
+            </div>
+          )}
+        </div>
+        
+        <div className="chat-panel">
+          <div className="chat-header">
+            <div className="chat-title">
+              <h3>💬 Галина</h3>
+              <p>Юридический помощник</p>
+            </div>
+          </div>
+          
+          <div className="chat-messages">
+            {messages.map((message) => (
+              <div key={message.id} className={`chat-message ${message.role}`}>
+                <div className="message-content">
+                  {message.content}
+                </div>
+                <div className="message-time">
+                  {new Date(message.timestamp).toLocaleTimeString('ru-RU', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </div>
+              </div>
+            ))}
+            
+            {isLoading && (
+              <div className="chat-message assistant">
+                <div className="message-content">
+                  <div className="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div ref={messagesEndRef} />
+          </div>
+          
+          <div className="chat-input">
+            <textarea
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Задайте вопрос о документе..."
+              disabled={isLoading}
+              rows="3"
+            />
+            <button 
+              onClick={handleSendMessage}
+              disabled={!inputMessage.trim() || isLoading}
+              className="send-button"
+            >
+              <Send size={20} />
+            </button>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+  );
+};
+
+export default DocumentDetailView;

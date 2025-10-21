@@ -21,72 +21,80 @@ async function performAdvancedDocumentAnalysis(documentText, documentType = 'leg
     });
 
     // Создаем детальный промпт для глубокого анализа
-    const analysisPrompt = `Ты - опытный юрист-аналитик с 20-летним стажем. Проведи глубокий анализ данного документа и найди ВСЕ возможные проблемы, ошибки и тонкие места.
+    const analysisPrompt = `Ты — Галина Петровна, опытный юридический аналитик с 25-летним стажем, защищающий интересы клиента. Работаешь строго в заданной юрисдикции и процедуре.
+Твоя задача — выявить нарушения и процессуальные уязвимости в документе и выдать МАКСИМАЛЬНО ДЕТАЛЬНЫЕ практичные действия защиты.
 
-ТРЕБОВАНИЯ К АНАЛИЗУ:
-1. Внимательно изучи ВЕСЬ документ
-2. Найди юридические ошибки, неточности и противоречия
-3. Выяви риски для каждой из сторон
-4. Определи пробелы в правовом регулировании
-5. Предложи конкретные решения для каждой проблемы
-6. Оцени общее качество документа
+КРИТИЧЕСКИ ВАЖНО ДЛЯ РЕКОМЕНДАЦИЙ:
+• Каждая рекомендация должна содержать ПОДРОБНОЕ пошаговое описание действий (минимум 3-5 конкретных шагов)
+• Укажи точные сроки выполнения каждого шага
+• Определи ответственного лица/орган для каждого действия
+• Опиши возможные препятствия и как их преодолеть
+• Укази необходимые документы и доказательства
+• Дай рекомендации по оформлению документов
+• Укажи сроки давности/реализации для каждой рекомендации
 
-ВОЗВРАТИ СТРОГО В JSON ФОРМАТЕ:
+Контекст (заполняется вызывающей стороной):
+jurisdiction: {например: "РФ"}
+procedure: {КоАП|УПК|ГПК|КАС|иное}
+stage: {pretrial|trial|appeal|cassation}
+lawVersionDate: {YYYY-MM-DD}
+doc:
+  type: {protocol|postanovlenie|definition|decision|order|иное}
+  date: {YYYY-MM-DD}
+  number: {номер документа}
+  issuer: {орган/суд}
+  signatory: {должность, ФИО}
+  serviceDate: {YYYY-MM-DD}
+  deliveryMethod: {inPerson|mail|EDS|unknown}
+
+Обязательные правила:
+• Pin-cite: для каждого нарушения указывать дословный фрагмент ≤300 символов и location {page, para, lineRange}.
+• Нормы права: объект {code, article, part, point}, указывать lawVersionDate. Если неизвестно — lawRefs: [] и confidence<0.5 с needsVerification.
+• Сроки: дедлайны от serviceDate в ISO YYYY-MM-DD, указывать ruleRef.
+• Классификация нарушений: competence|form|evidence|procedure|deadline|rights.
+• severity: low|medium|high|critical по влиянию на допустимость доказательств и процедурные ошибки.
+• Anti-hallucination: не выдумывать факты, отражать missing и assumptions.
+• Минимум 3–5 пунктов в risks и recommendations.
+• Тон: нейтральный юридический стиль, термины: «процессуальный механизм», «основание», «ходатайство», «исключение доказательства».
+• Для больших текстов (>10 000 знаков): агрегировать по разделам, но вернуть единый JSON.
+
+Структура КАЖДОЙ рекомендации:
 {
-  "summary": {
-    "documentType": "тип документа",
-    "overallQuality": "excellent|good|average|poor",
-    "riskLevel": "low|medium|high|critical",
-    "mainIssues": ["основные проблемы в 2-3 словах"]
-  },
-  "legalErrors": [
+  "priority": "high|medium|low",
+  "category": "категория рекомендации",
+  "title": "короткое название",
+  "description": "общее описание проблемы и решения",
+  "steps": [
     {
-      "type": "тип ошибки",
-      "description": "описание ошибки",
-      "location": "где найдена",
-      "severity": "low|medium|high|critical",
-      "solution": "как исправить"
+      "step": 1,
+      "title": "Название шага",
+      "description": "Подробное описание что нужно сделать",
+      "timeframe": "сроки выполнения",
+      "responsible": "кто отвечает (клиент, юрист, суд)",
+      "documents": ["список необходимых документов"],
+      "notes": "дополнительные замечания"
     }
   ],
-  "risks": [
-    {
-      "category": "категория риска",
-      "description": "описание риска",
-      "probability": "low|medium|high",
-      "impact": "low|medium|high",
-      "mitigation": "как минимизировать"
-    }
-  ],
-  "recommendations": [
-    {
-      "priority": "high|medium|low",
-      "category": "категория рекомендации",
-      "description": "описание рекомендации",
-      "implementation": "как реализовать"
-    }
-  ],
-  "complianceIssues": [
-    {
-      "regulation": "какое требование нарушено",
-      "description": "описание нарушения",
-      "consequence": "последствия",
-      "fix": "как исправить"
-    }
-  ],
-  "suggestedClauses": [
-    {
-      "purpose": "назначение пункта",
-      "text": "предлагаемый текст",
-      "reason": "зачем нужен"
-    }
-  ],
-  "missingElements": [
-    {
-      "element": "что отсутствует",
-      "importance": "high|medium|low",
-      "suggestion": "что добавить"
-    }
-  ]
+  "timeline": "общий срок выполнения всей рекомендации",
+  "owner": "кто отвечает за реализацию",
+  "dependencies": ["другие рекомендации, которые должны быть выполнены первыми"],
+  "risks": "возможные риски при невыполнении",
+  "successIndicators": "как определить успешное выполнение",
+  "implementation": "практические советы по реализации",
+  "deadline": "абсолютный срок выполнения"
+}
+
+Строго возвращай JSON согласно схеме:
+{
+  "summary": { ... },
+  "legalErrors": [ ... ],
+  "risks": [ ... ],
+  "recommendations": [ ... ],
+  "motions": [ ... ],
+  "assumptions": [...],
+  "missing": [...],
+  "expertOpinion": { ... },
+  "controls": { "nonFabrication": true, "returnEmptyIfUnknown": true }
 }
 
 ДОКУМЕНТ ДЛЯ АНАЛИЗА:
@@ -97,12 +105,12 @@ ${documentText}`;
       messages: [
         { 
           role: 'system', 
-          content: 'Ты - эксперт-юрист с глубокими знаниями российского права. Проводи детальный анализ документов, находи все проблемы и предлагай конкретные решения. Отвечай строго в JSON формате.' 
+          content: 'Ты - Галина Петровна, опытный юрист-аналитик с 25-летним стажем. Ты дотошна, профессиональна и находишь даже скрытые правовые проблемы. Твой анализ должен быть МАКСИМАЛЬНО ДЕТАЛЬНЫМ, конкретным, практичным и основанным на реальном опыте. Не упускай ни одной проблемы. Находи минимум 3-5 рисков и 3-5 рекомендаций для каждого документа. КРИТИЧЕСКИ ВАЖНО: каждая рекомендация должна содержать подробное пошаговое описание с точными сроками, ответственными лицами, необходимыми документами и практическими советами. Отвечай строго в JSON формате, будь максимально детальной и полезной.' 
         },
         { role: 'user', content: analysisPrompt }
       ],
-      temperature: 0.1, // Низкая температура для более точного анализа
-      max_tokens: 4000
+      temperature: 0.2, // Низкая температура для точного, но детального анализа
+      max_tokens: 8000 // Увеличенный лимит для ОЧЕНЬ детального анализа рекомендаций
     });
 
     let content = completion.choices[0]?.message?.content?.trim() || '';
@@ -127,7 +135,13 @@ ${documentText}`;
       recommendations: Array.isArray(analysis.recommendations) ? analysis.recommendations.slice(0, 10) : [],
       complianceIssues: Array.isArray(analysis.complianceIssues) ? analysis.complianceIssues.slice(0, 10) : [],
       suggestedClauses: Array.isArray(analysis.suggestedClauses) ? analysis.suggestedClauses.slice(0, 5) : [],
-      missingElements: Array.isArray(analysis.missingElements) ? analysis.missingElements.slice(0, 5) : []
+      missingElements: Array.isArray(analysis.missingElements) ? analysis.missingElements.slice(0, 5) : [],
+      expertOpinion: analysis.expertOpinion || {
+        overallAssessment: 'Требует дополнительной экспертизы',
+        criticalPoints: [],
+        successProbability: 'unknown',
+        nextSteps: ['Обратиться к юристу']
+      }
     };
 
     // Добавляем статистику
@@ -152,7 +166,7 @@ ${documentText}`;
       fileName
     });
 
-    // Fallback анализ
+    // Fallback анализ от Галины Петровны
     return {
       summary: {
         documentType: documentType,
@@ -162,27 +176,36 @@ ${documentText}`;
       },
       legalErrors: [{
         type: 'Ошибка анализа',
-        description: 'Не удалось провести автоматический анализ',
+        description: 'Не удалось провести автоматический анализ документа. Требуется ручная экспертиза.',
         location: 'Весь документ',
         severity: 'medium',
-        solution: 'Обратитесь к юристу для ручной проверки'
+        solution: 'Обратитесь к квалифицированному юристу для детальной проверки',
+        legalBasis: 'Ст. 15 ГПК РФ - принцип объективной истины'
       }],
       risks: [{
         category: 'Техническая ошибка',
-        description: 'Автоматический анализ недоступен',
+        description: 'Автоматический анализ недоступен. Документ может содержать скрытые правовые риски.',
         probability: 'high',
         impact: 'medium',
-        mitigation: 'Проведите ручную проверку документа'
+        mitigation: 'Проведите ручную проверку документа у опытного юриста',
+        legalConsequences: 'Возможны процессуальные нарушения при неправильной оценке'
       }],
       recommendations: [{
         priority: 'high',
-        category: 'Проверка',
-        description: 'Проведите ручную юридическую экспертизу',
-        implementation: 'Обратитесь к квалифицированному юристу'
+        category: 'Экспертиза',
+        description: 'Проведите ручную юридическую экспертизу документа',
+        implementation: '1. Обратитесь к юристу с опытом в данной области права\n2. Предоставьте полный пакет документов\n3. Получите письменное заключение',
+        deadline: 'В течение 3-5 рабочих дней'
       }],
       complianceIssues: [],
       suggestedClauses: [],
       missingElements: [],
+      expertOpinion: {
+        overallAssessment: 'Документ требует профессиональной экспертизы. Автоматический анализ недоступен.',
+        criticalPoints: ['Необходима ручная проверка', 'Возможны скрытые правовые риски'],
+        successProbability: 'unknown',
+        nextSteps: ['Обратиться к юристу', 'Получить письменное заключение', 'Проанализировать все риски']
+      },
       statistics: {
         totalIssues: 1,
         criticalIssues: 0,

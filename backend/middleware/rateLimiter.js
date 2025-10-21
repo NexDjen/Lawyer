@@ -69,9 +69,9 @@ class RateLimiter {
 
 // Rate limiters для разных эндпоинтов
 const chatRateLimiter = new RateLimiter({
-  windowMs: 60 * 1000, // 1 минута
-  max: 10, // 10 запросов в минуту
-  message: 'Слишком много Chat запросов. Попробуйте через минуту'
+  windowMs: 15 * 60 * 1000, // 15 минут
+  max: 100, // 100 запросов за 15 минут
+  message: 'Слишком много Chat запросов. Попробуйте через 15 минут'
 });
 
 const apiRateLimiter = new RateLimiter({

@@ -33,17 +33,12 @@ class ChatController {
       // If a document analysis ID is provided, load its analysis and include in context
       if (docId) {
         try {
-          const fs = require('fs');
-          const path = require('path');
-          const analysisFilePath = path.resolve(__dirname, '../data/analysis.json');
-          if (fs.existsSync(analysisFilePath)) {
-            const store = JSON.parse(fs.readFileSync(analysisFilePath, 'utf8'));
-            const entry = store.items.find(item => item.id === docId);
-            if (entry) {
-              const summary = entry.analysis.summary;
-              const contextMsg = `Сводка анализа документа: Тип: ${summary.documentType}, Уровень риска: ${summary.riskLevel}, Основные проблемы: ${summary.mainIssues.join(', ')}`;
-              allHistory.unshift({ role: 'system', content: contextMsg });
-            }
+          const analysisService = require('../services/analysisService');
+          const analysis = await analysisService.getAnalysisById(docId);
+          if (analysis) {
+            const summary = analysis.analysis.summary;
+            const contextMsg = `Сводка анализа документа: Тип: ${summary.documentType}, Уровень риска: ${summary.riskLevel}, Основные проблемы: ${summary.mainIssues.join(', ')}`;
+            allHistory.unshift({ role: 'system', content: contextMsg });
           }
         } catch (err) {
           logger.warn('Не удалось загрузить контекст анализа документа', { docId, error: err.message });

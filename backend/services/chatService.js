@@ -211,6 +211,75 @@ class ChatService {
     return this.generateResponse(message, conversationHistory, useWebSearch, userId, model);
   }
 
+  // Генерация ответа с контекстом документа
+  async generateResponseWithContext(message, conversationHistory = [], systemContext = '', useWebSearch = true, userId = null, model = null) {
+    try {
+      // Используем модель из параметра или модель по умолчанию
+      const selectedModel = model || config.windexai.model;
+
+      logger.info('🔍 ChatService.generateResponseWithContext called', {
+        messageLength: message.length,
+        messagePreview: message.substring(0, 100),
+        hasApiKey: !!config.windexai.apiKey,
+        apiKeyPrefix: config.windexai.apiKey ? config.windexai.apiKey.substring(0, 8) + '...' : 'NOT_SET',
+        selectedModel,
+        conversationHistoryLength: conversationHistory.length,
+        systemContextLength: systemContext.length,
+        systemContextPreview: systemContext.substring(0, 200)
+      });
+
+      if (!config.windexai.apiKey) {
+        logger.error('❌ WindexAI API ключ не настроен');
+        throw new Error('WindexAI API ключ не настроен');
+      }
+
+      // Собираем контекст из пользовательских документов (OCR результаты)
+      // ВРЕМЕННО ОТКЛЮЧЕНО для изоляции пользователей
+      let userContext = '';
+      logger.info('User context loading temporarily disabled for user isolation');
+
+      const prompt = await this.buildPrompt(message + userContext, conversationHistory, useWebSearch, userId);
+
+      // Добавляем системный контекст в начало промпта
+      const contextualPrompt = systemContext + '\n\n' + prompt;
+
+      logger.info('🤖 Sending request to WindexAI', {
+        model: selectedModel,
+        promptLength: contextualPrompt.length,
+        promptPreview: contextualPrompt.substring(contextualPrompt.length - 200), // Последние 200 символов промпта
+        maxTokens: config.windexai.maxTokens,
+        temperature: config.windexai.temperature
+      });
+
+      const completion = await this.windexai.chat.completions.create({
+        model: selectedModel,
+        messages: [
+          {
+            role: 'user',
+            content: contextualPrompt
+          }
+        ],
+        max_tokens: config.windexai.maxTokens,
+        temperature: config.windexai.temperature,
+        stream: false,
+        // Добавляем уникальный идентификатор для предотвращения кэширования
+        user: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      });
+
+      const response = completion.choices[0].message.content;
+
+      logger.info('✅ WindexAI response received', {
+        responseLength: response.length,
+        usage: completion.usage
+      });
+
+      return response;
+    } catch (error) {
+      logger.error('❌ Error in generateResponseWithContext:', error);
+      throw error;
+    }
+  }
+
   // Генерация ответа (для WebSocket)
   async generateResponse(message, conversationHistory = [], useWebSearch = true, userId = null, model = null) {
     try {

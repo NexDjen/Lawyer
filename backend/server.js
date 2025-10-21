@@ -224,10 +224,10 @@ class Server {
   _setupMiddleware() {
     // Устанавливаем увеличенные таймауты для OCR обработки
     this.app.use((req, res, next) => {
-      // Увеличиваем таймауты для OCR запросов
-      if (req.path.includes('/ocr')) {
-        req.setTimeout(120000); // 2 минуты для OCR
-        res.setTimeout(120000);
+      // Increase timeouts for long-running requests (OCR and advanced analysis)
+      if (req.path.includes('/ocr') || req.path.includes('/advanced-analysis')) {
+        req.setTimeout(180000); // 3 минуты
+        res.setTimeout(180000);
       } else {
         req.setTimeout(30000); // 30 секунд для остальных
         res.setTimeout(30000);
@@ -238,6 +238,10 @@ class Server {
     // Debug: log allowed CORS origins
     logger.info('Allowed CORS origins:', config.cors.origins);
     this.app.use(cors(corsOptions));
+    
+    // Статические файлы (должны быть до всех остальных маршрутов)
+    this.app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+    this.app.use(express.static(path.join(__dirname, '..', 'build')));
     
     // Middleware для сбора метрик производительности
     this.app.use(metricsMiddleware);
@@ -254,12 +258,6 @@ class Server {
       extended: true,
       parameterLimit: 1000
     }));
-    
-    // Статические файлы
-    this.app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
-    
-    // Статические файлы фронтенда для глобального доступа
-    this.app.use(express.static(path.join(process.cwd(), 'build')));
     
     // Middleware для обработки ошибок размера запроса
     this.app.use((error, req, res, next) => {
@@ -326,6 +324,10 @@ class Server {
     this.app.get('*', (req, res, next) => {
       // Если это API запрос - передаем дальше для обработки 404
       if (req.path.startsWith('/api/')) {
+        return next();
+      }
+      // Если это статические файлы - передаем дальше
+      if (req.path.startsWith('/static/') || req.path.includes('.')) {
         return next();
       }
       // Для всех остальных - возвращаем SPA

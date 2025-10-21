@@ -8,6 +8,9 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
   const { updateCurrentUser, user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(null);
+  // State for multiple image carousel
+  const [uploadedImages, setUploadedImages] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [ocrResult, setOcrResult] = useState(null);
   const [isProcessing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -15,13 +18,35 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
   const [isEditing, setIsEditing] = useState(false);
   const [editedFields, setEditedFields] = useState({});
   const [showRawText, setShowRawText] = useState(false);
+
+  // Функции перевода
+  const translateSeverity = (severity) => {
+    switch (severity) {
+      case 'critical': return 'Критический';
+      case 'high': return 'Высокий';
+      case 'medium': return 'Средний';
+      case 'low': return 'Низкий';
+      default: return severity;
+    }
+  };
+
+  const translatePriority = (priority) => {
+    switch (priority) {
+      case 'high': return 'Высокий';
+      case 'medium': return 'Средний';
+      case 'low': return 'Низкий';
+      default: return priority;
+    }
+  };
   const fileInputRef = useRef(null);
   const cameraRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const [cameraError, setCameraError] = useState(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [lastUploadMeta, setLastUploadMeta] = useState(null);
+  const [originalFileName, setOriginalFileName] = useState(null);
   const [progress, setProgress] = useState(0);
+  const [progressStage, setProgressStage] = useState('');
   const progressTimerRef = useRef(null);
   const controllerRef = useRef(null);
   const pendingIdRef = useRef(null);
@@ -121,10 +146,12 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
   };
 
   const handleFileSelect = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      handleFileUpload(file);
-    }
+    const files = Array.from(event.target.files);
+    files.forEach(file => {
+      if (file) {
+        handleFileUpload(file);
+      }
+    });
   };
 
   const handleFileUpload = async (file) => {
@@ -137,12 +164,30 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
 
     setIsUploading(true);
     setProgress(0);
+    setProgressStage('Подготовка файла...');
     if (progressTimerRef.current) clearInterval(progressTimerRef.current);
-    // Имитация прогресса до 90% пока ждём ответ сервера
+    
+    // Имитация прогресса с этапами обработки
+    let stageIndex = 0;
+    const stages = [
+      { text: 'Подготовка файла...', max: 20 },
+      { text: 'Отправка на сервер...', max: 45 },
+      { text: 'Обработка изображения...', max: 70 },
+      { text: 'Анализ документа...', max: 90 }
+    ];
+    
     progressTimerRef.current = setInterval(() => {
       setProgress((prev) => {
-        const increment = prev < 70 ? 1.2 : prev < 90 ? 0.6 : 0.2;
-        const next = Math.min(prev + increment, 90);
+        const currentStage = stages[stageIndex];
+        const increment = currentStage.max / 20; // Плавное заполнение этапа
+        const next = Math.min(prev + increment, currentStage.max);
+        
+        // Переход к следующему этапу
+        if (next >= currentStage.max && stageIndex < stages.length - 1) {
+          stageIndex++;
+          setProgressStage(stages[stageIndex].text);
+        }
+        
         progressValueRef.current = next;
         const clientId = pendingIdRef.current;
         if (clientId) {
@@ -155,13 +200,17 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
         }
         return next;
       });
-    }, 150);
+    }, 200);
     
     try {
       // Создаём карточку в списке документов со статусом "processing"
       const clientId = `tmp_${Date.now()}`;
       pendingIdRef.current = clientId;
       const isPdfLocal = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+      
+      // Сохраняем оригинальное имя файла
+      setOriginalFileName(file.name);
+      
       const newDoc = {
         id: clientId,
         name: file.name || (isPdfLocal ? 'PDF документ' : (documentType?.name || 'Документ')),
@@ -187,7 +236,10 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
       if (!isPdf) {
         const reader = new FileReader();
         reader.onload = (e) => {
+          // Add new image to carousel and keep single-image state for compatibility
+          setUploadedImages(prev => [...prev, e.target.result]);
           setUploadedImage(e.target.result);
+          setCurrentIndex(0);
         };
         reader.readAsDataURL(file);
       } else {
@@ -199,12 +251,13 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
       xhrRef.current = xhr;
       const endpoint = buildApiUrl('documents/ocr');
       xhr.open('POST', endpoint, true);
-      xhr.timeout = 120000; // 2 минуты таймаут для OCR
+      xhr.timeout = 180000; // 3 минуты таймаут для OCR
       // upload progress (реальный прогресс отправки файла)
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
-          const percent = Math.max(1, Math.min(90, Math.round((e.loaded / e.total) * 90)));
+          const percent = Math.max(35, Math.min(60, Math.round((e.loaded / e.total) * 25) + 35));
           setProgress(percent);
+          setProgressStage('Отправка на сервер...');
           progressValueRef.current = percent;
           const clientId = pendingIdRef.current;
           if (clientId) {
@@ -216,6 +269,7 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
       xhr.onprogress = () => {
         const bump = Math.min(95, Math.max(progressValueRef.current, 92));
         setProgress(bump);
+        setProgressStage('Получение результата...');
         progressValueRef.current = bump;
         const clientId = pendingIdRef.current;
         if (clientId) {
@@ -223,6 +277,9 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
         }
       };
       const responsePromise = new Promise((resolve, reject) => {
+        xhr.ontimeout = () => {
+          reject(new Error('Превышено время ожидания OCR (3 минуты). Проверьте соединение и попробуйте снова.'));
+        };
         xhr.onreadystatechange = () => {
           if (xhr.readyState === 4) {
             if (xhr.status >= 200 && xhr.status < 300) {
@@ -259,7 +316,6 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
           }
         };
         xhr.onerror = () => reject(new Error('Ошибка сети при загрузке документа'));
-        xhr.ontimeout = () => reject(new Error('Таймаут при обработке документа. Попробуйте еще раз.'));
         xhr.onabort = () => reject(Object.assign(new Error('Загрузка отменена'), { name: 'AbortError' }));
       });
 
@@ -380,9 +436,13 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
         progressTimerRef.current = null;
       }
       setProgress(100);
+      setProgressStage('Завершено!');
       progressValueRef.current = 100;
       setIsUploading(false);
-      setTimeout(() => setProgress(0), 800);
+      setTimeout(() => {
+        setProgress(0);
+        setProgressStage('');
+      }, 800);
     }
   };
 
@@ -474,52 +534,124 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
     return `${bytes} B`;
   };
 
-  const handleSaveDocument = () => {
-    const isPdf = !!(lastUploadMeta?.isPdf || (ocrResult && ocrResult.kind === 'pdf'));
-    const documentData = isPdf
-      ? {
-          type: 'pdf',
-          filename: lastUploadMeta?.filename,
-          id: lastUploadMeta?.id,
-          expiresAt: lastUploadMeta?.expiresAt,
-          recognizedText: ocrResult?.recognizedText,
-          extractedData: ocrResult?.extractedData,
-          confidence: ocrResult?.confidence,
-          analysis: ocrResult?.analysis || null
+  const handleSaveDocument = async () => {
+    console.log('🔄 Начинаем сохранение документа...');
+    console.log('📊 Данные для сохранения:', {
+      lastUploadMeta,
+      ocrResult,
+      analysisResult,
+      uploadedImage: !!uploadedImage,
+      editedFields,
+      documentType
+    });
+
+    try {
+      const isPdf = !!(lastUploadMeta?.isPdf || (ocrResult && ocrResult.kind === 'pdf'));
+      const documentData = isPdf
+        ? {
+            type: 'pdf',
+            filename: lastUploadMeta?.filename,
+            id: lastUploadMeta?.id,
+            expiresAt: lastUploadMeta?.expiresAt,
+            recognizedText: ocrResult?.recognizedText,
+            extractedData: ocrResult?.extractedData,
+            confidence: ocrResult?.confidence,
+            analysis: ocrResult?.analysis || analysisResult || null
+          }
+        : { 
+            type: documentType?.id || 'unknown', 
+            fields: editedFields, 
+            image: uploadedImage, 
+            ocrResult: ocrResult,
+            analysis: analysisResult || null
+          };
+
+      // При сохранении изображения — обновим профиль из вручную откорректированных полей
+      if (!isPdf && documentType && editedFields) {
+        applyExtractedToProfile(editedFields);
+      }
+
+      // Try to save to database first
+      try {
+        const userId = user?.id || 'current-user';
+        const dbDocumentData = {
+          filename: isPdf ? (lastUploadMeta?.filename || originalFileName || 'PDF документ') : (originalFileName || documentType?.name || 'Документ'),
+          originalName: isPdf ? (lastUploadMeta?.filename || originalFileName || 'PDF документ') : (originalFileName || documentType?.name || 'Документ'),
+          filePath: isPdf ? (lastUploadMeta?.filePath || '') : '',
+          fileSize: isPdf ? (lastUploadMeta?.sizeBytes || 0) : (uploadedImage?.length || 0),
+          mimeType: isPdf ? 'application/pdf' : 'image/jpeg',
+          documentType: isPdf ? 'pdf' : (documentType?.id || 'unknown'),
+          extractedText: isPdf ? (ocrResult?.recognizedText || '') : (ocrResult?.parsedData?.extractedText || ocrResult?.extractedText || ''),
+          ocrConfidence: ocrResult?.confidence || 0,
+          analysisResult: ocrResult?.parsedData?.analysis || ocrResult?.analysis || analysisResult || null,
+          imageBase64: !isPdf ? uploadedImage : null
+        };
+
+        console.log('💾 Сохраняем документ в базу данных...', {
+          extractedTextLength: dbDocumentData.extractedText?.length || 0,
+          extractedTextPreview: dbDocumentData.extractedText?.substring(0, 100) || 'empty',
+          ocrResult: ocrResult ? 'has ocrResult' : 'no ocrResult'
+        });
+        const response = await fetch(buildApiUrl('documents/save'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId,
+            documentData: dbDocumentData
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ Документ успешно сохранен в базу данных:', result.data);
+        } else {
+          throw new Error('Database save failed');
         }
-      : { type: documentType?.id || 'unknown', fields: editedFields, image: uploadedImage, ocrResult: ocrResult };
+      } catch (dbError) {
+        console.warn('⚠️ Ошибка сохранения в базу данных, используем localStorage:', dbError);
+        
+        // Fallback to localStorage
+        const savedDocuments = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        const newDocument = {
+          id: Date.now(),
+          name: isPdf ? (lastUploadMeta?.filename || 'PDF документ') : (documentType?.name || 'Документ'),
+          content: isPdf
+            ? (ocrResult?.recognizedText || `PDF: ${lastUploadMeta?.filename || ''} (истекает: ${lastUploadMeta?.expiresAt || ''})`)
+            : JSON.stringify(documentData),
+          uploadedAt: new Date().toISOString(),
+          type: isPdf ? 'pdf' : (documentType?.id || 'legal'),
+          status: isPdf ? 'uploaded' : 'analyzed',
+          size: isPdf ? formatSize(lastUploadMeta?.sizeBytes || 0) : `${(uploadedImage?.length || 0) / 1024} KB`,
+          analysis: ocrResult?.analysis || analysisResult || null
+        };
 
-    // При сохранении изображения — обновим профиль из вручную откорректированных полей
-    if (!isPdf && documentType && editedFields) {
-      applyExtractedToProfile(editedFields);
+        console.log('💾 Сохраняем документ в localStorage:', newDocument);
+
+        savedDocuments.unshift(newDocument);
+        localStorage.setItem(storageKey, JSON.stringify(savedDocuments));
+
+        console.log('✅ Документ успешно сохранен в localStorage');
+      }
+
+      // Для PDF пробрасываем чистый текст, чтобы карточка не показывала JSON
+      const textToEmit = isPdf ? (ocrResult?.recognizedText || '') : JSON.stringify(documentData);
+      onTextExtracted(textToEmit, isPdf ? (lastUploadMeta?.filename || 'PDF документ') : (documentType?.name || 'Документ'));
+      
+      console.log('🎉 Сохранение завершено, закрываем модал');
+      onClose();
+    } catch (error) {
+      console.error('❌ Ошибка при сохранении документа:', error);
+      alert('Ошибка при сохранении документа: ' + error.message);
     }
-
-    // Сохраняем в localStorage
-    const savedDocuments = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const newDocument = {
-      id: Date.now(),
-      name: isPdf ? (lastUploadMeta?.filename || 'PDF документ') : (documentType?.name || 'Документ'),
-      content: isPdf
-        ? (ocrResult?.recognizedText || `PDF: ${lastUploadMeta?.filename || ''} (истекает: ${lastUploadMeta?.expiresAt || ''})`)
-        : JSON.stringify(documentData),
-      uploadedAt: new Date().toISOString(),
-      type: isPdf ? 'pdf' : (documentType?.id || 'legal'),
-      status: isPdf ? 'uploaded' : 'analyzed',
-      size: isPdf ? formatSize(lastUploadMeta?.sizeBytes || 0) : `${(uploadedImage?.length || 0) / 1024} KB`,
-      analysis: ocrResult?.analysis || null
-    };
-
-    savedDocuments.unshift(newDocument);
-    localStorage.setItem(storageKey, JSON.stringify(savedDocuments));
-
-    // Для PDF пробрасываем чистый текст, чтобы карточка не показывала JSON
-    const textToEmit = isPdf ? (ocrResult?.recognizedText || '') : JSON.stringify(documentData);
-    onTextExtracted(textToEmit, isPdf ? (lastUploadMeta?.filename || 'PDF документ') : (documentType?.name || 'Документ'));
-    onClose();
   };
 
   const handleRetakePhoto = () => {
     setUploadedImage(null);
+    // Clear carousel images
+    setUploadedImages([]);
+    setCurrentIndex(0);
     setOcrResult(null);
     setEditedFields({});
     setIsEditing(false);
@@ -529,19 +661,29 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
   const performLLMAnalysis = async (documentText, fileName) => {
     try {
       setIsAnalyzing(true);
+      setProgressStage('Анализ документа с помощью AI...');
+      setProgress(85);
       console.log('Начинаем LLM анализ документа:', fileName);
       
-      const analysisResponse = await fetch(buildApiUrl('documents/advanced-analysis'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          documentText: documentText,
-          documentName: fileName,
-          userId: user?.id || 'current-user'
-        }),
-      });
+      // Fetch with retries for transient errors
+      const fetchWithRetry = async (url, options, retries = 3, delay = 1000) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            return await fetch(url, options);
+          } catch (err) {
+            if (i === retries - 1) throw err;
+            await new Promise(res => setTimeout(res, delay));
+          }
+        }
+      };
+      const analysisResponse = await fetchWithRetry(
+        buildApiUrl('documents/advanced-analysis'),
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ documentText, documentType: 'legal', fileName, userId: '1' })
+        }
+      );
 
       if (!analysisResponse.ok) {
         const errorText = await analysisResponse.text();
@@ -552,10 +694,23 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
       const analysisData = await analysisResponse.json();
       console.log('LLM анализ завершен:', analysisData);
       setAnalysisResult(analysisData);
+      setProgress(100);
+      
+      // Сохраняем результат анализа в localStorage для последующего отображения
+      const docId = analysisData.data?.metadata?.docId;
+      if (docId) {
+        localStorage.setItem(`analysis_${docId}`, JSON.stringify({
+          docId,
+          timestamp: new Date().toISOString(),
+          analysis: analysisData.data,
+          fileName: fileName
+        }));
+      }
       
     } catch (error) {
       console.error('Ошибка LLM анализа:', error);
-      // Не показываем ошибку пользователю, просто не показываем анализ
+      setProgressStage('Анализ завершен с ошибкой');
+      // Продолжаем, даже если анализ не удался
     } finally {
       setIsAnalyzing(false);
     }
@@ -605,7 +760,8 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
         <input
           ref={fileInputRef}
           type="file"
-                  accept="image/*,.pdf"
+          multiple
+          accept="image/*,.pdf"
           onChange={handleFileSelect}
           style={{ display: 'none' }}
         />
@@ -626,132 +782,158 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
 
               <div className="preview-content">
                 <div className="image-preview">
-                  {uploadedImage ? <img src={uploadedImage} alt="Загруженный документ" /> : <div style={{padding:16,opacity:0.7}}>Предпросмотр доступен только для изображений</div>}
+                  {uploadedImages && uploadedImages.length > 0 ? (
+                    <div className="image-carousel">
+                      <button
+                        className="carousel-btn prev"
+                        onClick={() => setCurrentIndex((prev) => (prev - 1 + uploadedImages.length) % uploadedImages.length)}
+                        aria-label="Предыдущее изображение"
+                      >
+                        ‹
+                      </button>
+                      <img src={uploadedImages[currentIndex]} alt={`Загруженный документ ${currentIndex + 1}/${uploadedImages.length}`} />
+                      <button
+                        className="carousel-btn next"
+                        onClick={() => setCurrentIndex((prev) => (prev + 1) % uploadedImages.length)}
+                        aria-label="Следующее изображение"
+                      >
+                        ›
+                      </button>
+                      <div className="carousel-indicator">
+                        {currentIndex + 1} / {uploadedImages.length}
+                      </div>
+                    </div>
+                  ) : (
+                    uploadedImage ? (
+                      <img src={uploadedImage} alt="Загруженный документ" />
+                    ) : (
+                      <div style={{padding:16,opacity:0.7}}>Предпросмотр доступен только для изображений</div>
+                    )
+                  )}
                 </div>
 
-                {ocrResult && !ocrResult.kind && (
-                  <div className="ocr-results">
-                    <div className="ocr-header">
-                      <h4>Распознанные данные</h4>
-                      <div className="ocr-actions">
-                        <button 
-                          className="edit-btn"
-                          onClick={() => setIsEditing(!isEditing)}
-                        >
-                          <Edit3 size={16} />
-                          {isEditing ? 'Сохранить' : 'Редактировать'}
-                        </button>
-                        <button 
-                          className="view-text-btn"
-                          onClick={() => setShowRawText(!showRawText)}
-                        >
-                          <FileText size={16} />
-                          {showRawText ? 'Скрыть текст' : 'Показать текст'}
-                        </button>
-                      </div>
-                    </div>
-
-                    {showRawText && ocrResult.recognizedText && (
-                      <div className="raw-text-section">
-                        <h5>Распознанный текст:</h5>
-                        <div className="raw-text-content">
-                          {ocrResult.recognizedText}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="fields-grid">
-                      {Object.entries(fields).map(([fieldName, config]) => (
-                        <div key={fieldName} className="field-group">
-                          <label className="field-label">{config.label}</label>
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              className="field-input"
-                              value={editedFields[fieldName] || ''}
-                              onChange={(e) => handleFieldChange(fieldName, e.target.value)}
-                              placeholder={config.placeholder}
-                            />
-                          ) : (
-                            <div className="field-value">
-                              {editedFields[fieldName] || 'Не заполнено'}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    {ocrResult.confidence !== undefined && (
-                      <div className="confidence-info">
-                        <span>Уверенность распознавания: {Math.round(ocrResult.confidence * 100)}%</span>
-                      </div>
-                    )}
-                    
-                  </div>
-                )}
+                {/* OCR details UI removed by request */}
                 
                 {/* LLM Анализ результатов */}
                 {isAnalyzing && (
                   <div className="analysis-loading">
-                    <div className="loading-spinner">
-                      <Brain size={24} className="spinning" />
-                    </div>
                     <p>ИИ анализирует документ...</p>
                   </div>
                 )}
                 
                 {analysisResult && (
-                  <div className="analysis-results">
-                    <h4 className="results-title">
-                      <Brain size={20} />
-                      Результаты LLM анализа
-                    </h4>
-                    
-                    <div className="analysis-grid">
-                      <div className="analysis-card risks">
-                        <h5>🚨 Риски</h5>
-                        <div className="risk-level">
-                          <span className="level-label">Уровень риска:</span>
-                          <span className={`level-value level-${analysisResult.data?.analysis?.riskLevel || 'medium'}`}>
-                            {analysisResult.data?.analysis?.riskLevel || 'Средний'}
-                          </span>
-                        </div>
-                        <ul className="risk-list">
-                          {analysisResult.data?.analysis?.risks?.map((risk, index) => (
-                            <li key={index}>{risk}</li>
-                          ))}
-                        </ul>
-                      </div>
+                  <div className="llm-analysis-container">
+                    <div className="analysis-header-new">
+                      <h3>📊 Экспертный анализ от Галины</h3>
+                      <p className="analysis-subtitle">Профессиональное заключение по документу</p>
+                    </div>
 
-                      <div className="analysis-card recommendations">
-                        <h5>💡 Рекомендации</h5>
-                        <ul className="recommendation-list">
-                          {analysisResult.data?.analysis?.recommendations?.map((rec, index) => (
-                            <li key={index}>{rec}</li>
-                          ))}
-                        </ul>
+                    {/* Экспертное мнение */}
+                    <div className="analysis-section expert-opinion-section">
+                      <div className="section-header">
+                        <span className="section-icon">💼</span>
+                        <h4>Экспертное мнение</h4>
                       </div>
-
-                      <div className="analysis-card compliance">
-                        <h5>⚖️ Соответствие</h5>
-                        <div className="compliance-status">
-                          <span className="status-label">Статус:</span>
-                          <span className={`status-value status-${analysisResult.data?.analysis?.compliance || 'medium'}`}>
-                            {analysisResult.data?.analysis?.compliance || 'Требует внимания'}
-                          </span>
-                        </div>
-                        <p className="compliance-note">
-                          {analysisResult.data?.analysis?.complianceNote || 'Документ требует дополнительной проверки'}
+                      <div className="section-content">
+                        <p className="expert-text">
+                          {analysisResult.data?.analysis?.expertOpinion?.overallAssessment ||
+                           analysisResult.data?.analysis?.summary?.overallAssessment ||
+                           'Документ проанализирован'}
                         </p>
-                      </div>
-
-                      <div className="analysis-card summary">
-                        <h5>📋 Краткое резюме</h5>
-                        <p className="summary-text">
-                          {analysisResult.data?.analysis?.summary || 'Анализ завершен. Обратите внимание на выявленные риски и рекомендации.'}
-                        </p>
+                        {analysisResult.data?.analysis?.expertOpinion?.criticalPoints?.length > 0 && (
+                          <div className="critical-section">
+                            <strong>🔴 Критические моменты:</strong>
+                            <ul className="critical-list">
+                              {analysisResult.data.analysis.expertOpinion.criticalPoints.map((point, i) => (
+                                <li key={i}>{point}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     </div>
+
+                    {/* Юридические ошибки */}
+                    {analysisResult.data?.analysis?.legalErrors?.length > 0 && (
+                      <div className="analysis-section errors-section">
+                        <div className="section-header">
+                          <span className="section-icon">⚠️</span>
+                          <h4>Юридические ошибки ({analysisResult.data.analysis.legalErrors.length})</h4>
+                        </div>
+                        <div className="section-content">
+                          {analysisResult.data.analysis.legalErrors.map((error, i) => (
+                            <div key={i} className={`error-box severity-${error.severity || 'medium'}`}>
+                              <div className="error-header-new">
+                                <span className="error-type-badge">{error.type}</span>
+                                <span className={`severity-badge severity-${error.severity}`}>{translateSeverity(error.severity)}</span>
+                              </div>
+                              <p className="error-text">{error.description}</p>
+                              {error.solution && <p className="error-meta"><strong>✅ Решение:</strong> {error.solution}</p>}
+                              {error.legalBasis && <p className="error-meta"><strong>📜 Основание:</strong> {error.legalBasis}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Риски */}
+                    {analysisResult.data?.analysis?.risks?.length > 0 && (
+                      <div className="analysis-section risks-section">
+                        <div className="section-header">
+                          <span className="section-icon">🚨</span>
+                          <h4>Выявленные риски</h4>
+                        </div>
+                        <div className="risks-grid">
+                          {analysisResult.data.analysis.risks.map((risk, i) => (
+                            <div key={i} className="risk-card">
+                              <div className="risk-title">{risk.category}</div>
+                              <p className="risk-text">{risk.description}</p>
+                              {risk.mitigation && <p className="risk-meta"><strong>Как минимизировать:</strong> {risk.mitigation}</p>}
+                              {risk.legalConsequences && <p className="risk-meta"><strong>Правовые последствия:</strong> {risk.legalConsequences}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Рекомендации */}
+                    {analysisResult.data?.analysis?.recommendations?.length > 0 && (
+                      <div className="analysis-section recommendations-section">
+                        <div className="section-header">
+                          <span className="section-icon">💡</span>
+                          <h4>Рекомендации Галины</h4>
+                        </div>
+                        <div className="recommendations-grid">
+                          {analysisResult.data.analysis.recommendations.map((rec, i) => (
+                            <div key={i} className={`rec-card priority-${rec.priority || 'medium'}`}>
+                              <div className="rec-header-new">
+                                <span className={`priority-dot priority-${rec.priority}`}></span>
+                                <strong>{rec.category}</strong>
+                              </div>
+                              <p className="rec-text">{rec.description}</p>
+                              {rec.implementation && <p className="rec-meta"><strong>Как реализовать:</strong> {rec.implementation}</p>}
+                              {rec.deadline && <p className="rec-meta"><strong>Сроки:</strong> {rec.deadline}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Следующие шаги */}
+                    {analysisResult.data?.analysis?.expertOpinion?.nextSteps?.length > 0 && (
+                      <div className="analysis-section next-steps-section">
+                        <div className="section-header">
+                          <span className="section-icon">🎯</span>
+                          <h4>Следующие шаги</h4>
+                        </div>
+                        <ol className="steps-list">
+                          {analysisResult.data.analysis.expertOpinion.nextSteps.map((step, i) => (
+                            <li key={i}>{step}</li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                    
                   </div>
                 )}
                 
@@ -786,6 +968,7 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
                 )}
               </div>
 
+              {/* Single Save Button */}
               <div className="preview-actions">
                 <button 
                   className="save-btn"
@@ -845,13 +1028,26 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
 
         {isUploading && (
           <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Обработка документа...</p>
+            <p>{progressStage || 'Обработка документа...'}</p>
             <div className="progress-wrapper">
               <div className="progress-bar">
                 <div className="progress-fill" style={{ width: `${Math.round(progress)}%` }} />
               </div>
               <div className="progress-label">{Math.round(progress)}%</div>
+            </div>
+            <div className="progress-stages">
+              <div className={`stage ${progress >= 20 ? 'completed' : progress >= 5 ? 'active' : ''}`}>
+                <span className="stage-text">Подготовка</span>
+              </div>
+              <div className={`stage ${progress >= 45 ? 'completed' : progress >= 25 ? 'active' : ''}`}>
+                <span className="stage-text">Отправка</span>
+              </div>
+              <div className={`stage ${progress >= 70 ? 'completed' : progress >= 50 ? 'active' : ''}`}>
+                <span className="stage-text">Обработка</span>
+              </div>
+              <div className={`stage ${progress >= 90 ? 'completed' : progress >= 75 ? 'active' : ''}`}>
+                <span className="stage-text">Анализ</span>
+              </div>
             </div>
             <div style={{ marginTop: 12, display: 'flex', gap: 12 }}>
               <button

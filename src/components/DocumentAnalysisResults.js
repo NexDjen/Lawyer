@@ -5,6 +5,16 @@ import './DocumentAnalysisResults.css';
 const DocumentAnalysisResults = ({ analysis, fileName, onClose }) => {
   const [activeTab, setActiveTab] = useState('summary');
 
+  // Функция перевода приоритета
+  const translatePriority = (priority) => {
+    switch (priority) {
+      case 'high': return 'Высокий';
+      case 'medium': return 'Средний';
+      case 'low': return 'Низкий';
+      default: return priority;
+    }
+  };
+
   if (!analysis) {
     return (
       <div className="analysis-results">
@@ -235,7 +245,6 @@ const DocumentAnalysisResults = ({ analysis, fileName, onClose }) => {
                     </div>
                     <div className="error-content">
                       <p><strong>Описание:</strong> {error.description}</p>
-                      {error.location && <p><strong>Местоположение:</strong> {error.location}</p>}
                       <p><strong>Решение:</strong> {error.solution}</p>
                     </div>
                   </div>
@@ -300,7 +309,7 @@ const DocumentAnalysisResults = ({ analysis, fileName, onClose }) => {
                                           rec.priority === 'medium' ? '#d97706' : '#16a34a'
                         }}
                       >
-                        {rec.priority}
+                        {translatePriority(rec.priority)}
                       </span>
                     </div>
                     <div className="recommendation-content">

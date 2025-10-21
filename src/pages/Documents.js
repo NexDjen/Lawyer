@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import {
   FileText,
   Download,
@@ -25,11 +25,15 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 import './Documents.css';
 import DocumentUpload from '../components/DocumentUpload';
+import MigrateDocuments from '../components/MigrateDocuments';
+import { AuthContext } from '../contexts/AuthContext';
+import { buildApiUrl } from '../config/api';
 
 
 const Documents = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
   // Логирование для диагностики
   console.log('Documents component rendered, current location:', location.pathname);
@@ -46,6 +50,7 @@ const Documents = () => {
   const [activeTab, setActiveTab] = useState('documents');
   const [showDocumentTypes, setShowDocumentTypes] = useState(false);
   const [, setTick] = useState(0);
+  const [showMigration, setShowMigration] = useState(false);
 
   // Преобразуем содержимое документа к отображаемому тексту
   const toDisplayText = (content) => {
@@ -99,17 +104,36 @@ const Documents = () => {
     }
   ];
 
-  useEffect(() => {
-    setIsVisible(true);
-    
-    // Проверяем, есть ли параметры для загрузки документа из хедера
-    if (location.state?.uploadDocument && location.state?.documentType) {
-      setUploadDocumentType(location.state.documentType);
-      setShowUpload(true);
-      setActiveTab('upload');
+  // Load documents from API or localStorage fallback
+  const loadDocuments = useCallback(async () => {
+    try {
+      const userId = user?.id || 'current-user';
+      
+      // Try to load from API first
+      const response = await fetch(buildApiUrl(`documents/user/${userId}`));
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          // Convert API documents to frontend format
+          const convertedDocuments = result.data.map(doc => ({
+            id: doc.id,
+            name: doc.filename,
+            content: doc.extracted_text,
+            uploadedAt: doc.created_at,
+            type: doc.document_type,
+            status: 'analyzed',
+            size: `${(doc.file_size / 1024).toFixed(2)} KB`,
+            analysis: doc.analysisResult
+          }));
+          setDocuments(convertedDocuments);
+          return;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load documents from API, falling back to localStorage:', error);
     }
     
-    // Загрузка документов из localStorage (только реальные пользовательские)
+    // Fallback to localStorage
     const savedDocuments = localStorage.getItem('documents');
     const allowedStatuses = new Set(['processing','pending','uploaded','analyzed','error','canceled']);
     if (savedDocuments) {
@@ -126,7 +150,38 @@ const Documents = () => {
     } else {
       setDocuments([]);
     }
-  }, [location.state]);
+  }, [user]);
+
+  useEffect(() => {
+    setIsVisible(true);
+    
+    // Проверяем, есть ли параметры для загрузки документа из хедера
+    if (location.state?.uploadDocument && location.state?.documentType) {
+      setUploadDocumentType(location.state.documentType);
+      setShowUpload(true);
+      setActiveTab('upload');
+    }
+    
+    // Load documents
+    loadDocuments();
+    
+    // Check if migration is needed
+    const hasLocalStorageDocs = localStorage.getItem('documents');
+    if (hasLocalStorageDocs) {
+      try {
+        const parsed = JSON.parse(hasLocalStorageDocs);
+        const validDocs = parsed.filter(doc => 
+          doc && doc.name && doc.content && 
+          ['analyzed', 'uploaded', 'processing', 'pending'].includes(doc.status)
+        );
+        if (validDocs.length > 0) {
+          setShowMigration(true);
+        }
+      } catch (error) {
+        console.error('Error checking localStorage documents:', error);
+      }
+    }
+  }, [location.state, user, loadDocuments]);
 
   // Периодическое обновление документов из localStorage для актуальных счетчиков и статусов
   useEffect(() => {
@@ -201,7 +256,24 @@ const Documents = () => {
     setSelectedDocument(document);
   };
 
-  const handleDeleteDocument = (documentId) => {
+  const handleDeleteDocument = async (documentId) => {
+    try {
+      // Try to delete from API first
+      const response = await fetch(buildApiUrl(`documents/${documentId}`), {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        // Remove from local state
+        const updatedDocuments = documents.filter(doc => doc.id !== documentId);
+        setDocuments(updatedDocuments);
+        return;
+      }
+    } catch (error) {
+      console.warn('Failed to delete document from API, falling back to localStorage:', error);
+    }
+    
+    // Fallback to localStorage
     const updatedDocuments = documents.filter(doc => doc.id !== documentId);
     setDocuments(updatedDocuments);
     localStorage.setItem('documents', JSON.stringify(updatedDocuments));
@@ -221,9 +293,8 @@ const Documents = () => {
 
   const handleTextExtracted = (text, filename) => {
     setOcrResults(prev => [...prev, { filename, text }]);
-    // Не создаем дубликат: перечитываем документы, которые уже сохранил DocumentUpload (с анализом)
-    const saved = JSON.parse(localStorage.getItem('documents') || '[]');
-    setDocuments(saved);
+    // Reload documents from API or localStorage
+    loadDocuments();
     setShowUpload(false);
     setUploadDocumentType(null);
   };
@@ -231,6 +302,16 @@ const Documents = () => {
   const handleCloseUpload = () => {
     setShowUpload(false);
     setUploadDocumentType(null);
+  };
+
+  const handleMigrationComplete = () => {
+    setShowMigration(false);
+    // Reload documents after migration
+    loadDocuments();
+  };
+
+  const handleMigrationCancel = () => {
+    setShowMigration(false);
   };
 
   const handleDocumentTypeSelect = (documentType) => {
@@ -303,6 +384,14 @@ const Documents = () => {
 
   return (
     <div className={`documents-page ${isVisible ? 'documents-page--visible' : ''}`}>
+      {/* Migration Component */}
+      {showMigration && (
+        <MigrateDocuments 
+          onComplete={handleMigrationComplete}
+          onCancel={handleMigrationCancel}
+        />
+      )}
+      
       {/* Header Section */}
       <section className="documents-header">
         <div className="documents-header__background">
@@ -576,7 +665,10 @@ const Documents = () => {
                           onClick={() => handleDocumentClick(doc)}
                           title="Просмотреть"
                         >
-                          <Eye size={16} />
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye">
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                          </svg>
                         </button>
                         
                         <button 
@@ -584,14 +676,24 @@ const Documents = () => {
                           onClick={() => handleDownloadDocument(doc)}
                           title="Скачать"
                         >
-                          <Download size={16} />
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7,10 12,15 17,10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                          </svg>
                         </button>
                         
                         <button 
                           className="document-card__btn document-card__btn--share"
                           title="Поделиться"
                         >
-                          <Share2 size={16} />
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-share2">
+                            <circle cx="18" cy="5" r="3"></circle>
+                            <circle cx="6" cy="12" r="3"></circle>
+                            <circle cx="18" cy="19" r="3"></circle>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                          </svg>
                         </button>
                         
                         <button
@@ -599,7 +701,13 @@ const Documents = () => {
                           onClick={() => handleDeleteDocument(doc.id)}
                           title="Удалить"
                         >
-                          <Trash2 size={16} />
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash2">
+                            <path d="M3 6h18"></path>
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                            <line x1="10" x2="10" y1="11" y2="17"></line>
+                            <line x1="14" x2="14" y1="11" y2="17"></line>
+                          </svg>
                         </button>
                       </div>
                     )}
@@ -777,7 +885,12 @@ const Documents = () => {
                         {selectedDocument.analysis.risks.map((r, i) => (
                           <li key={i} style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
                             <AlertCircle size={16} />
-                            <span>{r}</span>
+                            <span>
+                              {typeof r === 'string' ? r :
+                               typeof r === 'object' && r.category ? `${r.category}: ${r.description}` :
+                               typeof r === 'object' && r.description ? r.description :
+                               JSON.stringify(r)}
+                            </span>
                           </li>
                         ))}
                       </ul>
@@ -791,7 +904,12 @@ const Documents = () => {
                         {selectedDocument.analysis.recommendations.map((r, i) => (
                           <li key={i} style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
                             <CheckCircle size={16} />
-                            <span>{r}</span>
+                            <span>
+                              {typeof r === 'string' ? r :
+                               typeof r === 'object' && r.category ? `${r.category}: ${r.description}` :
+                               typeof r === 'object' && r.description ? r.description :
+                               JSON.stringify(r)}
+                            </span>
                           </li>
                         ))}
                       </ul>

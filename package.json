@@ -41,7 +41,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "server": "node backend/server.js",
-    "server:dev": "nodemon backend/server.js",
+    "server:dev": "cd backend && nodemon --config nodemon.json server.js",
     "server:prod": "NODE_ENV=production node backend/server.js",
     "setup-windexai": "node setup_windexai.js"
   },

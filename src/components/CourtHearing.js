@@ -392,7 +392,12 @@ const CourtHearing = ({ isOpen, onClose }) => {
                   <Info size={16} />
                   Итоговый анализ
                 </h4>
-                <p>{hearingData.analysis.summary}</p>
+                <p>
+                  {typeof hearingData.analysis.summary === 'string' ? hearingData.analysis.summary :
+                   typeof hearingData.analysis.summary === 'object' && hearingData.analysis.summary.description ? hearingData.analysis.summary.description :
+                   typeof hearingData.analysis.summary === 'object' ? JSON.stringify(hearingData.analysis.summary) :
+                   hearingData.analysis.summary}
+                </p>
               </div>
 
               {/* Информация о сохраненном файле */}
