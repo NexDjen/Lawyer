@@ -319,6 +319,14 @@ class Server {
         version: '1.0.0'
       });
     });
+    // API health check endpoint
+    this.app.get('/api/health', (req, res) => {
+      res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      });
+    });
   }
 
   _setupErrorHandling() {
