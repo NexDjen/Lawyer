@@ -3,7 +3,7 @@ const envApiBase = process.env.REACT_APP_API_URL;
 const isProd = process.env.NODE_ENV === 'production';
 
 // Use localhost for development
-const DEV_API_URL = 'http://localhost:3007/api';
+const DEV_API_URL = 'http://localhost:3009/api';
 
 // In production use relative paths to let nginx handle SSL and ports
 export const API_BASE_URL = isProd
@@ -16,7 +16,7 @@ export const WS_BASE_URL = isProd
   ? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`
   : (process.env.REACT_APP_WS_URL
       ? process.env.REACT_APP_WS_URL.replace(/\/$/, '')
-      : 'ws://localhost:3007');
+      : 'ws://localhost:3009');
 
 // Debug logs
 console.log('🔧 API_BASE_URL:', API_BASE_URL);

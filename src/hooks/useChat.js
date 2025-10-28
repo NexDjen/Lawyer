@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { safeFetchWithFallback, getFallbackNews } from '../utils/safeJson';
 import { buildApiUrl } from '../config/api';
+import { downloadBlob, isDownloadAvailable } from '../utils/downloadUtils';
 
 // Константы для API
 const API_ENDPOINTS = {
@@ -286,6 +287,12 @@ export const useChat = (userId = null) => {
   // Функция для скачивания документа из сообщения
   const downloadDocument = useCallback(async (messageContent, title = 'Юридический документ') => {
     try {
+      // Check if downloads are available in this environment
+      if (!isDownloadAvailable()) {
+        alert('Скачивание недоступно. Убедитесь, что вы используете браузер.');
+        return;
+      }
+
       const documentContent = extractDocumentContent(messageContent);
       
       const resp = await fetch('/api/chat/generate-docx', {
@@ -300,20 +307,20 @@ export const useChat = (userId = null) => {
 
       if (resp.ok) {
         const blob = await resp.blob();
-        const url = URL.createObjectURL(blob);
-        const downloadLink = document.createElement('a');
-        downloadLink.href = url;
-        downloadLink.download = `${title}-${Date.now()}.docx`;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-        URL.revokeObjectURL(url);
+        const filename = `${title}-${Date.now()}.docx`;
+        
+        // Use safe download function
+        const success = downloadBlob(blob, filename);
+        
+        if (!success) {
+          alert('Не удалось скачать документ. Попробуйте еще раз.');
+        }
       } else {
         throw new Error('Не удалось сгенерировать документ');
       }
     } catch (error) {
       console.error('Ошибка скачивания документа:', error);
-      alert('Ошибка при скачивании документа');
+      alert('Ошибка при скачивании документа: ' + error.message);
     }
   }, []);
 
@@ -335,13 +342,19 @@ export const useChat = (userId = null) => {
       if (resp.ok) {
         const blob = await resp.blob();
         const url = URL.createObjectURL(blob);
-        const downloadLink = document.createElement('a');
-        downloadLink.href = url;
-        downloadLink.download = `${title}-${Date.now()}.pdf`;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-        URL.revokeObjectURL(url);
+        
+        // Проверяем, что мы в браузере
+        if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+          const downloadLink = document.createElement('a');
+          downloadLink.href = url;
+          downloadLink.download = `${title}-${Date.now()}.pdf`;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+          URL.revokeObjectURL(url);
+        } else {
+          console.log('PDF документ готов к скачиванию, но document недоступен');
+        }
       } else {
         throw new Error('Не удалось сгенерировать PDF документ');
       }

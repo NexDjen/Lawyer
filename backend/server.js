@@ -25,7 +25,7 @@ const courtRoutes = require('./routes/courtRoutes');
 const walletRoutes = require('./routes/walletRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 
-require('dotenv').config({ path: path.resolve(__dirname, '../config/.env'), override: true });
+require('dotenv').config({ path: path.resolve(__dirname, '../.env'), override: true });
 
 // Enable HTTP proxy for AI requests to bypass regional restrictions
 if (process.env.HTTPS_PROXY) {
@@ -351,7 +351,7 @@ class Server {
             port: this.port,
             environment: process.env.NODE_ENV || 'development',
             windexaiApiKey: process.env.WINDEXAI_API_KEY ? 'SET' : 'NOT SET',
-            windexaiModel: process.env.WINDEXAI_MODEL || 'gpt-4o-mini'
+            windexaiModel: process.env.WINDEXAI_MODEL || 'gpt-4o'
           });
           
           // Инициализируем WebSocket сервер

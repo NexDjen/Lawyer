@@ -8,9 +8,11 @@ import {
   CheckCircle,
   Upload,
   Plus,
-  X
+  X,
+  Package
 } from 'lucide-react';
 import DocumentUpload from '../components/DocumentUpload';
+import { downloadText } from '../utils/downloadUtils';
 import './Documents.css';
 
 const DocumentsFunctional = () => {
@@ -110,6 +112,7 @@ const DocumentsFunctional = () => {
 
   const getTypeText = (type) => {
     switch (type) {
+      case 'batch': return 'Пакет документов';
       case 'contract': return 'Договор';
       case 'passport': return 'Паспорт РФ';
       case 'snils': return 'СНИЛС';
@@ -255,7 +258,7 @@ const DocumentsFunctional = () => {
                 <div key={doc.id} className="document-card">
                   <div className="document-card__header">
                     <div className="document-card__icon">
-                      <FileText size={24} />
+                      {doc.type === 'batch' ? <Package size={24} /> : <FileText size={24} />}
                     </div>
                     <div className="document-card__status">
                       <span 
@@ -299,16 +302,7 @@ const DocumentsFunctional = () => {
                       className="btn btn--icon"
                       onClick={() => {
                         console.log('Скачивание документа:', doc);
-                        // Создаем и скачиваем файл
-                        const blob = new Blob([doc.content], { type: 'text/plain' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `${doc.name}.txt`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
+                        downloadText(doc.content, doc.name);
                       }}
                       title="Скачать"
                     >

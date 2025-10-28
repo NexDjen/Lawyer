@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Brain, Upload, FileText, AlertCircle, CheckCircle, File, Calendar } from 'lucide-react';
+import { Brain, Upload, FileText, AlertCircle, CheckCircle, File, Calendar, Package } from 'lucide-react';
 import DocumentUpload from '../components/DocumentUpload';
 import DocumentDetailView from '../components/DocumentDetailView';
 import { useAuth } from '../contexts/AuthContext';
@@ -48,8 +48,13 @@ const DocumentsAnalysis = () => {
               uploadedAt: doc.created_at,
               type: doc.document_type || 'unknown',
               status: 'analyzed',
-              size: doc.file_size ? `${(doc.file_size / 1024).toFixed(2)} KB` : '0 KB',
-              analysis: analysisResult
+              size: doc.is_batch 
+                ? `${doc.document_count || 1} документов` 
+                : (doc.file_size ? `${(doc.file_size / 1024).toFixed(2)} KB` : '0 KB'),
+              analysis: analysisResult,
+              isBatch: doc.is_batch || false,
+              batchId: doc.batch_id || null,
+              documentCount: doc.document_count || 1
             };
           });
           setDocuments(convertedDocuments);
@@ -185,6 +190,7 @@ const DocumentsAnalysis = () => {
   // Helper functions
   const getTypeIcon = (type) => {
     switch (type) {
+      case 'batch': return <Package size={24} />;
       case 'pdf': return <FileText size={24} />;
       case 'image': return <FileText size={24} />;
       default: return <FileText size={24} />;
@@ -329,7 +335,7 @@ const DocumentsAnalysis = () => {
                   >
                     <div className="document-card__header">
                       <div className="document-card__icon">
-                        {getTypeIcon(doc.type)}
+                        {doc.isBatch ? <Package size={24} /> : getTypeIcon(doc.type)}
                       </div>
                       <div className="document-card__status">
                         {getStatusIcon(doc.status)}

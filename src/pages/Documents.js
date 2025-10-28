@@ -20,7 +20,8 @@ import {
   Scan,
   X,
   MessageCircle,
-  Phone
+  Phone,
+  Package
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './Documents.css';
@@ -360,10 +361,14 @@ const Documents = () => {
 
   const getTypeIcon = (type) => {
     switch (type) {
+      case 'batch':
+        return <Package size={20} />;
       case 'contract':
         return <FileText size={20} />;
       case 'legal':
         return <File size={20} />;
+      case 'pdf':
+        return <FileText size={20} />;
       default:
         return <File size={20} />;
     }

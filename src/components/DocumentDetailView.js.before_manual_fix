@@ -305,7 +305,7 @@ const DocumentDetailView = ({ document, onBack }) => {
                     <p className="expert-text">{document.analysis.expertOpinion}</p>
                     {document.analysis.criticalIssues && document.analysis.criticalIssues.length > 0 && (
                       <div className="critical-section">
-                        <strong>🔴 Критические моменты:</strong>
+                        <strong>Критические моменты:</strong>
                         <ul className="critical-list">
                           {document.analysis.criticalIssues.map((issue, idx) => (
                             <li key={idx}>{issue}</li>

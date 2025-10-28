@@ -102,6 +102,43 @@ class AnalysisService {
   }
 
   /**
+   * Получить анализ по ID документа
+   */
+  async getAnalysisByDocumentId(documentId) {
+    try {
+      const analysis = await database.get(`
+        SELECT * FROM document_analysis WHERE document_id = ? ORDER BY created_at DESC LIMIT 1
+      `, [documentId]);
+
+      if (!analysis) {
+        return null;
+      }
+
+      // Парсим JSON поля
+      return {
+        id: analysis.id,
+        userId: analysis.user_id,
+        documentId: analysis.document_id,
+        analysis: {
+          summary: { mainIssues: JSON.parse(analysis.risks || '[]') },
+          recommendations: JSON.parse(analysis.recommendations || '[]'),
+          confidence: analysis.confidence
+        },
+        metadata: {
+          analyzedAt: analysis.created_at,
+          documentType: analysis.summary,
+          fileName: `analysis_${analysis.id}`,
+          docId: analysis.id,
+          modelUsed: analysis.model_used
+        }
+      };
+    } catch (error) {
+      logger.error('Ошибка получения анализа по ID документа из БД:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Получить список анализов пользователя
    */
   async getUserAnalyses(userId) {

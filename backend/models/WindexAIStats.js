@@ -19,7 +19,7 @@ class WindexAIStats {
       const {
         userId = null,
         requestType = 'chat',
-        model = 'gpt-4o-mini',
+        model = 'gpt-4o',
         tokensUsed = 0,
         cost = 0,
         responseTime = null

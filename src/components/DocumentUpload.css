@@ -866,6 +866,17 @@
   transform: translateY(-2px);
 }
 
+.upload-btn.danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 2px solid rgba(239, 68, 68, 0.3);
+}
+
+.upload-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: translateY(-2px);
+}
+
 /* Document Preview Section */
 .document-preview-section {
   display: flex;

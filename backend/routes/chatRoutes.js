@@ -166,7 +166,7 @@ router.post('/transcribe', upload.single('audio'), ErrorHandler.asyncHandler(asy
 
     const fileStream = fs.createReadStream(tempPath);
     let transcriptText = '';
-    const preferredModel = process.env.WINDEXAI_TRANSCRIBE_MODEL || 'gpt-4o-mini-transcribe';
+    const preferredModel = process.env.WINDEXAI_TRANSCRIBE_MODEL || 'gpt-4o';
     try {
       // Пытаемся сначала актуальной моделью
       const tr1 = await windexai.audio.transcriptions.create({ file: fileStream, model: preferredModel });

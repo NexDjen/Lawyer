@@ -182,8 +182,8 @@ export const useWebSocketChat = () => {
         // In development, connect to backend port directly
         // In production, use reverse proxy (no port needed)
         if (process.env.NODE_ENV === 'development') {
-          // Development: use backend port 3007 directly
-          wsUrl = `${protocol}//localhost:3007/api/ws`;
+          // Development: use backend port 3009 directly
+          wsUrl = `${protocol}//localhost:3009/api/ws`;
         } else {
           // Production: use same host through reverse proxy (w-lawyer.ru/api/ws)
           wsUrl = `${protocol}//${window.location.hostname}/api/ws`;

@@ -11,7 +11,8 @@ class ChatController {
         history = [], // Поддержка нового формата истории
         useWebSearch = true,
         userId = null, // ID пользователя для персонализации
-        docId // ID документа для анализа
+        docId, // ID документа для анализа
+        professionalMode = true // Режим профессионального стиля
       } = req.body;
 
       // Валидация входных данных
@@ -24,7 +25,7 @@ class ChatController {
       }
 
       // Получаем модель из запроса или используем модель по умолчанию
-      const requestedModel = req.body.model || process.env.WINDEXAI_MODEL || 'gpt-4o-mini';
+      const requestedModel = req.body.model || process.env.WINDEXAI_MODEL || 'gpt-4o';
 
       // Объединяем историю из разных форматов
       const allHistory = [...conversationHistory, ...history];
@@ -34,14 +35,22 @@ class ChatController {
       if (docId) {
         try {
           const analysisService = require('../services/analysisService');
-          const analysis = await analysisService.getAnalysisById(docId);
+          const documentStorageService = require('../services/documentStorageService');
+          // Load analysis summary by document ID
+          const analysis = await analysisService.getAnalysisByDocumentId(docId);
+          // Load full document content if available
+          const docRecord = await documentStorageService.getDocumentById(docId);
+          const fullText = docRecord?.extracted_text || docRecord?.content || 'Содержимое документа недоступно';
+          // Prepend full text context
+          allHistory.unshift({ role: 'system', content: `Содержание документа:\n${fullText}` });
+          // Then prepend summary for quick overview
           if (analysis) {
-            const summary = analysis.analysis.summary;
-            const contextMsg = `Сводка анализа документа: Тип: ${summary.documentType}, Уровень риска: ${summary.riskLevel}, Основные проблемы: ${summary.mainIssues.join(', ')}`;
+            const summary = analysis.analysis.summary || {};
+            const contextMsg = `Сводка анализа: Тип: ${summary.documentType || 'неизвестно'}, Уровень риска: ${summary.riskLevel || 'неизвестно'}, Основные проблемы: ${(summary.mainIssues||[]).join(', ')}`;
             allHistory.unshift({ role: 'system', content: contextMsg });
           }
         } catch (err) {
-          logger.warn('Не удалось загрузить контекст анализа документа', { docId, error: err.message });
+          logger.warn('Не удалось загрузить контекст документа для чата', { docId, error: err.message });
         }
       }
 
@@ -50,22 +59,28 @@ class ChatController {
         historyLength: validatedHistory.length,
         useWebSearch,
         hasUserId: !!userId,
-        requestedModel
+        requestedModel,
+        professionalMode
       });
 
       // Обработка сообщения через сервис
-      const response = await chatService.processMessage(message, validatedHistory, useWebSearch, userId, requestedModel);
+      const response = await chatService.processMessage(message, validatedHistory, useWebSearch, userId, requestedModel, professionalMode);
 
       // Генерируем уникальное имя для аудио файла заранее
       const audioFileName = `chat_response_${Date.now()}.mp3`;
       const audioUrl = `/api/court/audio-files/${audioFileName}`;
 
+      // Форматируем ответ для отображения
+      const formattedResponse = chatService.formatForDisplay(response);
+
       // Немедленно отправляем ответ клиенту (не ждем TTS)
       const result = {
         response,
+        formattedResponse, // HTML-форматированная версия
         audioUrl, // Клиент будет запрашивать аудио по этому URL
         timestamp: new Date().toISOString(),
-        model: requestedModel
+        model: requestedModel,
+        professionalMode
       };
       res.json(result);
 
@@ -130,8 +145,8 @@ class ChatController {
         api: {
           windexaiConfigured: !!process.env.WINDEXAI_API_KEY,
           openaiConfigured: !!process.env.OPENAI_API_KEY,
-          model: process.env.WINDEXAI_MODEL || 'gpt-4o-mini',
-          maxTokens: parseInt(process.env.WINDEXAI_MAX_TOKENS) || 15000
+          model: process.env.WINDEXAI_MODEL || 'gpt-4o',
+          maxTokens: parseInt(process.env.WINDEXAI_MAX_TOKENS) || 4000
         },
         usage: {
           totalMessages: 0, // TODO: реализовать подсчет из базы данных
@@ -165,8 +180,8 @@ class ChatController {
       const apiStatus = {
         windexai: {
           configured: hasApiKey,
-          model: process.env.WINDEXAI_MODEL || 'gpt-4o-mini',
-          maxTokens: parseInt(process.env.WINDEXAI_MAX_TOKENS) || 15000
+          model: process.env.WINDEXAI_MODEL || 'gpt-4o',
+          maxTokens: parseInt(process.env.WINDEXAI_MAX_TOKENS) || 4000
         },
         openai: {
           configured: hasOpenAIKey,
@@ -194,7 +209,7 @@ class ChatController {
   async getModelInfo(req, res) {
     try {
       const modelInfo = {
-        name: process.env.WINDEXAI_MODEL || 'gpt-4o-mini',
+        name: process.env.WINDEXAI_MODEL || 'gpt-4o',
         maxTokens: parseInt(process.env.WINDEXAI_MAX_TOKENS) || 4000,
         temperature: parseFloat(process.env.WINDEXAI_TEMPERATURE) || 0.7,
         features: ['chat', 'legal_consultation', 'document_analysis']

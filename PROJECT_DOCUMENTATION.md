@@ -381,7 +381,7 @@ layer_3/
 #### **WindexAI**
 - **Назначение:** Основной AI сервис для чата и анализа
 - **Функции:** Генерация ответов, анализ документов, контекстный чат
-- **Модели:** GPT-4, GPT-3.5-turbo
+- **Модели:** GPT-4o, GPT-4o
 
 #### **OpenAI**
 - **Назначение:** OCR и анализ изображений
@@ -742,8 +742,8 @@ npm start
 
 #### Используемые модели:
 - **OCR:** OpenAI GPT-4o Vision
-- **Анализ:** WindexAI/OpenAI GPT-4o-mini
-- **Чат:** WindexAI/OpenAI GPT-4o-mini
+- **Анализ:** WindexAI/OpenAI GPT-4o
+- **Чат:** WindexAI/OpenAI GPT-4o
 
 #### Rate Limiting:
 - Чат: 100 запросов за 15 минут

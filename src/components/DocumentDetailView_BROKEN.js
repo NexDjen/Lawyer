@@ -305,7 +305,7 @@ const DocumentDetailView = ({ document, onBack }) => {
                     <p className="expert-text">{document.analysis.expertOpinion}</p>
                     {document.analysis.criticalIssues && document.analysis.criticalIssues.length > 0 && (
                       <div className="critical-section">
-                        <strong>🔴 Критические моменты:</strong>
+                        <strong>Критические моменты:</strong>
                         <ul className="critical-list">
                           {document.analysis.criticalIssues.map((issue, idx) => (
                             <li key={idx}>{issue}</li>
@@ -384,7 +384,7 @@ const DocumentDetailView = ({ document, onBack }) => {
                       return (
                         <div key={idx} className="risk-card">
                           <div className="risk-header">
-                            <span className="risk-category">{riskObj.category || riskObj.type || 'Риск'}</span>
+                            <span className="risk-category">{riskObj.category || riskObj.type || 'Неизвестный риск'}</span>
                             {riskObj.level && <span className={`risk-level risk-level-${riskObj.level.toLowerCase()}`}>{riskObj.level}</span>}
                           </div>
                           <div className="risk-title">{riskObj.title || riskObj.category || 'риск'}</div>
@@ -578,7 +578,7 @@ const DocumentDetailView = ({ document, onBack }) => {
               }</p>
               <p><strong>Риски:</strong> {
                 Array.isArray(document.analysis.risks)
-                  ? document.analysis.risks.map(r => typeof r === 'string' ? r : (r.title || r.description || r.category || 'Риск')).join(', ')
+                  ? document.analysis.risks.map(r => typeof r === 'string' ? r : (r.title || r.description || r.category || 'Неизвестный риск')).join(', ')
                   : 'Риски не выявлены'
               }</p>
               <p><strong>Рекомендации:</strong> {

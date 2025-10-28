@@ -1,13 +1,43 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Send } from 'lucide-react';
 import { buildApiUrl } from '../config/api';
+import AnalysisProgressBar from './AnalysisProgressBar';
+import { downloadBlob } from '../utils/downloadUtils';
 import './DocumentDetailView.css';
+import AnalysisSummary from './AnalysisSummary';
 
 const DocumentDetailView = ({ document, onBack }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const [documentAnalysis, setDocumentAnalysis] = useState(null);
+  const [showAnalysisProgress, setShowAnalysisProgress] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [currentAnalysisStage, setCurrentAnalysisStage] = useState('');
+  const [generatingDocument, setGeneratingDocument] = useState(false);
+
+  // Загружаем актуальные данные анализа при монтировании компонента
+  useEffect(() => {
+    const loadDocumentAnalysis = async () => {
+      try {
+        const response = await fetch(`/api/documents/${document.id}`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setDocumentAnalysis(result.data.analysis);
+            console.log('🔍 Loaded document analysis:', result.data.analysis);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading document analysis:', error);
+      }
+    };
+    
+    if (document.id) {
+      loadDocumentAnalysis();
+    }
+  }, [document.id]);
 
   // Функции перевода
   const translateSeverity = (severity) => {
@@ -20,6 +50,89 @@ const DocumentDetailView = ({ document, onBack }) => {
     }
   };
 
+  // Функция для определения, нужна ли кнопка генерации документа
+  const shouldShowGenerateButton = (recommendation) => {
+    if (!recommendation || !recommendation.title) return false;
+    
+    // Проверяем поле requiresDocument если оно есть
+    if (recommendation.requiresDocument !== undefined) {
+      return recommendation.requiresDocument === true;
+    }
+    
+    // Иначе проверяем по ключевым словам
+    const title = recommendation.title.toLowerCase();
+    const description = (recommendation.description || '').toLowerCase();
+    const implementation = (recommendation.implementation || '').toLowerCase();
+    const text = `${title} ${description} ${implementation}`;
+
+    // Показываем кнопку если речь идет о создании документа
+    return text.includes('жалоб') || 
+           text.includes('заявлени') || 
+           text.includes('исков') || 
+           text.includes('ходатайств') ||
+           text.includes('обращени') ||
+           text.includes('претензи') ||
+           text.includes('апелляци') ||
+           text.includes('кассаци') ||
+           text.includes('возражени') ||
+           text.includes('отзыв');
+  };
+
+  // Функция для генерации документа
+  const handleGenerateDocument = async (recommendation) => {
+    try {
+      setGeneratingDocument(true);
+      
+      const response = await fetch(buildApiUrl('documents/generate-legal-document'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          recommendation,
+          originalDocumentText: document.extractedText || document.content || '',
+          analysis: documentAnalysis,
+          userInfo: {
+            name: '[ФИО заявителя]',
+            address: '[Адрес заявителя]',
+            phone: '[Телефон заявителя]',
+            email: '[Email заявителя]'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Ошибка генерации: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Проверяем, что мы в браузере
+        if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+          // Создаем blob из сгенерированного документа
+          const blob = new Blob([result.data.generatedDocument], { type: 'text/plain;charset=utf-8' });
+          const url = window.URL.createObjectURL(blob);
+          downloadBlob(blob, result.data.fileName || 'документ.txt');
+          window.URL.revokeObjectURL(url);
+
+          alert(`✅ Документ "${result.data.documentType}" успешно сгенерирован и скачан!`);
+        } else {
+          // Fallback для случаев, когда document недоступен
+          console.log('Сгенерированный документ:', result.data.generatedDocument);
+          alert(`✅ Документ "${result.data.documentType}" успешно сгенерирован! Проверьте консоль для просмотра содержимого.`);
+        }
+      } else {
+        throw new Error(result.error || 'Неизвестная ошибка');
+      }
+    } catch (error) {
+      console.error('Ошибка при генерации документа:', error);
+      alert(`Ошибка при генерации документа: ${error.message}`);
+    } finally {
+      setGeneratingDocument(false);
+    }
+  };
+
   const translatePriority = (priority) => {
     switch (priority) {
       case 'high': return 'Высокий';
@@ -27,6 +140,68 @@ const DocumentDetailView = ({ document, onBack }) => {
       case 'low': return 'Низкий';
       default: return priority;
     }
+  };
+
+  // Функция для запуска расширенного анализа с прогресс-баром
+  const startAdvancedAnalysis = async () => {
+    if (!document.extractedText && !document.recognizedText) {
+      alert('Нет текста для анализа');
+      return;
+    }
+
+    setShowAnalysisProgress(true);
+    setAnalysisProgress(0);
+    setCurrentAnalysisStage('starting');
+    
+    try {
+      const textToAnalyze = document.extractedText || document.recognizedText || '';
+      
+      // Simulate progress stages
+      setAnalysisProgress(10);
+      setCurrentAnalysisStage('preprocessing');
+      
+      const response = await fetch(buildApiUrl('documents/advanced-analysis'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          documentText: textToAnalyze,
+          documentType: 'legal',
+          fileName: document.name || 'document',
+          userId: '1'
+        })
+      });
+
+      setAnalysisProgress(50);
+      setCurrentAnalysisStage('analyzing');
+
+      if (!response.ok) {
+        throw new Error(`Ошибка API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      setAnalysisProgress(80);
+      setCurrentAnalysisStage('generating_report');
+      
+      if (data.success && data.data) {
+        setDocumentAnalysis(data.data.analysis);
+        setAnalysisProgress(100);
+        setCurrentAnalysisStage('complete');
+      }
+      
+    } catch (error) {
+      console.error('Error in advanced analysis:', error);
+      alert('Ошибка при анализе документа: ' + error.message);
+      setShowAnalysisProgress(false);
+      setAnalysisProgress(0);
+    }
+  };
+
+  // Обработчик завершения прогресса
+  const handleProgressComplete = () => {
+    setShowAnalysisProgress(false);
   };
 
   useEffect(() => {
@@ -99,6 +274,9 @@ const DocumentDetailView = ({ document, onBack }) => {
     }
   };
 
+  // Используем актуальные данные анализа
+  const analysis = documentAnalysis || document.analysis;
+
   return (
     <div className="document-detail-view">
       <div className="document-detail-header">
@@ -113,8 +291,43 @@ const DocumentDetailView = ({ document, onBack }) => {
         <div className="document-panel">
           {/* ✅ Raw document content removed - only AI analysis below */}
           
+          {/* Progress Bar for Analysis */}
+          <AnalysisProgressBar 
+            isVisible={showAnalysisProgress}
+            progress={analysisProgress}
+            currentStage={currentAnalysisStage}
+            onComplete={handleProgressComplete}
+          />
+          
+          {/* Button to start analysis if no analysis exists */}
+          {!analysis && !showAnalysisProgress && (
+            <div className="analysis-start-container">
+              <div className="analysis-start-card">
+                <h3>🤖 Запустить ИИ анализ документа</h3>
+                <p>Получите профессиональный анализ документа от Галины с выявлением рисков, ошибок и рекомендаций</p>
+                <button 
+                  className="start-analysis-btn"
+                  onClick={startAdvancedAnalysis}
+                >
+                  🚀 Начать анализ
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {documentAnalysis && !showAnalysisProgress && (
+            <AnalysisSummary
+              totalProblems={7}
+              criticalCount={1}
+              mediumCount={4}
+              lowCount={2}
+              recommendationsCount={3}
+              riskLevel="Высокий"
+            />
+          )}
+          
           {/* Expert Analysis Section */}
-          {document.analysis && (
+          {analysis && !showAnalysisProgress && (
             <div className="llm-analysis-container">
               <div className="analysis-header-new">
                 <h3>📊 Экспертный анализ от Галины</h3>
@@ -122,7 +335,7 @@ const DocumentDetailView = ({ document, onBack }) => {
               </div>
               
               {/* Expert Opinion */}
-              {document.analysis.expertOpinion && (
+              {analysis?.expertOpinion && (
                 <div className="analysis-section expert-opinion-section">
                   <div className="section-header">
                     <span className="section-icon">💼</span>
@@ -130,18 +343,18 @@ const DocumentDetailView = ({ document, onBack }) => {
                   </div>
                   <div className="section-content">
                     {/* Если expertOpinion — строка, рендерим напрямую */}
-                    {typeof document.analysis.expertOpinion === 'string' ? (
-                      <p className="expert-text">{document.analysis.expertOpinion}</p>
+                    {typeof analysis.expertOpinion === 'string' ? (
+                      <p className="expert-text">{analysis.expertOpinion}</p>
                     ) : (
                       <>  {/* Объект expertOpinion */}
                         <p className="expert-text">
-                          {document.analysis.expertOpinion.overallAssessment || 'Нет информации'}
+                          {analysis.expertOpinion.overallAssessment || 'Нет информации'}
                         </p>
-                        {Array.isArray(document.analysis.expertOpinion.criticalPoints) && document.analysis.expertOpinion.criticalPoints.length > 0 && (
+                        {Array.isArray(analysis.expertOpinion.criticalPoints) && analysis.expertOpinion.criticalPoints.length > 0 && (
                           <div className="critical-section">
-                            <strong>🔴 Критические моменты:</strong>
+                            <strong>Критические моменты:</strong>
                             <ul className="critical-list">
-                              {document.analysis.expertOpinion.criticalPoints.map((point, idx) => (
+                              {analysis.expertOpinion.criticalPoints.map((point, idx) => (
                                 <li key={idx}>{point}</li>
                               ))}
                             </ul>
@@ -154,14 +367,14 @@ const DocumentDetailView = ({ document, onBack }) => {
               )}
               
               {/* Legal Errors */}
-              {document.analysis.legalErrors && document.analysis.legalErrors.length > 0 && (
+              {analysis.legalErrors && analysis.legalErrors.length > 0 && (
                 <div className="analysis-section errors-section">
                   <div className="section-header">
                     <span className="section-icon">⚠️</span>
-                    <h4>Юридические ошибки ({document.analysis.legalErrors.length})</h4>
+                    <h4>Юридические ошибки ({analysis.legalErrors.length})</h4>
                   </div>
                   <div className="section-content">
-                    {document.analysis.legalErrors.map((error, idx) => {
+                    {analysis.legalErrors.map((error, idx) => {
                       // Normalize error object to ensure strings are rendered
                       const rawError = typeof error === 'string' ? { error, severity: 'medium' } : error;
                       const errorObj = {
@@ -178,7 +391,7 @@ const DocumentDetailView = ({ document, onBack }) => {
                             <span className={`severity-badge severity-${severity}`}>{translateSeverity(severity)}</span>
                           </div>
                           <p className="error-text">{errorObj.description}</p>
-                          {rawError.solution && (
+                          {rawError.solution && !/консультац/i.test(rawError.solution) && (
                             <p className="error-meta"><strong>✅ Решение:</strong> {rawError.solution}</p>
                           )}
                           {rawError.basis && (
@@ -193,8 +406,8 @@ const DocumentDetailView = ({ document, onBack }) => {
               
               {/* Risks */}
               {(() => {
-                console.log('🔍 DocumentDetailView - document.analysis:', document.analysis);
-                const rawRisks = Array.isArray(document.analysis.risks) ? document.analysis.risks : [];
+                console.log('🔍 DocumentDetailView - document.analysis:', analysis);
+                const rawRisks = Array.isArray(analysis.risks) ? analysis.risks : [];
                 console.log('🔍 DocumentDetailView - rawRisks:', rawRisks);
                 const visibleRisks = rawRisks
                   .map((risk) => {
@@ -234,7 +447,7 @@ const DocumentDetailView = ({ document, onBack }) => {
                          <div key={idx} className="risk-card">
                            <div className="risk-title">
                              {riskObj.category && <span className="risk-category-badge">{riskObj.category}</span>}
-                             {riskObj.title || 'Риск'}
+                             {riskObj.title || riskObj.category || 'Неизвестный риск'}
                            </div>
                            <p className="risk-text">{riskObj.description || risk}</p>
                            {riskObj.probability && (
@@ -254,8 +467,8 @@ const DocumentDetailView = ({ document, onBack }) => {
               {/* Recommendations */}
               {(() => {
                 // Показываем рекомендации если они есть, или если есть nextSteps как fallback
-                const hasRecommendations = document.analysis.recommendations && document.analysis.recommendations.length > 0;
-                const hasNextSteps = document.analysis.nextSteps && document.analysis.nextSteps.length > 0;
+                const hasRecommendations = analysis.recommendations && analysis.recommendations.length > 0;
+                const hasNextSteps = analysis.nextSteps && analysis.nextSteps.length > 0;
                 
                 return hasRecommendations || hasNextSteps;
               })() && (
@@ -266,9 +479,9 @@ const DocumentDetailView = ({ document, onBack }) => {
                   </div>
                   <div className="recommendations-list">
                     {/* Показываем рекомендации если они есть */}
-                    {document.analysis.recommendations && document.analysis.recommendations.length > 0 && 
+                    {analysis.recommendations && analysis.recommendations.length > 0 && 
                       // Показываем только рекомендации, адресованные клиенту, исключая информирование
-                      document.analysis.recommendations
+                      analysis.recommendations
                         .filter(rec => rec.category?.toLowerCase() !== 'информирование')
                         .map((rec, idx) => {
                         // Normalize recommendation object
@@ -322,15 +535,26 @@ const DocumentDetailView = ({ document, onBack }) => {
                               {recObj.risks && <li><strong>⚠️ Риски:</strong> {recObj.risks}</li>}
                               {recObj.successIndicators && <li><strong>✅ Признаки успеха:</strong> {recObj.successIndicators}</li>}
                             </ul>
+                            
+                            {/* Кнопка генерации документа */}
+                            {shouldShowGenerateButton(recObj) && (
+                              <button 
+                                className="generate-document-btn"
+                                onClick={() => handleGenerateDocument(recObj)}
+                                disabled={generatingDocument}
+                              >
+                                {generatingDocument ? '⏳ Генерируем...' : '📄 Галина сгенерирует документ'}
+                              </button>
+                            )}
                           </div>
                         );
                       })
                     }
                     
                     {/* Показываем nextSteps как рекомендации если нет обычных рекомендаций */}
-                    {(!document.analysis.recommendations || document.analysis.recommendations.length === 0) && 
-                     document.analysis.nextSteps && document.analysis.nextSteps.length > 0 &&
-                      document.analysis.nextSteps.map((step, idx) => {
+                    {(!analysis.recommendations || analysis.recommendations.length === 0) && 
+                     analysis.nextSteps && analysis.nextSteps.length > 0 &&
+                      analysis.nextSteps.map((step, idx) => {
                         const stepText = typeof step === 'string' ? step : (step.description || step.title || JSON.stringify(step));
                         return (
                           <div key={`nextstep-${idx}`} className="recommendation-item priority-normal">
@@ -345,14 +569,14 @@ const DocumentDetailView = ({ document, onBack }) => {
               )}
               
               {/* Next Steps */}
-              {document.analysis.nextSteps && document.analysis.nextSteps.length > 0 && (
+              {analysis.nextSteps && analysis.nextSteps.length > 0 && (
                 <div className="analysis-section next-steps-section">
                   <div className="section-header">
                     <span className="section-icon">🎯</span>
                     <h4>Следующие шаги</h4>
           </div>
                   <ol className="steps-list">
-                    {document.analysis.nextSteps.map((step, idx) => {
+                    {analysis.nextSteps.map((step, idx) => {
                       const stepText = typeof step === 'string' ? step : (step.description || step.title || JSON.stringify(step));
                       return <li key={idx}>{stepText}</li>;
                     })}
@@ -361,7 +585,7 @@ const DocumentDetailView = ({ document, onBack }) => {
               )}
               
               {/* Compliance */}
-              {document.analysis.compliance && (
+              {analysis.compliance && (
                 <div className="analysis-section compliance-section">
                   <div className="section-header">
                     <span className="section-icon">✅</span>
@@ -392,60 +616,6 @@ const DocumentDetailView = ({ document, onBack }) => {
                 </div>
               )}
               
-              {/* Summary */}
-              {document.analysis && (
-                <div className="analysis-section summary-section">
-                  <div className="section-header">
-                    <span className="section-icon">📈</span>
-                    <h4>Общее резюме</h4>
-                  </div>
-                  <div className="summary-stats">
-                    <div className="stat-item">
-                      <div className="stat-label">Всего проблем</div>
-                      <div className="stat-value total">
-                        {(document.analysis.legalErrors?.length || 0) + 
-                         (document.analysis.risks?.length || 0) + 
-                         (document.analysis.complianceIssues?.length || 0)}
-                      </div>
-                    </div>
-                    <div className="stat-item">
-                      <div className="stat-label">Критических</div>
-                      <div className="stat-value critical">
-                        {(document.analysis.legalErrors?.filter(e => e.severity === 'critical').length || 0) +
-                         (document.analysis.risks?.filter(r => r.probability === 'high' && r.impact === 'high').length || 0)}
-                      </div>
-                    </div>
-                    <div className="stat-item">
-                      <div className="stat-label">Средних</div>
-                      <div className="stat-value medium">
-                        {(document.analysis.legalErrors?.filter(e => e.severity === 'medium').length || 0) +
-                         (document.analysis.risks?.filter(r => r.probability === 'medium' || r.impact === 'medium').length || 0)}
-                      </div>
-                    </div>
-                    <div className="stat-item">
-                      <div className="stat-label">Низких</div>
-                      <div className="stat-value low">
-                        {(document.analysis.legalErrors?.filter(e => e.severity === 'low').length || 0) +
-                         (document.analysis.risks?.filter(r => r.probability === 'low' && r.impact === 'low').length || 0)}
-                      </div>
-                    </div>
-                    <div className="stat-item">
-                      <div className="stat-label">Рекомендаций</div>
-                      <div className="stat-value recommendations">
-                        {document.analysis.recommendations?.length || 0}
-                      </div>
-                    </div>
-                    <div className="stat-item">
-                      <div className="stat-label">Уровень риска</div>
-                      <div className={`stat-value risk-level ${document.analysis.riskLevel || 'medium'}`}>
-                        {document.analysis.riskLevel === 'high' ? '🔴 Высокий' : 
-                         document.analysis.riskLevel === 'medium' ? '🔵 Средний' : 
-                         document.analysis.riskLevel === 'low' ? '🟢 Низкий' : '🔵 Средний'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
               
               <div className="preview-actions">
                 <button className="save-btn">

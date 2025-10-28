@@ -99,7 +99,7 @@ router.post('/reset-stats', async (req, res) => {
 router.get('/api-settings', async (req, res) => {
   try {
     const settings = {
-      model: process.env.WINDEXAI_MODEL || 'gpt-4o-mini',
+      model: process.env.WINDEXAI_MODEL || 'gpt-4o',
       maxTokens: parseInt(process.env.WINDEXAI_MAX_TOKENS) || 4000,
       temperature: parseFloat(process.env.WINDEXAI_TEMPERATURE) || 0.7,
       apiStatus: process.env.WINDEXAI_API_KEY ? 'active' : 'inactive'
@@ -162,7 +162,7 @@ router.put('/api-settings', async (req, res) => {
     // В реальном приложении здесь нужно обновить переменные окружения
     // Для демонстрации просто возвращаем обновленные настройки
     const settings = {
-      model: model || process.env.WINDEXAI_MODEL || 'gpt-4o-mini',
+      model: model || process.env.WINDEXAI_MODEL || 'gpt-4o',
       maxTokens: maxTokens || parseInt(process.env.WINDEXAI_MAX_TOKENS) || 4000,
       temperature: temperature || parseFloat(process.env.WINDEXAI_TEMPERATURE) || 0.7,
       apiStatus: process.env.WINDEXAI_API_KEY ? 'active' : 'inactive'

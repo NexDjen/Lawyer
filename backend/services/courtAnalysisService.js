@@ -220,7 +220,7 @@ ${hearingText}
 `;
 
     const completion = await windexai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -232,7 +232,7 @@ ${hearingText}
         }
       ],
       temperature: 0.3,
-      max_tokens: 2000
+      max_tokens: 4000
     });
 
     const response = completion.choices[0].message.content;

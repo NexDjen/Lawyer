@@ -219,7 +219,7 @@ const ChatInput = ({
           placeholder={placeholder}
           disabled={disabled}
           rows={1}
-          maxLength={4000}
+          maxLength={50000}
         />
         
         <div className="chat-input__actions">

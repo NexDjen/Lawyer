@@ -123,7 +123,7 @@ class DocumentStorageService {
       const sql = `
         SELECT id, filename, original_name, file_path, file_size, mime_type, 
                document_type, extracted_text, ocr_confidence, analysis_result,
-               created_at, updated_at
+               is_batch, batch_id, document_count, created_at, updated_at
         FROM documents 
         WHERE user_id = ? AND is_deleted = 0
         ORDER BY created_at DESC
@@ -182,7 +182,10 @@ class DocumentStorageService {
         return {
           ...doc,
           analysis_result: doc.analysis_result ? JSON.parse(doc.analysis_result) : null,
-          analysis: analysis // Новое поле с анализом
+          analysis: analysis, // Новое поле с анализом
+          is_batch: doc.is_batch || false,
+          batch_id: doc.batch_id || null,
+          document_count: doc.document_count || 1
         };
       }));
       
@@ -203,7 +206,7 @@ class DocumentStorageService {
       const sql = `
         SELECT id, user_id, filename, original_name, file_path, file_size, 
                mime_type, document_type, extracted_text, ocr_confidence, 
-               analysis_result, created_at, updated_at
+               analysis_result, is_batch, batch_id, document_count, created_at, updated_at
         FROM documents 
         WHERE id = ? AND is_deleted = 0
       `;
@@ -261,7 +264,10 @@ class DocumentStorageService {
       return {
         ...document,
         analysis: analysis,  // Add detailed analysis
-        analysisResult: document.analysis_result ? JSON.parse(document.analysis_result) : null
+        analysisResult: document.analysis_result ? JSON.parse(document.analysis_result) : null,
+        is_batch: document.is_batch || false,
+        batch_id: document.batch_id || null,
+        document_count: document.document_count || 1
       };
     } catch (error) {
       logger.error('Error getting document by ID:', error);
@@ -428,6 +434,160 @@ class DocumentStorageService {
       return stats;
     } catch (error) {
       logger.error('Error getting document statistics:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Save a batch case (multiple documents analyzed together with case icon)
+   * @param {string} userId - User ID
+   * @param {Object} caseData - Case data including analysis
+   * @returns {Promise<Object>} Saved case
+   */
+  async saveBatchCase(userId, caseData) {
+    try {
+      const {
+        caseId,
+        caseName,
+        caseNumber,
+        description,
+        fileCount,
+        fileNames,
+        documentType,
+        icon,
+        ocrMetadata,
+        analysis,
+        createdAt
+      } = caseData;
+
+      // Ensure user exists
+      await this.ensureUserExists(userId);
+
+      const sql = `
+        INSERT INTO batch_cases (
+          id, user_id, case_name, case_number, description, 
+          file_count, file_names, document_type, icon,
+          ocr_metadata, analysis_result, created_at, updated_at, is_deleted
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), 0)
+      `;
+
+      await database.run(sql, [
+        caseId,
+        userId,
+        caseName,
+        caseNumber || null,
+        description,
+        fileCount,
+        JSON.stringify(fileNames),
+        documentType,
+        icon,
+        JSON.stringify(ocrMetadata),
+        JSON.stringify(analysis),
+        createdAt
+      ]);
+
+      logger.info('Batch case saved to database', {
+        caseId,
+        caseName,
+        userId,
+        fileCount
+      });
+
+      return {
+        caseId,
+        caseName,
+        caseNumber,
+        description,
+        fileCount,
+        fileNames,
+        documentType,
+        icon,
+        createdAt
+      };
+
+    } catch (error) {
+      logger.error('Error saving batch case:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a batch case by ID
+   * @param {string} caseId - Case ID
+   * @returns {Promise<Object>} Case data
+   */
+  async getBatchCase(caseId) {
+    try {
+      const sql = `
+        SELECT * FROM batch_cases 
+        WHERE id = ? AND is_deleted = 0
+      `;
+
+      const caseData = await database.get(sql, [caseId]);
+
+      if (caseData) {
+        // Parse JSON fields
+        caseData.fileNames = JSON.parse(caseData.file_names || '[]');
+        caseData.ocrMetadata = JSON.parse(caseData.ocr_metadata || '{}');
+        caseData.analysis = JSON.parse(caseData.analysis_result || '{}');
+      }
+
+      return caseData;
+    } catch (error) {
+      logger.error('Error getting batch case:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * List all batch cases for a user
+   * @param {string} userId - User ID
+   * @param {Object} options - Query options (limit, offset, sortBy)
+   * @returns {Promise<Array>} List of batch cases
+   */
+  async listBatchCases(userId, options = {}) {
+    try {
+      const { limit = 50, offset = 0, sortBy = 'created_at DESC' } = options;
+
+      const sql = `
+        SELECT * FROM batch_cases 
+        WHERE user_id = ? AND is_deleted = 0
+        ORDER BY ${sortBy}
+        LIMIT ? OFFSET ?
+      `;
+
+      const cases = await database.all(sql, [userId, limit, offset]);
+
+      // Parse JSON fields for each case
+      return cases.map(c => ({
+        ...c,
+        fileNames: JSON.parse(c.file_names || '[]'),
+        ocrMetadata: JSON.parse(c.ocr_metadata || '{}'),
+        analysis: JSON.parse(c.analysis_result || '{}')
+      }));
+
+    } catch (error) {
+      logger.error('Error listing batch cases:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get batch case count for a user
+   * @param {string} userId - User ID
+   * @returns {Promise<number>} Number of batch cases
+   */
+  async getBatchCaseCount(userId) {
+    try {
+      const sql = `
+        SELECT COUNT(*) as count FROM batch_cases 
+        WHERE user_id = ? AND is_deleted = 0
+      `;
+
+      const result = await database.get(sql, [userId]);
+      return result?.count || 0;
+    } catch (error) {
+      logger.error('Error getting batch case count:', error);
       throw error;
     }
   }

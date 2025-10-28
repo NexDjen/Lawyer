@@ -1,0 +1,217 @@
+.analysis-progress-container {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 20px 0;
+  color: white;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.analysis-progress-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.analysis-progress-header h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.progress-message {
+  margin: 0;
+  font-size: 1.1rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.progress-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+  border-radius: 6px;
+  transition: width 0.5s ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.progress-percentage {
+  font-size: 1.2rem;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: right;
+}
+
+.analysis-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.analysis-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  opacity: 0.6;
+}
+
+.analysis-step.active {
+  background: rgba(255, 255, 255, 0.2);
+  opacity: 1;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.analysis-step.completed {
+  background: rgba(76, 175, 80, 0.3);
+  opacity: 1;
+}
+
+.step-icon {
+  font-size: 1.2rem;
+}
+
+.step-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.step-check {
+  color: #4caf50;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.analysis-logs {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.analysis-logs h4 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.logs-container {
+  max-height: 120px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.logs-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.logs-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.logs-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.log-entry {
+  display: flex;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+  align-items: center;
+}
+
+.log-time {
+  color: rgba(255, 255, 255, 0.7);
+  font-family: monospace;
+  min-width: 80px;
+}
+
+.log-icon {
+  font-size: 1.1rem;
+}
+
+.log-message {
+  flex: 1;
+}
+
+/* Анимации */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.analysis-step.active .step-icon {
+  animation: pulse 1.5s infinite;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .analysis-progress-container {
+    padding: 16px;
+    margin: 16px 0;
+  }
+  
+  .analysis-progress-header h3 {
+    font-size: 1.3rem;
+  }
+  
+  .analysis-steps {
+    grid-template-columns: 1fr;
+  }
+  
+  .progress-bar-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .progress-percentage {
+    text-align: center;
+  }
+}

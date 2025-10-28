@@ -21,6 +21,7 @@ try {
   pdfParse = null;
 }
 const logger = require('../utils/logger');
+const { generateLegalDocument, detectDocumentType: detectDocType, shouldGenerateDocument } = require('../services/documentGenerationService');
 
 const router = express.Router();
 
@@ -324,6 +325,28 @@ router.post('/ocr', upload.single('document'), async (req, res) => {
   }
 });
 
+/**
+ * POST /api/documents/batch-ocr-analysis
+ * Process multiple files with OCR and LLM analysis in one unified flow
+ * Flow: Upload multiple files -> OCR all in parallel -> Send to LLM -> Save as case with icon
+ */
+router.post('/batch-ocr-analysis', upload.array('documents'), (req, res, next) => {
+  req.user = { id: req.body.userId || '1' };
+  next();
+}, documentController.handleBatchOCRAnalysis);
+
+/**
+ * GET /api/documents/batch-cases/:caseId
+ * Retrieve a specific batch case by ID
+ */
+router.get('/batch-cases/:caseId', documentController.getBatchCase);
+
+/**
+ * GET /api/documents/batch-cases
+ * List all batch cases for a user
+ */
+router.get('/batch-cases', documentController.listBatchCases);
+
 // Маршрут для получения списка документов
 router.get('/', async (req, res) => {
   try {
@@ -495,6 +518,12 @@ router.post('/advanced-analysis', (req, res, next) => {
   next();
 }, documentController.handleAdvancedDocumentAnalysis);
 
+// Маршрут для группового анализа документов
+router.post('/batch-analysis', (req, res, next) => {
+  req.user = { id: req.body.userId || '1' };
+  next();
+}, documentController.handleBatchDocumentAnalysis);
+
 // Маршрут для получения сохраненного анализа документа
 router.get('/analysis/:docId', documentController.handleGetAnalysis);
 
@@ -512,7 +541,7 @@ router.post('/migrate', documentController.handleMigrateDocuments);
 router.post('/:id/chat', async (req, res) => {
   try {
     const { id } = req.params;
-    const { message, history, documentContext } = req.body;
+    const { message, history, documentContext, professionalMode = true } = req.body;
     
     // Получить документ из БД
     const document = await documentController.getDocumentById(id);
@@ -545,12 +574,81 @@ router.post('/:id/chat', async (req, res) => {
     
     // Отправить в chatService
     const chatService = require('../services/chatService');
-    const response = await chatService.generateResponseWithContext(contextualMessage.userMessage, contextualMessage.history, contextualMessage.systemContext);
+    const response = await chatService.generateResponseWithContext(
+      contextualMessage.userMessage,
+      contextualMessage.history,
+      contextualMessage.systemContext,
+      true, // useWebSearch
+      null, // userId
+      null, // model
+      professionalMode
+    );
     
-    res.json({ success: true, response });
+    // Форматируем ответ для отображения
+    const formattedResponse = chatService.formatForDisplay(response);
+    
+    res.json({ 
+      success: true, 
+      response,
+      formattedResponse,
+      professionalMode
+    });
   } catch (error) {
     logger.error('Ошибка в чате с документом:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/documents/generate-legal-document
+ * Генерирует юридический документ на основе рекомендации
+ */
+router.post('/generate-legal-document', async (req, res) => {
+  try {
+    logger.info('Запрос на генерацию юридического документа', {
+      body: req.body
+    });
+
+    const {
+      documentType,
+      recommendation,
+      originalDocumentText,
+      analysis,
+      userInfo
+    } = req.body;
+
+    if (!recommendation) {
+      return res.status(400).json({
+        success: false,
+        error: 'Рекомендация обязательна для генерации документа'
+      });
+    }
+
+    // Генерируем документ
+    const result = await generateLegalDocument({
+      documentType: documentType || detectDocType(recommendation) || 'заявление',
+      recommendation,
+      originalDocumentText,
+      analysis,
+      userInfo
+    });
+
+    logger.info('Юридический документ успешно сгенерирован', {
+      documentType: result.documentType,
+      fileName: result.fileName
+    });
+
+    res.json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    logger.error('Ошибка при генерации юридического документа:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
   }
 });
 

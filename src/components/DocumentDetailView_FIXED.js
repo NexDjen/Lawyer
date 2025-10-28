@@ -113,7 +113,7 @@ const DocumentDetailView = ({ document, onBack }) => {
                     <p className="expert-text">{document.analysis.expertOpinion}</p>
                     {document.analysis.criticalIssues && document.analysis.criticalIssues.length > 0 && (
                       <div className="critical-section">
-                        <strong>🔴 Критические моменты:</strong>
+                        <strong>Критические моменты:</strong>
                         <ul className="critical-list">
                           {document.analysis.criticalIssues.map((issue, idx) => (
                             <li key={idx}>{issue}</li>
@@ -287,33 +287,6 @@ const DocumentDetailView = ({ document, onBack }) => {
                 </div>
               )}
               
-              {/* Summary */}
-              {document.analysis.summary && (
-                <div className="analysis-section summary-section">
-                  <div className="section-header">
-                    <span className="section-icon">📈</span>
-                    <h4>Общее резюме</h4>
-                  </div>
-                  <div className="summary-stats">
-                    <div className="stat-item">
-                      <div className="stat-label">Всего проблем</div>
-                      <div className="stat-value total">{document.analysis.legalErrors?.length || 0}</div>
-                    </div>
-                    <div className="stat-item">
-                      <div className="stat-label">Критических</div>
-                      <div className="stat-value critical">{document.analysis.legalErrors?.filter(e => e.severity === 'critical').length || 0}</div>
-                    </div>
-                    <div className="stat-item">
-                      <div className="stat-label">Средних</div>
-                      <div className="stat-value medium">{document.analysis.legalErrors?.filter(e => e.severity === 'medium').length || 0}</div>
-                    </div>
-                    <div className="stat-item">
-                      <div className="stat-label">Низких</div>
-                      <div className="stat-value low">{document.analysis.legalErrors?.filter(e => e.severity === 'low').length || 0}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
               
               <div className="preview-actions">
                 <button className="save-btn">
@@ -346,7 +319,7 @@ const DocumentDetailView = ({ document, onBack }) => {
                   ? document.analysis.risks.map(r => 
                       typeof r === 'string' 
                         ? r 
-                        : (r.title || r.description || r.category || 'Риск')
+                        : (r.title || r.description || r.category || 'Неизвестный риск')
                     ).join(', ')
                   : 'Риски не выявлены'
               }</p>

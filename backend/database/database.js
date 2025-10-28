@@ -53,10 +53,32 @@ class Database {
       } else {
         console.log('ℹ️ analysis_data column already exists');
       }
+
+      // Проверяем и добавляем колонки для группового анализа в таблицу documents
+      const documentsTableInfo = await this.all("PRAGMA table_info(documents)");
+      const hasIsBatch = documentsTableInfo.some(col => col.name === 'is_batch');
+      const hasBatchId = documentsTableInfo.some(col => col.name === 'batch_id');
+      const hasDocumentCount = documentsTableInfo.some(col => col.name === 'document_count');
+
+      if (!hasIsBatch) {
+        await this.run(`ALTER TABLE documents ADD COLUMN is_batch BOOLEAN DEFAULT 0`);
+        console.log('✅ Added is_batch column to documents table');
+      }
+
+      if (!hasBatchId) {
+        await this.run(`ALTER TABLE documents ADD COLUMN batch_id TEXT`);
+        console.log('✅ Added batch_id column to documents table');
+      }
+
+      if (!hasDocumentCount) {
+        await this.run(`ALTER TABLE documents ADD COLUMN document_count INTEGER DEFAULT 1`);
+        console.log('✅ Added document_count column to documents table');
+      }
+
     } catch (error) {
       // Игнорируем ошибки, если колонка уже существует
       if (!error.message.includes('duplicate column name')) {
-        console.log('Note: analysis_data column may already exist');
+        console.log('Note: Some columns may already exist');
       }
     }
   }
@@ -121,6 +143,9 @@ class Database {
         extracted_text TEXT,
         ocr_confidence REAL,
         analysis_result TEXT, -- JSON с результатами анализа
+        is_batch BOOLEAN DEFAULT 0, -- Флаг группового анализа
+        batch_id TEXT, -- ID группового анализа
+        document_count INTEGER DEFAULT 1, -- Количество документов в пакете
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         is_deleted BOOLEAN DEFAULT 0
@@ -202,6 +227,48 @@ class Database {
         value TEXT NOT NULL,
         description TEXT,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+      // Таблица агрегированной статистики API
+      `CREATE TABLE IF NOT EXISTS api_usage_stats (
+        month TEXT PRIMARY KEY,
+        total_tokens INTEGER DEFAULT 0,
+        total_cost REAL DEFAULT 0,
+        total_requests INTEGER DEFAULT 0,
+        avg_tokens_per_request REAL DEFAULT 0,
+        avg_cost_per_request REAL DEFAULT 0,
+        last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+      // Таблица дневной статистики
+      `CREATE TABLE IF NOT EXISTS daily_statistics (
+        date TEXT PRIMARY KEY,
+        total_requests INTEGER DEFAULT 0,
+        total_tokens INTEGER DEFAULT 0,
+        total_cost REAL DEFAULT 0,
+        active_users INTEGER DEFAULT 0,
+        documents_processed INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+      // Таблица пакетных анализов (дела из нескольких документов)
+      `CREATE TABLE IF NOT EXISTS batch_cases (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        case_name TEXT NOT NULL,
+        case_number TEXT,
+        description TEXT,
+        file_count INTEGER NOT NULL,
+        file_names TEXT NOT NULL, -- JSON array с названиями файлов
+        document_type TEXT DEFAULT 'legal',
+        icon TEXT DEFAULT 'briefcase', -- Иконка для отображения (briefcase для дел)
+        ocr_metadata TEXT, -- JSON с метаданными OCR
+        analysis_result TEXT, -- JSON с результатами анализа
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        is_deleted BOOLEAN DEFAULT 0
+        -- FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       )`
     ];
 
@@ -222,7 +289,9 @@ class Database {
       'CREATE INDEX IF NOT EXISTS idx_windexai_stats_created_at ON windexai_stats(created_at)',
       'CREATE INDEX IF NOT EXISTS idx_document_analysis_doc_id ON document_analysis(document_id)',
       'CREATE INDEX IF NOT EXISTS idx_document_analysis_user_id ON document_analysis(user_id)',
-      'CREATE INDEX IF NOT EXISTS idx_document_analysis_created_at ON document_analysis(created_at)'
+      'CREATE INDEX IF NOT EXISTS idx_document_analysis_created_at ON document_analysis(created_at)',
+      'CREATE INDEX IF NOT EXISTS idx_batch_cases_user_id ON batch_cases(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_batch_cases_created_at ON batch_cases(created_at)'
     ];
 
     for (const index of indexes) {

@@ -1,6 +1,6 @@
 const logger = require('../utils/logger');
 const documentService = require('../services/documentService');
-const { performAdvancedDocumentAnalysis, generateAnalysisReport } = require('../services/advancedDocumentAnalysisService');
+const { performAdvancedDocumentAnalysis, performBatchDocumentAnalysis, generateAnalysisReport } = require('../services/advancedDocumentAnalysisService');
 const documentStorageService = require('../services/documentStorageService');
 
 class DocumentController {
@@ -80,6 +80,86 @@ class DocumentController {
       logger.error('Error in document analysis:', error);
       res.status(500).json({ 
         error: 'Ошибка при анализе документа' 
+      });
+    }
+  }
+
+  async handleBatchDocumentAnalysis(req, res) {
+    try {
+      logger.info('Batch document analysis request received');
+      
+      const { documents, userId } = req.body;
+      
+      if (!documents || !Array.isArray(documents) || documents.length === 0) {
+        return res.status(400).json({ 
+          error: 'Список документов не найден или пуст' 
+        });
+      }
+
+      // Validate each document has required fields
+      for (let i = 0; i < documents.length; i++) {
+        const doc = documents[i];
+        if (!doc.documentText || !doc.fileName) {
+          return res.status(400).json({ 
+            error: `Документ ${i + 1} не содержит обязательные поля: documentText и fileName` 
+          });
+        }
+      }
+
+      logger.info('Starting batch analysis', {
+        documentCount: documents.length,
+        documentNames: documents.map(d => d.fileName),
+        userId
+      });
+
+      // Perform batch analysis
+      const analysis = await performBatchDocumentAnalysis(documents);
+      
+      // Generate report
+      const report = generateAnalysisReport(analysis, `Набор документов (${documents.length})`);
+
+      // Save batch analysis to database
+      const database = require('../database/database');
+      const batchId = `batch_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+      const currentUserId = userId || '1';
+      
+      try {
+        await database.run(
+          `INSERT INTO document_analyses (
+            id, user_id, document_id, analysis_type, analysis_result,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            batchId,
+            currentUserId,
+            null, // No single document ID for batch
+            'batch',
+            JSON.stringify(analysis),
+            new Date().toISOString(),
+            new Date().toISOString()
+          ]
+        );
+        
+        logger.info('Batch analysis saved to database', { batchId, userId: currentUserId });
+      } catch (err) {
+        logger.warn('Failed to save batch analysis to database', { error: err.message });
+      }
+
+      res.json({
+        success: true,
+        message: 'Групповой анализ документов завершен',
+        data: {
+          analysis,
+          report,
+          batchId,
+          documentCount: documents.length
+        }
+      });
+      
+    } catch (error) {
+      logger.error('Error in batch document analysis:', error);
+      res.status(500).json({ 
+        error: 'Ошибка при групповом анализе документов' 
       });
     }
   }
@@ -456,6 +536,111 @@ class DocumentController {
     } catch (error) {
       logger.error('Error getting document by ID:', error);
       return null;
+    }
+  }
+
+  /**
+   * Handle batch document analysis with OCR and LLM
+   * Flow: Multiple files -> OCR in parallel -> LLM analysis -> Save as case
+   */
+  async handleBatchOCRAnalysis(req, res) {
+    try {
+      logger.info('Batch OCR analysis request received');
+
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({
+          error: 'No files provided for batch analysis'
+        });
+      }
+
+      const userId = req.body?.userId || req.user?.id || '1';
+      const options = {
+        caseName: req.body?.caseName || null,
+        caseNumber: req.body?.caseNumber || null,
+        description: req.body?.description || null,
+        documentType: req.body?.documentType || 'legal'
+      };
+
+      logger.info('Starting batch analysis', {
+        fileCount: req.files.length,
+        userId,
+        caseName: options.caseName
+      });
+
+      const batchAnalysisService = require('../services/batchDocumentAnalysisService');
+      const result = await batchAnalysisService.processBatchDocuments(
+        req.files,
+        userId,
+        options
+      );
+
+      res.json({
+        success: true,
+        message: 'Batch analysis completed successfully',
+        data: result
+      });
+
+    } catch (error) {
+      logger.error('Error in batch OCR analysis:', error);
+      res.status(500).json({
+        error: 'Batch analysis failed',
+        details: error.message
+      });
+    }
+  }
+
+  /**
+   * Get batch case by ID
+   */
+  async getBatchCase(req, res) {
+    try {
+      const { caseId } = req.params;
+      const batchAnalysisService = require('../services/batchDocumentAnalysisService');
+      const caseData = await batchAnalysisService.getBatchCase(caseId);
+
+      if (!caseData) {
+        return res.status(404).json({ error: 'Case not found' });
+      }
+
+      res.json({
+        success: true,
+        data: caseData
+      });
+    } catch (error) {
+      logger.error('Error getting batch case:', error);
+      res.status(500).json({
+        error: 'Failed to retrieve case',
+        details: error.message
+      });
+    }
+  }
+
+  /**
+   * List batch cases for a user
+   */
+  async listBatchCases(req, res) {
+    try {
+      const userId = req.query?.userId || req.user?.id || '1';
+      const limit = parseInt(req.query?.limit || '50', 10);
+      const offset = parseInt(req.query?.offset || '0', 10);
+
+      const batchAnalysisService = require('../services/batchDocumentAnalysisService');
+      const cases = await batchAnalysisService.listBatchCases(userId, {
+        limit,
+        offset
+      });
+
+      res.json({
+        success: true,
+        data: cases,
+        count: cases.length
+      });
+    } catch (error) {
+      logger.error('Error listing batch cases:', error);
+      res.status(500).json({
+        error: 'Failed to list cases',
+        details: error.message
+      });
     }
   }
 }

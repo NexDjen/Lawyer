@@ -4,16 +4,17 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env'), override: t
 const config = {
   // Server configuration
   server: {
-    port: parseInt(process.env.PORT, 10) || 3007,
+    port: parseInt(process.env.PORT, 10) || 3008,
     host: process.env.HOST || '0.0.0.0'
   },
 
         // WindexAI configuration
         windexai: {
             apiKey: process.env.WINDEXAI_API_KEY,
-            model: process.env.WINDEXAI_MODEL || 'gpt-4o-mini',
+            model: process.env.WINDEXAI_MODEL || 'gpt-4o',
             maxTokens: parseInt(process.env.WINDEXAI_MAX_TOKENS) || 15000,
-            temperature: parseFloat(process.env.WINDEXAI_TEMPERATURE) || 0.8
+            temperature: parseFloat(process.env.WINDEXAI_TEMPERATURE) || 0.8,
+            timeout: parseInt(process.env.WINDEXAI_TIMEOUT) || 120000
         },
 
   // OpenAI configuration
@@ -55,11 +56,11 @@ const config = {
       : [
           'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002',
           'http://localhost:3004', 'http://localhost:3006', 'http://localhost:3007',
-          'http://localhost:3008', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001',
-          'http://127.0.0.1:3002', 'http://127.0.0.1:3004', 'http://127.0.0.1:3006',
-          'http://127.0.0.1:3007', 'http://127.0.0.1:3008', 'file://', 'null',
-          'http://localhost', 'http://127.0.0.1', 'https://w-lawyer.ru',
-          'https://www.w-lawyer.ru'
+          'http://localhost:3008', 'http://localhost:3009', 'http://127.0.0.1:3000', 
+          'http://127.0.0.1:3001', 'http://127.0.0.1:3002', 'http://127.0.0.1:3004', 
+          'http://127.0.0.1:3006', 'http://127.0.0.1:3007', 'http://127.0.0.1:3008', 
+          'http://127.0.0.1:3009', 'file://', 'null', 'http://localhost', 
+          'http://127.0.0.1', 'https://w-lawyer.ru', 'https://www.w-lawyer.ru'
         ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

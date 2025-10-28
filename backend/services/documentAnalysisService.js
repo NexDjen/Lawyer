@@ -35,7 +35,7 @@ async function analyzeDocumentText(text) {
 ${text}`;
 
     const completion = await windexai.chat.completions.create({
-      model: config.windexai.model || 'gpt-4o-mini',
+      model: config.windexai.model || 'gpt-4o',
       messages: [
         { role: 'system', content: 'Ты юридический аналитик. Отвечай строго в JSON.' },
         { role: 'user', content: prompt }

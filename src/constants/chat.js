@@ -19,7 +19,7 @@ export const API_STATUS = {
 
 // Лимиты
 export const LIMITS = {
-  MAX_MESSAGE_LENGTH: 4000,
+  MAX_MESSAGE_LENGTH: 50000, // Увеличено с 4000 до 50000
   MAX_HISTORY_LENGTH: 10,
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
   FREE_DAILY_MESSAGES: 10,

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Upload, X, Camera, FileText, Edit3, Save, RotateCcw, Brain, Loader } from 'lucide-react';
+import { Upload, X, Camera, FileText, Edit3, Save, RotateCcw, Brain, Loader, Trash2 } from 'lucide-react';
 import { buildApiUrl } from '../config/api';
 import './DocumentUpload.css';
 
@@ -12,12 +12,37 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
   const [uploadedImages, setUploadedImages] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [ocrResult, setOcrResult] = useState(null);
+  const [uploadedDocuments, setUploadedDocuments] = useState([]);
+  const [showBatchAnalysis, setShowBatchAnalysis] = useState(false);
   const [isProcessing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editedFields, setEditedFields] = useState({});
   const [showRawText, setShowRawText] = useState(false);
+
+  // Auto-start batch analysis if multiple files or single PDF uploaded
+  // BUT only if all documents have completed OCR
+  useEffect(() => {
+    if (!uploadedDocuments.length) return;
+    
+    // Check if all documents have completed OCR
+    const allDocumentsProcessed = uploadedDocuments.every(doc => 
+      doc.status === 'analyzed' || doc.status === 'uploaded'
+    );
+    
+    if (!allDocumentsProcessed) {
+      console.log('⏳ Waiting for all documents to complete OCR...');
+      return;
+    }
+    
+    const singlePdf = uploadedDocuments.length === 1 && uploadedDocuments[0].isPdf;
+    if (uploadedDocuments.length > 1 || singlePdf) {
+      console.log('✅ All documents OCR completed, starting batch analysis...');
+      handleBatchAnalysis();
+    }
+  }, [uploadedDocuments]);
 
   // Функции перевода
   const translateSeverity = (severity) => {
@@ -87,14 +112,51 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
   const isMediaDevicesSupported = typeof navigator !== 'undefined' && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function';
 
   const upsertDocumentInStorage = (predicate, updater, fallbackNewDoc) => {
-    const docs = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const idx = docs.findIndex(predicate);
-    if (idx >= 0) {
-      docs[idx] = { ...docs[idx], ...updater(docs[idx]) };
-    } else if (fallbackNewDoc) {
-      docs.unshift(fallbackNewDoc);
+    try {
+      const docs = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      const idx = docs.findIndex(predicate);
+      if (idx >= 0) {
+        docs[idx] = { ...docs[idx], ...updater(docs[idx]) };
+      } else if (fallbackNewDoc) {
+        docs.unshift(fallbackNewDoc);
+      }
+      
+      // Ограничиваем количество документов в localStorage (максимум 50)
+      if (docs.length > 50) {
+        docs.splice(50); // Удаляем старые документы
+        console.warn('LocalStorage quota exceeded, removed old documents');
+      }
+      
+      localStorage.setItem(storageKey, JSON.stringify(docs));
+    } catch (error) {
+      if (error.name === 'QuotaExceededError') {
+        console.warn('LocalStorage quota exceeded, clearing old documents');
+        // Очищаем старые документы и пробуем снова
+        try {
+          const docs = JSON.parse(localStorage.getItem(storageKey) || '[]');
+          const originalCount = docs.length;
+          // Оставляем только последние 20 документов
+          const recentDocs = docs.slice(0, 20);
+          localStorage.setItem(storageKey, JSON.stringify(recentDocs));
+          
+          // Пробуем добавить новый документ
+          if (fallbackNewDoc) {
+            recentDocs.unshift(fallbackNewDoc);
+            localStorage.setItem(storageKey, JSON.stringify(recentDocs));
+          }
+          
+          // Показываем уведомление пользователю
+          console.log(`Auto-cleared ${originalCount - recentDocs.length} old documents due to storage limit`);
+        } catch (retryError) {
+          console.error('Failed to save document to localStorage:', retryError);
+          // Если и это не помогло, очищаем все
+          localStorage.removeItem(storageKey);
+          alert('Память браузера переполнена. Все документы очищены. Попробуйте загрузить документ снова.');
+        }
+      } else {
+        console.error('Error saving document to localStorage:', error);
+      }
     }
-    localStorage.setItem(storageKey, JSON.stringify(docs));
   };
 
 
@@ -147,14 +209,24 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
 
   const handleFileSelect = (event) => {
     const files = Array.from(event.target.files);
+    
+    // Determine if this is batch mode (multiple files)
+    const isBatchMode = files.length > 1;
+    
+    if (isBatchMode) {
+      console.log(`📦 Batch mode detected: ${files.length} files selected`);
+    } else {
+      console.log(`📄 Single file mode: ${files.length} file selected`);
+    }
+    
     files.forEach(file => {
       if (file) {
-        handleFileUpload(file);
+        handleFileUpload(file, isBatchMode);
       }
     });
   };
 
-  const handleFileUpload = async (file) => {
+  const handleFileUpload = async (file, isBatchMode = false) => {
     // Проверяем размер файла на клиенте (50GB лимит)
     const MAX_FILE_SIZE = 50 * 1024 * 1024 * 1024; // 50GB - практически без ограничений
     if (file.size > MAX_FILE_SIZE) {
@@ -330,7 +402,25 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
       
       // Запускаем LLM анализ если есть распознанный текст
       if (result && result.recognizedText && result.recognizedText.trim().length > 50) {
-        performLLMAnalysis(result.recognizedText, file.name);
+        // Only perform per-document LLM analysis for single documents (not batch)
+        // In batch mode, we wait for all OCR to complete, then do unified analysis
+        
+        if (!isBatchMode) {
+          console.log('📄 Single document mode: starting individual analysis');
+          performLLMAnalysis(result.recognizedText, file.name);
+        } else {
+          console.log('📦 Batch mode: skipping individual analysis, will do unified analysis after all OCR');
+        }
+        
+        // Always add to list for batch analysis
+        const documentData = {
+          fileName: file.name,
+          extractedText: result.recognizedText,
+          documentType: 'legal',
+          uploadedAt: new Date().toISOString(),
+          isPdf: isPdf
+        };
+        setUploadedDocuments(prev => [...prev, documentData]);
       }
       // Обновляем карточку документа из background
       upsertDocumentInStorage(
@@ -535,6 +625,7 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
   };
 
   const handleSaveDocument = async () => {
+    setIsSaving(true);
     console.log('🔄 Начинаем сохранение документа...');
     console.log('📊 Данные для сохранения:', {
       lastUploadMeta,
@@ -542,29 +633,59 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
       analysisResult,
       uploadedImage: !!uploadedImage,
       editedFields,
-      documentType
+      documentType,
+      uploadedDocuments: uploadedDocuments.length
     });
 
     try {
+      // Проверяем, есть ли групповой анализ
+      const isBatchAnalysis = uploadedDocuments.length > 1 && analysisResult;
+      
       const isPdf = !!(lastUploadMeta?.isPdf || (ocrResult && ocrResult.kind === 'pdf'));
-      const documentData = isPdf
-        ? {
-            type: 'pdf',
-            filename: lastUploadMeta?.filename,
-            id: lastUploadMeta?.id,
-            expiresAt: lastUploadMeta?.expiresAt,
-            recognizedText: ocrResult?.recognizedText,
-            extractedData: ocrResult?.extractedData,
-            confidence: ocrResult?.confidence,
-            analysis: ocrResult?.analysis || analysisResult || null
-          }
-        : { 
-            type: documentType?.id || 'unknown', 
-            fields: editedFields, 
-            image: uploadedImage, 
-            ocrResult: ocrResult,
-            analysis: analysisResult || null
-          };
+      
+      let documentData;
+      let filename;
+      let documentTypeForSave;
+      
+      if (isBatchAnalysis) {
+        // Сохраняем групповой анализ как один документ
+        documentData = {
+          type: 'batch',
+          isBatch: true,
+          documentCount: uploadedDocuments.length,
+          documents: uploadedDocuments.map(doc => ({
+            fileName: doc.fileName,
+            extractedText: doc.extractedText,
+            uploadedAt: doc.uploadedAt
+          })),
+          analysis: analysisResult,
+          batchId: analysisResult.batchId || `batch_${Date.now()}`
+        };
+        filename = `Пакет документов (${uploadedDocuments.length})`;
+        documentTypeForSave = 'batch';
+      } else {
+        // Обычное сохранение одного документа
+        documentData = isPdf
+          ? {
+              type: 'pdf',
+              filename: lastUploadMeta?.filename,
+              id: lastUploadMeta?.id,
+              expiresAt: lastUploadMeta?.expiresAt,
+              recognizedText: ocrResult?.recognizedText,
+              extractedData: ocrResult?.extractedData,
+              confidence: ocrResult?.confidence,
+              analysis: ocrResult?.analysis || analysisResult || null
+            }
+          : { 
+              type: documentType?.id || 'unknown', 
+              fields: editedFields, 
+              image: uploadedImage, 
+              ocrResult: ocrResult,
+              analysis: analysisResult || null
+            };
+        filename = isPdf ? (lastUploadMeta?.filename || originalFileName || 'PDF документ') : (originalFileName || documentType?.name || 'Документ');
+        documentTypeForSave = isPdf ? 'pdf' : (documentType?.id || 'unknown');
+      }
 
       // При сохранении изображения — обновим профиль из вручную откорректированных полей
       if (!isPdf && documentType && editedFields) {
@@ -575,16 +696,21 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
       try {
         const userId = user?.id || 'current-user';
         const dbDocumentData = {
-          filename: isPdf ? (lastUploadMeta?.filename || originalFileName || 'PDF документ') : (originalFileName || documentType?.name || 'Документ'),
-          originalName: isPdf ? (lastUploadMeta?.filename || originalFileName || 'PDF документ') : (originalFileName || documentType?.name || 'Документ'),
+          filename: filename,
+          originalName: filename,
           filePath: isPdf ? (lastUploadMeta?.filePath || '') : '',
           fileSize: isPdf ? (lastUploadMeta?.sizeBytes || 0) : (uploadedImage?.length || 0),
-          mimeType: isPdf ? 'application/pdf' : 'image/jpeg',
-          documentType: isPdf ? 'pdf' : (documentType?.id || 'unknown'),
-          extractedText: isPdf ? (ocrResult?.recognizedText || '') : (ocrResult?.parsedData?.extractedText || ocrResult?.extractedText || ''),
+          mimeType: isPdf ? 'application/pdf' : (isBatchAnalysis ? 'application/batch' : 'image/jpeg'),
+          documentType: documentTypeForSave,
+          extractedText: isBatchAnalysis 
+            ? uploadedDocuments.map(doc => `${doc.fileName}: ${doc.extractedText}`).join('\n\n')
+            : (isPdf ? (ocrResult?.recognizedText || '') : (ocrResult?.parsedData?.extractedText || ocrResult?.extractedText || '')),
           ocrConfidence: ocrResult?.confidence || 0,
-          analysisResult: ocrResult?.parsedData?.analysis || ocrResult?.analysis || analysisResult || null,
-          imageBase64: !isPdf ? uploadedImage : null
+          analysisResult: analysisResult || ocrResult?.parsedData?.analysis || ocrResult?.analysis || null,
+          imageBase64: !isPdf && !isBatchAnalysis ? uploadedImage : null,
+          isBatch: isBatchAnalysis,
+          batchId: isBatchAnalysis ? (analysisResult.batchId || `batch_${Date.now()}`) : null,
+          documentCount: isBatchAnalysis ? uploadedDocuments.length : 1
         };
 
         console.log('💾 Сохраняем документ в базу данных...', {
@@ -613,37 +739,93 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
         console.warn('⚠️ Ошибка сохранения в базу данных, используем localStorage:', dbError);
         
         // Fallback to localStorage
-        const savedDocuments = JSON.parse(localStorage.getItem(storageKey) || '[]');
-        const newDocument = {
-          id: Date.now(),
-          name: isPdf ? (lastUploadMeta?.filename || 'PDF документ') : (documentType?.name || 'Документ'),
-          content: isPdf
-            ? (ocrResult?.recognizedText || `PDF: ${lastUploadMeta?.filename || ''} (истекает: ${lastUploadMeta?.expiresAt || ''})`)
-            : JSON.stringify(documentData),
-          uploadedAt: new Date().toISOString(),
-          type: isPdf ? 'pdf' : (documentType?.id || 'legal'),
-          status: isPdf ? 'uploaded' : 'analyzed',
-          size: isPdf ? formatSize(lastUploadMeta?.sizeBytes || 0) : `${(uploadedImage?.length || 0) / 1024} KB`,
-          analysis: ocrResult?.analysis || analysisResult || null
-        };
+        try {
+          const savedDocuments = JSON.parse(localStorage.getItem(storageKey) || '[]');
+          const newDocument = {
+            id: Date.now(),
+            name: filename,
+            content: isBatchAnalysis 
+              ? `Пакет из ${uploadedDocuments.length} документов:\n${uploadedDocuments.map(doc => `• ${doc.fileName}`).join('\n')}`
+              : (isPdf
+                ? (ocrResult?.recognizedText || `PDF: ${lastUploadMeta?.filename || ''} (истекает: ${lastUploadMeta?.expiresAt || ''})`)
+                : JSON.stringify(documentData)),
+            uploadedAt: new Date().toISOString(),
+            type: documentTypeForSave,
+            status: isPdf ? 'uploaded' : 'analyzed',
+            size: isPdf ? formatSize(lastUploadMeta?.sizeBytes || 0) : (isBatchAnalysis ? `${uploadedDocuments.length} документов` : `${(uploadedImage?.length || 0) / 1024} KB`),
+            analysis: analysisResult || ocrResult?.analysis || null,
+            isBatch: isBatchAnalysis,
+            batchId: isBatchAnalysis ? (analysisResult.batchId || `batch_${Date.now()}`) : null,
+            documentCount: isBatchAnalysis ? uploadedDocuments.length : 1
+          };
 
-        console.log('💾 Сохраняем документ в localStorage:', newDocument);
+          console.log('💾 Сохраняем документ в localStorage:', newDocument);
 
-        savedDocuments.unshift(newDocument);
-        localStorage.setItem(storageKey, JSON.stringify(savedDocuments));
-
-        console.log('✅ Документ успешно сохранен в localStorage');
+          savedDocuments.unshift(newDocument);
+          
+          // Ограничиваем количество документов в localStorage (максимум 50)
+          if (savedDocuments.length > 50) {
+            savedDocuments.splice(50); // Удаляем старые документы
+            console.warn('LocalStorage quota exceeded, removed old documents');
+          }
+          
+          localStorage.setItem(storageKey, JSON.stringify(savedDocuments));
+          console.log('✅ Документ успешно сохранен в localStorage');
+        } catch (error) {
+          if (error.name === 'QuotaExceededError') {
+            console.warn('LocalStorage quota exceeded, clearing old documents');
+            try {
+              // Очищаем старые документы и пробуем снова
+              const savedDocuments = JSON.parse(localStorage.getItem(storageKey) || '[]');
+              const recentDocs = savedDocuments.slice(0, 20); // Оставляем только последние 20
+              localStorage.setItem(storageKey, JSON.stringify(recentDocs));
+              
+              // Пробуем добавить новый документ
+              const newDocument = {
+                id: Date.now(),
+                name: filename,
+                content: isBatchAnalysis 
+                  ? `Пакет из ${uploadedDocuments.length} документов:\n${uploadedDocuments.map(doc => `• ${doc.fileName}`).join('\n')}`
+                  : (isPdf
+                    ? (ocrResult?.recognizedText || `PDF: ${lastUploadMeta?.filename || ''} (истекает: ${lastUploadMeta?.expiresAt || ''})`)
+                    : JSON.stringify(documentData)),
+                uploadedAt: new Date().toISOString(),
+                type: documentTypeForSave,
+                status: isPdf ? 'uploaded' : 'analyzed',
+                size: isPdf ? formatSize(lastUploadMeta?.sizeBytes || 0) : (isBatchAnalysis ? `${uploadedDocuments.length} документов` : `${(uploadedImage?.length || 0) / 1024} KB`),
+                analysis: analysisResult || ocrResult?.analysis || null,
+                isBatch: isBatchAnalysis,
+                batchId: isBatchAnalysis ? (analysisResult.batchId || `batch_${Date.now()}`) : null,
+                documentCount: isBatchAnalysis ? uploadedDocuments.length : 1
+              };
+              
+              recentDocs.unshift(newDocument);
+              localStorage.setItem(storageKey, JSON.stringify(recentDocs));
+              console.log('✅ Документ сохранен после очистки localStorage');
+            } catch (retryError) {
+              console.error('Failed to save document to localStorage after cleanup:', retryError);
+              alert('Память браузера переполнена. Документ не может быть сохранен локально.');
+            }
+          } else {
+            console.error('Error saving document to localStorage:', error);
+            alert('Ошибка сохранения документа в память браузера.');
+          }
+        }
       }
 
       // Для PDF пробрасываем чистый текст, чтобы карточка не показывала JSON
-      const textToEmit = isPdf ? (ocrResult?.recognizedText || '') : JSON.stringify(documentData);
-      onTextExtracted(textToEmit, isPdf ? (lastUploadMeta?.filename || 'PDF документ') : (documentType?.name || 'Документ'));
+      const textToEmit = isBatchAnalysis 
+        ? `Пакет из ${uploadedDocuments.length} документов:\n${uploadedDocuments.map(doc => `• ${doc.fileName}`).join('\n')}`
+        : (isPdf ? (ocrResult?.recognizedText || '') : JSON.stringify(documentData));
+      onTextExtracted(textToEmit, filename);
       
       console.log('🎉 Сохранение завершено, закрываем модал');
       onClose();
     } catch (error) {
       console.error('❌ Ошибка при сохранении документа:', error);
       alert('Ошибка при сохранении документа: ' + error.message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -658,12 +840,113 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
     setAnalysisResult(null);
   };
 
+  const handleBatchAnalysis = async () => {
+    // Guard against multiple triggers
+    if (isAnalyzing) {
+      console.warn('⚠️ Batch analysis already in progress, skipping duplicate trigger');
+      return;
+    }
+    
+    if (uploadedDocuments.length < 2) {
+      // Убираем всплывающее уведомление о необходимости минимум 2 документов
+      return;
+    }
+
+    try {
+      const result = await performBatchLLMAnalysis(uploadedDocuments);
+      // console.log('Групповой анализ завершен:', result);
+      // Убираем всплывающее уведомление о завершении группового анализа
+    } catch (error) {
+      console.error('Ошибка группового анализа:', error);
+      // Убираем всплывающее уведомление об ошибке группового анализа
+    }
+  };
+
+  const performBatchLLMAnalysis = async (documents) => {
+    try {
+      setIsAnalyzing(true);
+      setProgress(0);
+      setProgressStage('⏳ Подготовка документов...');
+      
+      // STEP 1: Preparing documents
+      setProgress(10);
+      setProgressStage('📄 Собираю информацию о всех документах...');
+      await new Promise(res => setTimeout(res, 500)); // Small delay for visual feedback
+
+      // STEP 2: Sending to LLM
+      setProgress(30);
+      setProgressStage('🤖 Отправляю все документы для анализа...');
+      
+      // Fetch with retries for transient errors
+      const fetchWithRetry = async (url, options, retries = 3, delay = 1000) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            return await fetch(url, options);
+          } catch (err) {
+            if (i === retries - 1) throw err;
+            await new Promise(res => setTimeout(res, delay));
+          }
+        }
+      };
+      
+      const analysisResponse = await fetchWithRetry(
+        buildApiUrl('documents/batch-analysis'),
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            documents: documents.map(doc => ({
+              documentText: doc.extractedText || doc.recognizedText || '',
+              fileName: doc.fileName || doc.name || 'Документ',
+              documentType: doc.documentType || 'legal'
+            })),
+            userId: '1' 
+          })
+        }
+      );
+
+      setProgress(70);
+      setProgressStage('📊 Формирую результаты анализа...');
+
+      if (!analysisResponse.ok) {
+        const errorText = await analysisResponse.text();
+        console.error('Ошибка группового LLM анализа:', analysisResponse.status, errorText);
+        throw new Error(`Ошибка группового анализа документов: ${analysisResponse.status}`);
+      }
+
+      const analysisData = await analysisResponse.json();
+      
+      setProgress(90);
+      setProgressStage('✨ Завершаю анализ...');
+      
+      // Set result and progress to complete
+      if (analysisData.data) {
+        setAnalysisResult(analysisData.data);
+      }
+      
+      setProgress(100);
+      setProgressStage('✅ Анализ завершен! Готово к просмотру.');
+      
+      // Keep showing result for 2 seconds before closing
+      await new Promise(res => setTimeout(res, 2000));
+      
+      return analysisData.data;
+    } catch (error) {
+      console.error('Ошибка при групповом LLM анализе:', error);
+      setProgressStage('❌ Ошибка при анализе: ' + error.message);
+      setProgress(0);
+      throw error;
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const performLLMAnalysis = async (documentText, fileName) => {
     try {
       setIsAnalyzing(true);
-      setProgressStage('Анализ документа с помощью AI...');
+      setProgressStage('🤔 Изучаю документ и анализирую его содержание...');
       setProgress(85);
-      console.log('Начинаем LLM анализ документа:', fileName);
+      // console.log('Начинаем LLM анализ документа:', fileName);
       
       // Fetch with retries for transient errors
       const fetchWithRetry = async (url, options, retries = 3, delay = 1000) => {
@@ -692,24 +975,50 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
       }
 
       const analysisData = await analysisResponse.json();
-      console.log('LLM анализ завершен:', analysisData);
+      // console.log('LLM анализ завершен:', analysisData);
       setAnalysisResult(analysisData);
       setProgress(100);
       
       // Сохраняем результат анализа в localStorage для последующего отображения
       const docId = analysisData.data?.metadata?.docId;
       if (docId) {
-        localStorage.setItem(`analysis_${docId}`, JSON.stringify({
-          docId,
-          timestamp: new Date().toISOString(),
-          analysis: analysisData.data,
-          fileName: fileName
-        }));
+        try {
+          localStorage.setItem(`analysis_${docId}`, JSON.stringify({
+            docId,
+            timestamp: new Date().toISOString(),
+            analysis: analysisData.data,
+            fileName: fileName
+          }));
+        } catch (error) {
+          if (error.name === 'QuotaExceededError') {
+            console.warn('LocalStorage quota exceeded for analysis data, skipping save');
+            // Очищаем старые анализы
+            try {
+              const keys = Object.keys(localStorage);
+              const analysisKeys = keys.filter(key => key.startsWith('analysis_'));
+              // Удаляем половину старых анализов
+              analysisKeys.slice(0, Math.floor(analysisKeys.length / 2)).forEach(key => {
+                localStorage.removeItem(key);
+              });
+              // Пробуем снова
+              localStorage.setItem(`analysis_${docId}`, JSON.stringify({
+                docId,
+                timestamp: new Date().toISOString(),
+                analysis: analysisData.data,
+                fileName: fileName
+              }));
+            } catch (retryError) {
+              console.error('Failed to save analysis after cleanup:', retryError);
+            }
+          } else {
+            console.error('Error saving analysis to localStorage:', error);
+          }
+        }
       }
       
     } catch (error) {
       console.error('Ошибка LLM анализа:', error);
-      setProgressStage('Анализ завершен с ошибкой');
+      setProgressStage('❌ Произошла ошибка при анализе');
       // Продолжаем, даже если анализ не удался
     } finally {
       setIsAnalyzing(false);
@@ -717,6 +1026,26 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
   };
 
   const fields = documentType ? getDocumentFields(documentType.id) : {};
+
+  // Функция для очистки localStorage при превышении квоты
+  const clearOldDocuments = () => {
+    try {
+      const docs = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      const originalCount = docs.length;
+      // Оставляем только последние 10 документов
+      const recentDocs = docs.slice(0, 10);
+      localStorage.setItem(storageKey, JSON.stringify(recentDocs));
+      console.log(`Cleared ${originalCount - recentDocs.length} old documents from localStorage`);
+      
+      // Показываем уведомление пользователю
+      alert(`Очищено ${originalCount - recentDocs.length} старых документов из памяти браузера. Осталось ${recentDocs.length} документов.`);
+      return true;
+    } catch (error) {
+      console.error('Failed to clear localStorage:', error);
+      alert('Ошибка при очистке памяти браузера. Попробуйте перезагрузить страницу.');
+      return false;
+    }
+  };
 
   return (
     <div className="document-upload-modal">
@@ -728,7 +1057,7 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
           </h2>
           <button className="close-button" onClick={onClose}>
             <X size={24} />
-        </button>
+          </button>
       </div>
 
         <div className="document-upload-body">
@@ -754,6 +1083,15 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
                   >
                     <Camera size={20} />
                     Сделать фото
+                  </button>
+                  
+                  <button 
+                    className="upload-btn danger"
+                    onClick={clearOldDocuments}
+                    title="Очистить старые документы из памяти браузера"
+                  >
+                    <Trash2 size={20} />
+                    Очистить память
                   </button>
                 </div>
                 
@@ -836,15 +1174,39 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
                       </div>
                       <div className="section-content">
                         <p className="expert-text">
-                          {analysisResult.data?.analysis?.expertOpinion?.overallAssessment ||
+                          {analysisResult.analysis?.expertOpinion?.overallAssessment ||
+                           analysisResult.analysis?.summary?.overallAssessment ||
+                           analysisResult.data?.analysis?.expertOpinion?.overallAssessment ||
                            analysisResult.data?.analysis?.summary?.overallAssessment ||
+                           analysisResult.data?.expertOpinion?.overallAssessment ||
+                           analysisResult.data?.summary?.overallAssessment ||
                            'Документ проанализирован'}
                         </p>
+                        {analysisResult.analysis?.expertOpinion?.criticalPoints?.length > 0 && (
+                          <div className="critical-section">
+                            <strong>Критические моменты:</strong>
+                            <ul className="critical-list">
+                              {analysisResult.analysis.expertOpinion.criticalPoints.map((point, i) => (
+                                <li key={i}>{point}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                         {analysisResult.data?.analysis?.expertOpinion?.criticalPoints?.length > 0 && (
                           <div className="critical-section">
-                            <strong>🔴 Критические моменты:</strong>
+                            <strong>Критические моменты:</strong>
                             <ul className="critical-list">
                               {analysisResult.data.analysis.expertOpinion.criticalPoints.map((point, i) => (
+                                <li key={i}>{point}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {analysisResult.data?.expertOpinion?.criticalPoints?.length > 0 && (
+                          <div className="critical-section">
+                            <strong>Критические моменты:</strong>
+                            <ul className="critical-list">
+                              {analysisResult.data.expertOpinion.criticalPoints.map((point, i) => (
                                 <li key={i}>{point}</li>
                               ))}
                             </ul>
@@ -854,14 +1216,14 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
                     </div>
 
                     {/* Юридические ошибки */}
-                    {analysisResult.data?.analysis?.legalErrors?.length > 0 && (
+                    {(analysisResult.analysis?.legalErrors?.length > 0 || analysisResult.data?.analysis?.legalErrors?.length > 0 || analysisResult.data?.legalErrors?.length > 0) && (
                       <div className="analysis-section errors-section">
                         <div className="section-header">
                           <span className="section-icon">⚠️</span>
-                          <h4>Юридические ошибки ({analysisResult.data.analysis.legalErrors.length})</h4>
+                          <h4>Юридические ошибки ({analysisResult.analysis?.legalErrors?.length || analysisResult.data?.analysis?.legalErrors?.length || analysisResult.data?.legalErrors?.length})</h4>
                         </div>
                         <div className="section-content">
-                          {analysisResult.data.analysis.legalErrors.map((error, i) => (
+                          {(analysisResult.analysis?.legalErrors || analysisResult.data?.analysis?.legalErrors || analysisResult.data?.legalErrors || []).map((error, i) => (
                             <div key={i} className={`error-box severity-${error.severity || 'medium'}`}>
                               <div className="error-header-new">
                                 <span className="error-type-badge">{error.type}</span>
@@ -877,14 +1239,14 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
                     )}
 
                     {/* Риски */}
-                    {analysisResult.data?.analysis?.risks?.length > 0 && (
+                    {(analysisResult.analysis?.risks?.length > 0 || analysisResult.data?.analysis?.risks?.length > 0 || analysisResult.data?.risks?.length > 0) && (
                       <div className="analysis-section risks-section">
                         <div className="section-header">
                           <span className="section-icon">🚨</span>
                           <h4>Выявленные риски</h4>
                         </div>
                         <div className="risks-grid">
-                          {analysisResult.data.analysis.risks.map((risk, i) => (
+                          {(analysisResult.analysis?.risks || analysisResult.data?.analysis?.risks || analysisResult.data?.risks || []).map((risk, i) => (
                             <div key={i} className="risk-card">
                               <div className="risk-title">{risk.category}</div>
                               <p className="risk-text">{risk.description}</p>
@@ -897,14 +1259,14 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
                     )}
 
                     {/* Рекомендации */}
-                    {analysisResult.data?.analysis?.recommendations?.length > 0 && (
+                    {(analysisResult.analysis?.recommendations?.length > 0 || analysisResult.data?.analysis?.recommendations?.length > 0 || analysisResult.data?.recommendations?.length > 0) && (
                       <div className="analysis-section recommendations-section">
                         <div className="section-header">
                           <span className="section-icon">💡</span>
                           <h4>Рекомендации Галины</h4>
                         </div>
                         <div className="recommendations-grid">
-                          {analysisResult.data.analysis.recommendations.map((rec, i) => (
+                          {(analysisResult.analysis?.recommendations || analysisResult.data?.analysis?.recommendations || analysisResult.data?.recommendations || []).map((rec, i) => (
                             <div key={i} className={`rec-card priority-${rec.priority || 'medium'}`}>
                               <div className="rec-header-new">
                                 <span className={`priority-dot priority-${rec.priority}`}></span>
@@ -920,14 +1282,14 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
                     )}
 
                     {/* Следующие шаги */}
-                    {analysisResult.data?.analysis?.expertOpinion?.nextSteps?.length > 0 && (
+                    {(analysisResult.analysis?.expertOpinion?.nextSteps?.length > 0 || analysisResult.data?.analysis?.expertOpinion?.nextSteps?.length > 0 || analysisResult.data?.expertOpinion?.nextSteps?.length > 0) && (
                       <div className="analysis-section next-steps-section">
                         <div className="section-header">
                           <span className="section-icon">🎯</span>
                           <h4>Следующие шаги</h4>
                         </div>
                         <ol className="steps-list">
-                          {analysisResult.data.analysis.expertOpinion.nextSteps.map((step, i) => (
+                          {(analysisResult.analysis?.expertOpinion?.nextSteps || analysisResult.data?.analysis?.expertOpinion?.nextSteps || analysisResult.data?.expertOpinion?.nextSteps || []).map((step, i) => (
                             <li key={i}>{step}</li>
                           ))}
                         </ol>
@@ -966,18 +1328,24 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
                     
                   </div>
                 )}
-              </div>
-
-              {/* Single Save Button */}
-              <div className="preview-actions">
-                <button 
-                  className="save-btn"
-                  onClick={handleSaveDocument}
-                  disabled={isUploading || isProcessing}
-                >
-                  <Save size={20} />
-                  Сохранить документ
-                </button>
+                
+                {/* Кнопка сохранения документа */}
+                {(analysisResult || ocrResult) && (
+                  <div className="preview-actions">
+                    <button 
+                      className="save-btn"
+                      onClick={handleSaveDocument}
+                      disabled={isSaving}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-save">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                      </svg>
+                      {isSaving ? 'Сохранение...' : 'Сохранить документ'}
+                    </button>
+                  </div>
+                )}
               </div>
         </div>
       )}
@@ -1068,7 +1436,6 @@ const DocumentUpload = ({ onTextExtracted, onClose, documentType = null, storage
             </div>
         </div>
       )}
-      
       </div>
     </div>
   );
