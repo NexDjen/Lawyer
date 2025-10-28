@@ -153,11 +153,11 @@ const ChatInput = ({
 
       const result = await response.json();
       
+      // Notify that file text has been recognized without full text display
       if (result.recognizedText) {
-        // Отправляем распознанный текст как сообщение
-        onSendMessage(`📎 Загружен файл: ${file.name}\n\nРаспознанный текст:\n${result.recognizedText}`);
+        onSendMessage(`📎 Файл ${file.name} успешно распознан`);
       } else {
-        onSendMessage(`📎 Загружен файл: ${file.name}`);
+        onSendMessage(`📎 Файл ${file.name} загружен`);
       }
       
       // Добавляем файл в список загруженных
