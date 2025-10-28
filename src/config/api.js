@@ -3,7 +3,7 @@ const envApiBase = process.env.REACT_APP_API_URL;
 const isProd = process.env.NODE_ENV === 'production';
 
 // Use localhost for development
-const DEV_API_URL = 'http://localhost:3009/api';
+const DEV_API_URL = '/api';
 
 // In production use relative paths to let nginx handle SSL and ports
 export const API_BASE_URL = isProd

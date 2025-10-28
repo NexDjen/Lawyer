@@ -16,9 +16,12 @@ class DocumentController {
 
       const result = await documentService.processDocument(req.file);
       
+      // Include recognizedText at top-level for frontend
+      const { recognizedText } = result;
       res.json({
         success: true,
         message: 'Документ успешно обработан',
+        recognizedText,
         data: result
       });
       

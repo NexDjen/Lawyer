@@ -222,6 +222,9 @@ class Server {
   }
 
   _setupMiddleware() {
+    // Enable CORS for all routes
+    this.app.options('*', cors(corsOptions));
+    this.app.use(cors(corsOptions));
     // Устанавливаем увеличенные таймауты для OCR обработки
     this.app.use((req, res, next) => {
       // Increase timeouts for long-running requests (OCR and advanced analysis)
@@ -237,7 +240,6 @@ class Server {
     
     // Debug: log allowed CORS origins
     logger.info('Allowed CORS origins:', config.cors.origins);
-    this.app.use(cors(corsOptions));
     
     // Статические файлы (должны быть до всех остальных маршрутов)
     this.app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));

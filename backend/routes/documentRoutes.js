@@ -445,15 +445,15 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         }
       }
     } 
-    // Word документы
-    else if (req.file.mimetype === 'application/msword' || 
+    // DOCX и Word документы – используем общий процессинг для извлечения текста
+    else if (req.file.mimetype === 'application/msword' ||
              req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       try {
-        // Для Word документов пока просто возвращаем информацию о файле
-        // В будущем можно добавить парсинг Word документов
-        recognizedText = `Word документ: ${req.file.originalname}`;
-        extractedData = { text: recognizedText };
-        confidence = 1.0;
+        // Используем documentService для обработки DOCX и Word
+        const result = await processDocument(req.file);
+        recognizedText = result.recognizedText;
+        extractedData = result.extractedData;
+        confidence = result.confidence;
       } catch (e) {
         logger.warn('Word document processing failed', { error: e.message });
       }
@@ -471,8 +471,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     }
     // Обработка изображений
     else {
-      const documentType = 'unknown';
-      const result = await processDocument(req.file.path, documentType);
+      const result = await processDocument(req.file, 'unknown');
       recognizedText = result.recognizedText || '';
       extractedData = result.extractedData;
       confidence = result.confidence;

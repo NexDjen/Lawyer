@@ -1,21 +1,40 @@
 const fs = require('fs');
 const path = require('path');
+const mammoth = require('mammoth');
 const logger = require('../utils/logger');
 const { processDocumentWithOCR } = require('./ocrService');
 const { preprocessImageAdvanced } = require('./imagePreprocess');
 
 // Функция для обработки документа с OCR
 const processDocument = async (filePath, documentType = null) => {
+  // If a .docx file is uploaded, extract text with Mammoth
+  const fileObj = filePath;
+  const ext = path.extname(fileObj.originalname || '').toLowerCase();
+  if (ext === '.docx') {
+    try {
+      const { value: text } = await mammoth.extractRawText({ path: fileObj.path });
+      logger.info('DOCX text extraction succeeded', { file: fileObj.originalname });
+      return {
+        extractedData: {},
+        confidence: 1,
+        documentType: documentType,
+        recognizedText: text
+      };
+    } catch (err) {
+      logger.error('DOCX text extraction failed', { error: err.message });
+      // Fall back to OCR if extraction fails
+    }
+  }
   try {
     logger.info('Начинаем обработку документа', {
-      filePath,
+      filePath: fileObj.path,
       documentType
     });
 
     // Advanced предобработка (устранение бликов/шумов)
-    let processedPath = filePath;
+    let processedPath = fileObj.path;
     try {
-      processedPath = await preprocessImageAdvanced(filePath);
+      processedPath = await preprocessImageAdvanced(fileObj.path);
     } catch (error) {
       logger.warn('Предобработка изображения не удалась, используем оригинал', { error: error.message });
     }

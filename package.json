@@ -19,6 +19,7 @@
     "form-data": "^4.0.4",
     "http-proxy": "^1.18.1",
     "lucide-react": "^0.263.1",
+    "mammoth": "^1.11.0",
     "multer": "^2.0.1",
     "node-latex": "^3.1.0",
     "node-tesseract-ocr": "^2.2.1",
@@ -67,7 +68,7 @@
     ]
   },
   "devDependencies": {
-    "prettier": "^2.8.0",
-    "http-proxy-middleware": "^3.0.5"
+    "http-proxy-middleware": "^3.0.5",
+    "prettier": "^2.8.0"
   }
 }
