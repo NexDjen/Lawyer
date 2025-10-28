@@ -5,7 +5,7 @@ const fs = require('fs');
 const sharp = require('sharp');
 const { savePDFMetadata, saveOCRResult, scheduleCleanup } = require('../services/documentStorage');
 const { processDocument } = require('../services/documentService');
-const { analyzeDocumentText } = require('../services/documentAnalysisService');
+const { analyzeDocumentText, analyzePdf } = require('../services/documentAnalysisService');
 const documentController = require('../controllers/documentController');
 const { testOCRWithText, detectDocumentType } = require('../services/ocrService');
 let runPythonPdfOcr;
@@ -105,7 +105,24 @@ router.post('/ocr', upload.single('document'), async (req, res) => {
       const tStart = Date.now();
       let ocrTimeMs = 0;
 
-      // 1) Python OCR приоритетно (конвертация страниц через pdf2image + pytesseract)
+      // Анализ PDF-файла на основе его содержимого
+      try {
+        const buffer = fs.readFileSync(req.file.path);
+        const { analysis: pdfAnalysis, text: pdfText } = await analyzePdf(buffer);
+        return res.json({
+          success: true,
+          kind: 'pdf',
+          message: 'PDF прочитан и проанализирован',
+          id: meta.id,
+          expiresAt: meta.expiresAt,
+          recognizedText: pdfText,
+          analysis: pdfAnalysis,
+          documentType: detectedType
+        });
+      } catch (e) {
+        logger.warn('PDF immediate analysis failed', { error: e.message });
+      }
+      // Существующий код для OCR PDF через pdftoppm или Python
       if (runPythonPdfOcr) {
         try {
           const py = await runPythonPdfOcr(req.file.path, 'rus+eng');

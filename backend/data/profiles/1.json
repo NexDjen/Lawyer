@@ -1,10 +1,10 @@
 {
   "userId": "1",
   "createdAt": "2025-10-21T22:43:40.567Z",
-  "updatedAt": "2025-10-28T10:00:37.676Z",
+  "updatedAt": "2025-10-28T19:28:08.978Z",
   "personalData": {
-    "fullName": "Бы Не",
-    "firstName": "Бы",
+    "fullName": "Ничего Не Подписывал",
+    "firstName": "Ничего",
     "lastName": "",
     "middleName": "Егоров",
     "birthDate": "04.08.1959",
@@ -17,7 +17,7 @@
     "inn": "575109340669",
     "snils": "",
     "maritalStatus": "",
-    "occupation": "бы не",
+    "occupation": "ничего не подписывал",
     "workplace": ""
   },
   "caseNotes": [
@@ -215,6 +215,11 @@
       "timestamp": "2025-10-28T10:00:37.673Z",
       "content": "подготовь мне речь для суда, что бы я мог платить меньше штрафа, хотя бы не 40% а 20%",
       "importance": 3
+    },
+    {
+      "timestamp": "2025-10-28T19:28:08.975Z",
+      "content": "Я ничего не подписывал, и узнал что на мне кредит только когда на почту пришла повестка в суд",
+      "importance": 3
     }
   ],
   "preferences": {
@@ -224,7 +229,7 @@
   },
   "statistics": {
     "totalMessages": 0,
-    "dataExtractionCount": 43,
-    "lastActivity": "2025-10-28T10:00:37.676Z"
+    "dataExtractionCount": 44,
+    "lastActivity": "2025-10-28T19:28:08.978Z"
   }
 }
