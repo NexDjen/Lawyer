@@ -7,7 +7,7 @@ class ChatController {
   async handleChatMessage(req, res) {
     // Manage chat session memory
     let { sessionId } = req.body;
-    const userId = req.body.userId || null;
+    const userId = req.body.userId || "1";
     if (!sessionId) {
       sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2,9)}`;
       // create new session
